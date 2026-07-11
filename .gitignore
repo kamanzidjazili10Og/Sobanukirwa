@@ -1,0 +1,11 @@
+node_modules/
+.env
+backend/uploads/
+SobanukirwaApp/node_modules/
+SobanukirwaApp/.expo/
+*.log
+.DS_Store
+Videos/
+audio/
+font-awasome/
+*.bak
