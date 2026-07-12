@@ -667,14 +667,20 @@ class PrayerTimesManager {
 
     async fetchTimes() {
         const today = new Date().toDateString();
+        const cacheKey = 'prayerTimes_' + this.location.lat + '_' + this.location.lng;
 
-        const cachedTimes = localStorage.getItem('prayerTimes');
+        const cachedTimes = localStorage.getItem(cacheKey);
         const cachedDate = localStorage.getItem('prayerTimesDate');
         if (cachedTimes && cachedDate === today) {
-            this.prayerTimes = JSON.parse(cachedTimes);
-            const sourceEl = document.getElementById('prayerSource');
-            if (sourceEl) sourceEl.textContent = 'Source: Cached';
-            return true;
+            const parsed = JSON.parse(cachedTimes);
+            if (this.isValidPrayerTimes(parsed)) {
+                this.prayerTimes = parsed;
+                const sourceEl = document.getElementById('prayerSource');
+                if (sourceEl) sourceEl.textContent = 'Source: Cached';
+                return true;
+            }
+            localStorage.removeItem(cacheKey);
+            localStorage.removeItem('prayerTimesDate');
         }
 
         const offlineSuccess = this.calculateOffline();
@@ -688,22 +694,53 @@ class PrayerTimesManager {
 
         try {
             const date = new Date();
-            const res = await fetch(`https://api.aladhan.com/v1/timings/${date.getTime() / 1000}?latitude=${this.location.lat}&longitude=${this.location.lng}&method=2`, { signal: controller.signal });
+            const dd = String(date.getDate()).padStart(2, '0');
+            const mm = String(date.getMonth() + 1).padStart(2, '0');
+            const yyyy = date.getFullYear();
+            const res = await fetch(`https://api.aladhan.com/v1/timings/${dd}-${mm}-${yyyy}?latitude=${this.location.lat}&longitude=${this.location.lng}&method=2`, { signal: controller.signal });
             clearTimeout(timeoutId);
             const data = await res.json();
             if (data.code === 200) {
-                this.prayerTimes = data.data.timings;
-                const sourceEl = document.getElementById('prayerSource');
-                if (sourceEl) sourceEl.textContent = 'Source: Aladhan API';
-                localStorage.setItem('prayerTimes', JSON.stringify(this.prayerTimes));
-                localStorage.setItem('prayerTimesDate', today);
-                return true;
+                const timings = data.data.timings;
+                const sanitized = this.sanitizePrayerTimes(timings);
+                if (sanitized) {
+                    this.prayerTimes = sanitized;
+                    const sourceEl = document.getElementById('prayerSource');
+                    if (sourceEl) sourceEl.textContent = 'Source: Aladhan API';
+                    localStorage.setItem(cacheKey, JSON.stringify(this.prayerTimes));
+                    localStorage.setItem('prayerTimesDate', today);
+                    return true;
+                }
             }
         } catch (e) {
             console.log('Prayer times API unavailable');
         }
 
         return offlineSuccess;
+    }
+
+    isValidPrayerTimes(times) {
+        if (!times || typeof times !== 'object') return false;
+        const required = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+        return required.every(name => {
+            const t = times[name];
+            return t && typeof t === 'string' && /^\d{1,2}:\d{2}$/.test(t);
+        });
+    }
+
+    sanitizePrayerTimes(timings) {
+        const result = {};
+        const names = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+        for (const name of names) {
+            let t = timings[name];
+            if (!t) continue;
+            t = String(t).trim();
+            const match = t.match(/^(\d{1,2}):(\d{2})/);
+            if (match) {
+                result[name] = match[1].padStart(2, '0') + ':' + match[2];
+            }
+        }
+        return this.isValidPrayerTimes(result) ? result : null;
     }
 
     calculateOffline() {
@@ -795,15 +832,19 @@ class PrayerTimesManager {
         const currentMinutes = now.getHours() * 60 + now.getMinutes();
         const orderedPrayers = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
         for (const name of orderedPrayers) {
-            const parts = this.prayerTimes[name].split(':');
+            const t = this.prayerTimes[name];
+            if (!t || !/^\d{1,2}:\d{2}$/.test(t)) continue;
+            const parts = t.split(':');
             const prayerMinutes = parseInt(parts[0]) * 60 + parseInt(parts[1]);
             if (prayerMinutes > currentMinutes) {
-                return { name, time: this.prayerTimes[name], minutesUntil: prayerMinutes - currentMinutes };
+                return { name, time: t, minutesUntil: prayerMinutes - currentMinutes };
             }
         }
-        const fajrParts = this.prayerTimes.Fajr.split(':');
+        const fajr = this.prayerTimes.Fajr;
+        if (!fajr || !/^\d{1,2}:\d{2}$/.test(fajr)) return null;
+        const fajrParts = fajr.split(':');
         const fajrMinutes = parseInt(fajrParts[0]) * 60 + parseInt(fajrParts[1]);
-        return { name: 'Fajr', time: this.prayerTimes.Fajr, minutesUntil: (24 * 60 - currentMinutes) + fajrMinutes };
+        return { name: 'Fajr', time: fajr, minutesUntil: (24 * 60 - currentMinutes) + fajrMinutes };
     }
 
     displayTimes() {
@@ -817,7 +858,7 @@ class PrayerTimesManager {
         const currentMinutes = now.getHours() * 60 + now.getMinutes();
         grid.innerHTML = this.prayerNames.map((name, i) => {
             const time = this.prayerTimes[name];
-            if (!time) return '';
+            if (!time || !/^\d{1,2}:\d{2}$/.test(time)) return '';
             const parts = time.split(':');
             const prayerMinutes = parseInt(parts[0]) * 60 + parseInt(parts[1]);
             const isNext = nextPrayer && nextPrayer.name === name;
@@ -913,7 +954,7 @@ function updatePrayerSummary() {
 
     list.innerHTML = prayerManager.prayerNames.map((name, i) => {
         const time = prayerManager.prayerTimes[name];
-        if (!time) return '';
+        if (!time || !/^\d{1,2}:\d{2}$/.test(time)) return '';
         const parts = time.split(':');
         const prayerMinutes = parseInt(parts[0]) * 60 + parseInt(parts[1]);
         const isNext = nextPrayer && nextPrayer.name === name;
@@ -1115,9 +1156,9 @@ class AdhanManager {
     play(prayerName) {
         if (!this.audio) return;
         const adhanFiles = {
-            adhan1: 'audio/Adhan1.mpeg',
-            adhan2: 'audio/Adhan2.mpeg',
-            mansour: 'audio/Mansour_Adhan.mpeg'
+            adhan1: 'Sounds/Adhan1.mpeg',
+            adhan2: 'Sounds/Adhan2.mpeg',
+            mansour: 'Sounds/Mansour_Adhan.mpeg'
         };
         this.audio.src = adhanFiles[this.reciter] || adhanFiles.adhan1;
         this.audio.volume = this.volume;
@@ -1204,7 +1245,7 @@ class AdhkarReminder {
         if (trans) trans.textContent = adhkar.transliteration;
         if (translation) translation.textContent = adhkar.translation;
         popup.classList.add('show');
-        var audioSrc = adhkar.audio_url || adhkar.audioFile || 'audio/Subhanallah.m4a';
+        var audioSrc = adhkar.audio_url || adhkar.audioFile || 'Sounds/Subhanallah.m4a';
         var silent = silentMode && (silentMode.isActive || (silentMode.isScheduled && (function(){ var n=new Date();var m=n.getHours()*60+n.getMinutes();var sp=silentMode.scheduledStart.split(':').map(Number);var ep=silentMode.scheduledEnd.split(':').map(Number);var sm=sp[0]*60+sp[1];var em=ep[0]*60+ep[1];if(sm<=em)return m>=sm&&m<em;return m>=sm||m<em;})()));
         if (!silent) {
             var audio = document.getElementById('reminderAudio');
@@ -1291,7 +1332,7 @@ function updatePrayerSummary() {
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
     list.innerHTML = prayerManager.prayerNames.map((name, i) => {
         const time = prayerManager.prayerTimes[name];
-        if (!time) return '';
+        if (!time || !/^\d{1,2}:\d{2}$/.test(time)) return '';
         const parts = time.split(':');
         const prayerMinutes = parseInt(parts[0]) * 60 + parseInt(parts[1]);
         const isNext = next && next.name === name;
@@ -1546,6 +1587,16 @@ function clearCache() {
 
 // ===== INIT =====
 function initApp() {
+    // Clear stale prayer cache (old format without location key)
+    try {
+        const oldTimes = localStorage.getItem('prayerTimes');
+        const oldDate = localStorage.getItem('prayerTimesDate');
+        if (oldTimes && !localStorage.getItem('prayerTimes_-1.9403_29.8739')) {
+            localStorage.removeItem('prayerTimes');
+            localStorage.removeItem('prayerTimesDate');
+        }
+    } catch(e) {}
+
     const loadingScreen = document.getElementById('loadingScreen');
     const loadingBar = document.getElementById('loadingBar');
     const loadingPercentage = document.getElementById('loadingPercentage');

@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = window.location.origin + '/api';
 let currentPage = 'dashboard';
 let currentLang = localStorage.getItem('admin_lang') || 'en';
 

@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:5000/api'; // Ensure this is 5000
+const API_BASE = window.location.origin + '/api';
 
 async function fetchFromAPI(endpoint, options = {}) {
     try {
