@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, Dimensions, ImageBackground } from 'react-native';
+import { View, Text, StyleSheet, Animated, Dimensions, ImageBackground, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
@@ -86,7 +86,7 @@ export default function LoadingScreen({ onFinish }) {
           <Animated.View style={[styles.logoGlow, { opacity: glowAnim }]} />
           <View style={styles.iconCircle}>
             <View style={styles.iconInner}>
-              <Ionicons name="mosque" size={48} color="#d4af37" />
+              <Image source={require('../../assets/icon.png')} style={styles.logoImage} resizeMode="contain" />
             </View>
           </View>
         </View>
@@ -138,8 +138,9 @@ const styles = StyleSheet.create({
   },
   iconInner: {
     width: 88, height: 88, borderRadius: 44, backgroundColor: 'rgba(212,175,55,0.08)',
-    alignItems: 'center', justifyContent: 'center',
+    alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
   },
+  logoImage: { width: 72, height: 72, borderRadius: 36 },
   title: { fontSize: 30, fontWeight: '700', fontFamily: 'serif', color: '#d4af37', marginTop: 16 },
   subtitle: { fontSize: 14, color: '#a8c1d9' },
   dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },

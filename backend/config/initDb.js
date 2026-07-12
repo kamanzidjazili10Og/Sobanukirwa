@@ -4,8 +4,16 @@ const path = require('path');
 require('dotenv').config();
 
 async function initDb() {
+  const dbHost = process.env.DB_HOST;
+  const isConfigured = dbHost && dbHost !== 'localhost' && dbHost !== '127.0.0.1';
+
+  if (!isConfigured) {
+    console.warn('DB_HOST not configured. Skipping database initialization.');
+    return;
+  }
+
   const connection = await mysql.createConnection({
-    host: process.env.DB_HOST || 'localhost',
+    host: dbHost,
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
     multipleStatements: true,

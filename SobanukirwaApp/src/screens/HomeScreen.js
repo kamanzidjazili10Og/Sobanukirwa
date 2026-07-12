@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions, RefreshControl, Animated } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions, RefreshControl, Animated, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -154,7 +154,7 @@ export default function HomeScreen({ navigation }) {
           <Animated.View style={[styles.heroGlow, { opacity: glowAnim, backgroundColor: 'rgba(212,175,55,0.1)' }]} />
           <View style={[styles.heroLogoWrap, { borderColor: COLORS.secondary }]}>
             <View style={[styles.heroLogoInner, { backgroundColor: 'rgba(212,175,55,0.12)' }]}>
-              <Ionicons name="mosque" size={32} color={COLORS.secondary} />
+              <Image source={require('../../assets/icon.png')} style={styles.heroLogoImage} resizeMode="contain" />
             </View>
           </View>
           <Text style={[styles.heroTitle, { color: COLORS.secondary }]}>Sobanukirwa</Text>
@@ -277,7 +277,8 @@ const styles = StyleSheet.create({
     shadowColor: '#d4af37', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.35, shadowRadius: 20, elevation: 10,
     marginBottom: 12,
   },
-  heroLogoInner: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center' },
+  heroLogoInner: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  heroLogoImage: { width: 52, height: 52, borderRadius: 26 },
   heroTitle: { fontSize: 26, fontWeight: '700', fontFamily: 'serif', textAlign: 'center' },
   heroSubtitle: { fontSize: 13, marginTop: 6, textAlign: 'center', letterSpacing: 0.5 },
   heroDividerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14 },

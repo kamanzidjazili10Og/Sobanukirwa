@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Switch, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Switch, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
@@ -64,7 +64,7 @@ export default function SettingsScreen({ navigation }) {
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={[styles.logoSection, { alignItems: 'center', marginBottom: 20 }]}>
           <View style={[styles.logoIcon, { backgroundColor: COLORS.secondary }]}>
-            <Ionicons name="mosque" size={28} color={COLORS.primaryDark} />
+            <Image source={require('../../assets/icon.png')} style={styles.logoImage} resizeMode="contain" />
           </View>
           <Text style={[styles.logoText, { color: COLORS.secondary }]}>Sobanukirwa</Text>
           <Text style={[styles.versionText, { color: COLORS.textMuted }]}>v2.0.0</Text>
@@ -369,7 +369,8 @@ const styles = StyleSheet.create({
   backBtn: { padding: 8 },
   headerTitle: { fontSize: 24, fontWeight: '700' },
   scroll: { padding: 20, paddingTop: 0, gap: 16, paddingBottom: 40 },
-  logoIcon: { width: 64, height: 64, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  logoIcon: { width: 64, height: 64, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginBottom: 8, overflow: 'hidden' },
+  logoImage: { width: 52, height: 52, borderRadius: 12 },
   logoText: { fontSize: 22, fontWeight: '700', fontFamily: 'serif' },
   versionText: { fontSize: 12, marginTop: 2 },
   card: { borderRadius: 16, borderWidth: 1.5, padding: 16 },
