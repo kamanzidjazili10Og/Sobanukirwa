@@ -34,7 +34,13 @@
       "expo-av",
       "expo-notifications",
       "expo-asset",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Sobanukirwa needs your location for prayer times and Qibla direction"
+        }
+      ]
     ]
   }
 }

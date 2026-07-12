@@ -1,39 +1,64 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useApp } from '../context/AppContext';
+import { fetchAdhkar } from '../services/api';
 
-const ADHKAR_DATA = [
-  { id: 1, arabic: 'سُبْحَانَ اللَّهِ', transliteration: 'Subhanallah', translation: 'Glory be to Allah', maxCount: 33 },
-  { id: 2, arabic: 'الْحَمْدُ لِلَّهِ', transliteration: 'Alhamdulillah', translation: 'All praise is due to Allah', maxCount: 33 },
-  { id: 3, arabic: 'اللَّهُ أَكْبَرُ', transliteration: 'Allahu Akbar', translation: 'Allah is the Greatest', maxCount: 34 },
-  { id: 4, arabic: 'لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ', transliteration: 'La ilaha illallah wahdahu la shareeka lahu', translation: 'There is no god but Allah alone, He has no partner', maxCount: 100 },
-  { id: 5, arabic: 'أَسْتَغْفِرُ اللَّهَ', transliteration: 'Astaghfirullah', translation: 'I seek forgiveness from Allah', maxCount: 100 },
-  { id: 6, arabic: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ', transliteration: 'Subhanallahi wa bihamdihi', translation: 'Glory be to Allah and His praise', maxCount: 100 },
-  { id: 7, arabic: 'لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ', transliteration: 'La hawla wa la quwwata illa billah', translation: 'There is no power nor strength except with Allah', maxCount: 100 },
-  { id: 8, arabic: 'اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ', transliteration: 'Allahumma salli ala Muhammad', translation: 'O Allah, send blessings upon Muhammad', maxCount: 100 },
-  { id: 9, arabic: 'سُبْحَانَ اللَّهِ الْعَظِيمِ وَبِحَمْدِهِ', transliteration: 'Subhanallahi al-Azeem wa bihamdihi', translation: 'Glory be to Allah the Magnificent and His praise', maxCount: 100 },
-  { id: 10, arabic: 'اللَّهُمَّ أَنْتَ السَّلَامُ وَمِنْكَ السَّلَامُ', transliteration: 'Allahumma antas-salam wa minkas-salam', translation: 'O Allah, You are Peace and from You comes peace', maxCount: 100 },
-  { id: 11, arabic: 'إِنَّا لِلَّهِ وَإِنَّا إِلَيْهِ رَاجِعُونَ', transliteration: 'Inna lillahi wa inna ilayhi raji\'un', translation: 'Indeed we belong to Allah and indeed to Him we will return', maxCount: 100 },
-  { id: 12, arabic: 'اللَّهُمَّ لَا مَانِعَ لِمَا أَعْطَيْتَ', transliteration: 'Allahumma la mani\'a lima a\'tayta', translation: 'O Allah, none can withhold what You give', maxCount: 100 },
-  { id: 13, arabic: 'رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً', transliteration: 'Rabbana atina fid-dunya hasanah', translation: 'Our Lord, give us in this world [that which is] good', maxCount: 100 },
-  { id: 14, arabic: 'سُبْحَانَكَ اللَّهُمَّ وَبِحَمْدِكَ', transliteration: 'Subhanakallahumma wa bihamdik', translation: 'Glory be to You, O Allah, and with Your praise', maxCount: 100 },
-  { id: 15, arabic: 'اللَّهُمَّ صَلِّ وَسَلِّمْ عَلَى نَبِيِّنَا مُحَمَّدٍ', transliteration: 'Allahumma salli wa sallim ala nabiyyina Muhammad', translation: 'O Allah, send peace and blessings upon our Prophet Muhammad', maxCount: 100 },
+const FALLBACK_ADHKAR = [
+  { id: 1, arabic: 'سُبْحَانَ اللَّهِ', transliteration: 'Subhanallah', translation_en: 'Glory be to Allah', translation_rw: 'Imana ni yose', count_target: 33 },
+  { id: 2, arabic: 'الْحَمْدُ لِلَّهِ', transliteration: 'Alhamdulillah', translation_en: 'All praise is due to Allah', translation_rw: 'Ishimwe ryose ni ry\'Imana', count_target: 33 },
+  { id: 3, arabic: 'اللَّهُ أَكْبَرُ', transliteration: 'Allahu Akbar', translation_en: 'Allah is the Greatest', translation_rw: 'Imana ni Nkuru', count_target: 34 },
+  { id: 4, arabic: 'لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ', transliteration: 'La ilaha illallah wahdahu la shareeka lahu', translation_en: 'There is no god but Allah alone, He has no partner', translation_rw: 'Nta Imana yindi kugeza kuri Yewe, ntaho yifatanyije', count_target: 100 },
+  { id: 5, arabic: 'أَسْتَغْفِرُ اللَّهَ', transliteration: 'Astaghfirullah', translation_en: 'I seek forgiveness from Allah', translation_rw: 'Ndusaba imbababuko ku Mana', count_target: 100 },
+  { id: 6, arabic: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ', transliteration: 'Subhanallahi wa bihamdihi', translation_en: 'Glory be to Allah and His praise', translation_rw: 'Imana ni yose mu kwishimira', count_target: 100 },
+  { id: 7, arabic: 'لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ', transliteration: 'La hawla wa la quwwata illa billah', translation_en: 'There is no power nor strength except with Allah', translation_rw: 'Nta muhungiro usibye ku Mana', count_target: 100 },
+  { id: 8, arabic: 'اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ', transliteration: 'Allahumma salli ala Muhammad', translation_en: 'O Allah, send blessings upon Muhammad', translation_rw: 'Mana, endenciesa kuri Muhammad', count_target: 100 },
+  { id: 9, arabic: 'سُبْحَانَ اللَّهِ الْعَظِيمِ وَبِحَمْدِهِ', transliteration: 'Subhanallahi al-Azeem wa bihamdihi', translation_en: 'Glory be to Allah the Magnificent and His praise', translation_rw: 'Imana Nkuru ni yose mu kwishimira', count_target: 100 },
+  { id: 10, arabic: 'اللَّهُمَّ أَنْتَ السَّلَامُ وَمِنْكَ السَّلَامُ', transliteration: 'Allahumma antas-salam wa minkas-salam', translation_en: 'O Allah, You are Peace and from You comes peace', translation_rw: 'Mana, Wowe ni Amahoro, kubera Awowe harubaho Amahoro', count_target: 100 },
 ];
 
 export default function AdhkarScreen() {
-  const { t, COLORS } = useApp();
+  const { t, COLORS, language } = useApp();
   const [counts, setCounts] = useState({});
+  const [adhkarList, setAdhkarList] = useState(FALLBACK_ADHKAR);
   const [refreshing, setRefreshing] = useState(false);
+  const [currentTime, setCurrentTime] = useState('');
+  const clockRef = useRef(null);
 
   useFocusEffect(
     useCallback(() => {
       loadCounts();
+      loadAdhkarData();
+      clockRef.current = setInterval(() => {
+        setCurrentTime(new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+      }, 1000);
+      setCurrentTime(new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+      return () => { if (clockRef.current) clearInterval(clockRef.current); };
     }, [])
   );
+
+  async function loadAdhkarData() {
+    try {
+      const data = await fetchAdhkar();
+      if (data && data.length > 0) {
+        setAdhkarList(data.map(a => ({
+          id: a.id,
+          arabic: a.arabic_text,
+          transliteration: a.transliteration,
+          translation_en: a.translation_en || '',
+          translation_rw: a.translation_rw || a.translation_en || '',
+          count_target: a.count_target || 100,
+          audio_url: a.audio_url || null,
+          category: a.category || 'general',
+        })));
+      }
+    } catch (e) {
+      setAdhkarList(FALLBACK_ADHKAR);
+    }
+  }
 
   async function loadCounts() {
     try {
@@ -44,37 +69,37 @@ export default function AdhkarScreen() {
 
   async function saveCounts(newCounts) {
     setCounts(newCounts);
-    try {
-      await AsyncStorage.setItem('adhkar_counts', JSON.stringify(newCounts));
-    } catch (e) {}
+    try { await AsyncStorage.setItem('adhkar_counts', JSON.stringify(newCounts)); } catch (e) {}
   }
 
   function increment(id) {
+    const adhkar = adhkarList.find(a => a.id === id);
     const current = counts[id] || 0;
-    const adhkar = ADHKAR_DATA.find(a => a.id === id);
-    if (current < (adhkar?.maxCount || 100)) {
+    if (current < (adhkar?.count_target || 100)) {
       saveCounts({ ...counts, [id]: current + 1 });
     }
   }
 
   function decrement(id) {
     const current = counts[id] || 0;
-    if (current > 0) {
-      saveCounts({ ...counts, [id]: current - 1 });
-    }
+    if (current > 0) saveCounts({ ...counts, [id]: current - 1 });
   }
 
-  function resetAll() {
-    saveCounts({});
-  }
+  function resetAll() { saveCounts({}); }
 
   async function onRefresh() {
     setRefreshing(true);
-    await loadCounts();
+    await Promise.all([loadCounts(), loadAdhkarData()]);
     setRefreshing(false);
   }
 
   const totalCount = Object.values(counts).reduce((a, b) => a + b, 0);
+
+  function getTranslation(adhkar) {
+    if (language === 'ar') return adhkar.translation_rw || adhkar.translation_en;
+    if (language === 'rw') return adhkar.translation_rw || adhkar.translation_en;
+    return adhkar.translation_en;
+  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]}>
@@ -82,20 +107,20 @@ export default function AdhkarScreen() {
         <Text style={[styles.headerTitle, { color: COLORS.secondary }]}>
           {t('Adhkar za Buri Munsi', 'Daily Adhkar', 'أذكار اليومية')}
         </Text>
-        <Text style={[styles.headerSub, { color: COLORS.textMuted }]}>
-          {totalCount} {t('ibikorwa', 'counted', 'عد')}
-        </Text>
+        <View style={styles.headerRow}>
+          <Text style={[styles.headerSub, { color: COLORS.textMuted }]}>
+            {totalCount} {t('ibikorwa', 'counted', 'عد')}
+          </Text>
+          {currentTime ? (
+            <Text style={[styles.clockText, { color: COLORS.secondary }]}>{currentTime}</Text>
+          ) : null}
+        </View>
       </View>
 
       <ScrollView
         contentContainerStyle={styles.list}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={COLORS.secondary}
-            colors={[COLORS.secondary]}
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.secondary} colors={[COLORS.secondary]} />
         }
       >
         {totalCount > 0 && (
@@ -107,9 +132,11 @@ export default function AdhkarScreen() {
           </TouchableOpacity>
         )}
 
-        {ADHKAR_DATA.map((adhkar) => {
+        {adhkarList.map((adhkar) => {
           const count = counts[adhkar.id] || 0;
-          const isComplete = count >= adhkar.maxCount;
+          const maxCount = adhkar.count_target || 100;
+          const isComplete = count >= maxCount;
+          const translation = getTranslation(adhkar);
           return (
             <View
               key={adhkar.id}
@@ -122,14 +149,16 @@ export default function AdhkarScreen() {
               <View style={[styles.accentBar, isComplete ? styles.accentComplete : { backgroundColor: COLORS.secondary }]} />
               <Text style={[styles.arabicText, { color: COLORS.secondary }]}>{adhkar.arabic}</Text>
               <Text style={[styles.translitText, { color: COLORS.text }]}>{adhkar.transliteration}</Text>
-              <Text style={[styles.translationText, { color: COLORS.textMuted }]}>{adhkar.translation}</Text>
+              {translation ? (
+                <Text style={[styles.translationText, { color: COLORS.textMuted }]}>{translation}</Text>
+              ) : null}
               <View style={styles.counterRow}>
                 <TouchableOpacity style={[styles.counterBtn, { borderColor: COLORS.border }]} onPress={() => decrement(adhkar.id)}>
                   <Ionicons name="remove" size={18} color={COLORS.text} />
                 </TouchableOpacity>
                 <View style={[styles.countDisplay, isComplete && { backgroundColor: 'rgba(39,174,96,0.15)' }]}>
                   <Text style={[styles.countText, { color: isComplete ? '#27ae60' : COLORS.secondary }]}>
-                    {count}/{adhkar.maxCount}
+                    {count}/{maxCount}
                   </Text>
                 </View>
                 <TouchableOpacity style={[styles.counterBtn, { borderColor: COLORS.border }]} onPress={() => increment(adhkar.id)}>
@@ -148,7 +177,9 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { padding: 20, paddingBottom: 10 },
   headerTitle: { fontSize: 24, fontWeight: '700' },
-  headerSub: { fontSize: 13, marginTop: 4 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
+  headerSub: { fontSize: 13 },
+  clockText: { fontSize: 14, fontWeight: '700', fontVariant: ['tabular-nums'] },
   list: { padding: 20, paddingTop: 8, gap: 12, paddingBottom: 40 },
   resetBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, padding: 10, borderRadius: 12, borderWidth: 1.5, marginBottom: 4 },
   resetText: { fontSize: 13, fontWeight: '600' },

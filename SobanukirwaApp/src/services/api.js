@@ -1,9 +1,13 @@
-const API_BASE = 'http://10.0.2.2:5000/api';
-const API_BASE_IOS = 'http://localhost:5000/api';
+const PRODUCTION_API = 'https://sobanukirwa.onrender.com/api';
+const LOCAL_ANDROID = 'http://10.0.2.2:5000/api';
+const LOCAL_IOS = 'http://localhost:5000/api';
 
 import { Platform } from 'react-native';
 
-const BASE = Platform.OS === 'android' ? API_BASE : API_BASE_IOS;
+const IS_DEV = __DEV__;
+const BASE = IS_DEV
+  ? (Platform.OS === 'android' ? LOCAL_ANDROID : LOCAL_IOS)
+  : PRODUCTION_API;
 
 export async function fetchTracks(params = {}) {
   try {
@@ -101,12 +105,28 @@ const fallbackBooks = [
 export async function fetchPrayerTimes(lat, lng) {
   try {
     const date = new Date();
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yyyy = date.getFullYear();
     const res = await fetch(
-      `https://api.aladhan.com/v1/timings/${date.getDate()}-${date.getMonth() + 1}-${date.getFullYear()}?latitude=${lat}&longitude=${lng}&method=3`
+      `https://api.aladhan.com/v1/timings/${dd}-${mm}-${yyyy}?latitude=${lat}&longitude=${lng}&method=3`
     );
     const data = await res.json();
     return data.data;
   } catch { return null; }
+}
+
+export async function fetchHijriDate() {
+  try {
+    const date = new Date();
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const res = await fetch(`https://api.aladhan.com/v1/gToH?date=${yyyy}-${mm}-${dd}`);
+    const data = await res.json();
+    if (data.code === 200) return data.data.hijri.date;
+  } catch {}
+  return '';
 }
 
 export async function loginAdmin(username, password) {
@@ -126,9 +146,6 @@ export function getMediaUrl(path) {
   return `${BASE.replace('/api', '')}${path}`;
 }
 
-// ===== ADMIN CRUD FUNCTIONS =====
-
-// Helper for admin API calls
 async function adminFetch(url, options = {}) {
   try {
     const headers = { Accept: 'application/json', ...options.headers };
@@ -144,7 +161,6 @@ async function adminFetch(url, options = {}) {
   }
 }
 
-// Artists
 export async function fetchArtists() {
   try { const res = await fetch(`${BASE}/artists`); return await res.json(); } catch { return []; }
 }
@@ -158,7 +174,6 @@ export async function deleteArtist(id) {
   return adminFetch(`${BASE}/artists/${id}`, { method: 'DELETE' });
 }
 
-// Tracks (admin CRUD - existing fetchTracks already handles list)
 export async function createTrack(formData) {
   return adminFetch(`${BASE}/tracks`, { method: 'POST', body: formData });
 }
@@ -172,7 +187,6 @@ export async function incrementPlay(id) {
   return adminFetch(`${BASE}/tracks/${id}/play`, { method: 'POST' });
 }
 
-// Videos (admin CRUD)
 export async function createVideo(formData) {
   return adminFetch(`${BASE}/videos`, { method: 'POST', body: formData });
 }
@@ -183,7 +197,6 @@ export async function deleteVideo(id) {
   return adminFetch(`${BASE}/videos/${id}`, { method: 'DELETE' });
 }
 
-// Books (admin CRUD)
 export async function createBook(formData) {
   return adminFetch(`${BASE}/books`, { method: 'POST', body: formData });
 }
@@ -194,7 +207,6 @@ export async function deleteBook(id) {
   return adminFetch(`${BASE}/books/${id}`, { method: 'DELETE' });
 }
 
-// Categories (admin CRUD)
 export async function createCategory(data) {
   return adminFetch(`${BASE}/categories`, { method: 'POST', body: JSON.stringify(data) });
 }
@@ -205,7 +217,6 @@ export async function deleteCategory(id) {
   return adminFetch(`${BASE}/categories/${id}`, { method: 'DELETE' });
 }
 
-// Adhkar
 export async function fetchAdhkar(category) {
   try {
     const url = category ? `${BASE}/adhkar?category=${category}` : `${BASE}/adhkar`;
@@ -222,12 +233,10 @@ export async function deleteAdhkar(id) {
   return adminFetch(`${BASE}/adhkar/${id}`, { method: 'DELETE' });
 }
 
-// Quran (audio upload only)
 export async function uploadSurahAudio(surahNumber, formData) {
   return adminFetch(`${BASE}/quran/surahs/${surahNumber}/audio`, { method: 'PUT', body: formData });
 }
 
-// Dashboard
 export async function fetchDashboard() {
   try { const res = await fetch(`${BASE}/stats/dashboard`); return await res.json(); } catch { return null; }
 }

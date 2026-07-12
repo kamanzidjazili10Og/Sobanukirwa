@@ -9,7 +9,8 @@ async function initDb() {
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
     multipleStatements: true,
-    charset: 'utf8mb4'
+    charset: 'utf8mb4',
+    connectTimeout: 10000,
   });
 
   const db = process.env.DB_NAME || 'sobanukirwa';

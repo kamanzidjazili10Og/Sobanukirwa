@@ -3,13 +3,17 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
+import * as Location from 'expo-location';
 import { useApp } from '../context/AppContext';
-import { fetchPrayerTimes } from '../services/api';
+import { fetchPrayerTimes, fetchHijriDate } from '../services/api';
+import { calculatePrayerTimes } from '../utils/prayerCalc';
 import ScreenBackground from '../components/ScreenBackground';
 
 const PRAYER_NAMES = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
 const PRAYER_ICONS = ['moon', 'sunny', 'sunny', 'sunny', 'moon', 'moon'];
 const PRAYER_AR = ['الفجر', 'الشروق', 'الظهر', 'العصر', 'المغرب', 'العشاء'];
+const DEFAULT_LAT = -1.9403;
+const DEFAULT_LNG = 29.8739;
 
 export default function PrayerScreen() {
   const { t, COLORS, refreshing, refreshData } = useApp();
@@ -17,30 +21,92 @@ export default function PrayerScreen() {
   const [nextPrayer, setNextPrayer] = useState('');
   const [nextPrayerTime, setNextPrayerTime] = useState('');
   const [location, setLocation] = useState('Kigali, Rwanda');
+  const [coords, setCoords] = useState({ lat: DEFAULT_LAT, lng: DEFAULT_LNG });
   const [currentDate, setCurrentDate] = useState('');
+  const [hijriDate, setHijriDate] = useState('');
   const [countdown, setCountdown] = useState('');
   const [source, setSource] = useState('');
+  const [locationLoading, setLocationLoading] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
-      loadPrayerTimes();
       const now = new Date();
       setCurrentDate(now.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
+      loadHijriDate();
+      getUserLocation();
       const interval = setInterval(updateCountdown, 10000);
       return () => clearInterval(interval);
     }, [])
   );
 
-  async function loadPrayerTimes() {
+  async function getUserLocation() {
     try {
-      const data = await fetchPrayerTimes(-1.9403, 29.8739);
-      if (data && data.timings) {
-        setPrayerTimes(data.timings);
-        setSource(data.source || 'Aladhan API');
-        calculateNextPrayer(data.timings);
-        updateCountdownWithTimes(data.timings);
+      setLocationLoading(true);
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted') {
+        const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        setCoords({ lat, lng });
+        const rev = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
+        if (rev && rev.length > 0) {
+          const place = rev[0];
+          setLocation(`${place.city || place.subregion || ''}, ${place.country || ''}`.replace(/^,\s*/, ''));
+        }
+        await loadPrayerTimes(lat, lng);
+        setLocationLoading(false);
+        return;
       }
     } catch (e) {}
+    await loadPrayerTimes(DEFAULT_LAT, DEFAULT_LNG);
+    setLocationLoading(false);
+  }
+
+  async function loadHijriDate() {
+    const h = await fetchHijriDate();
+    if (h) setHijriDate(h);
+  }
+
+  async function loadPrayerTimes(lat, lng) {
+    try {
+      const data = await fetchPrayerTimes(lat, lng);
+      if (data && data.timings) {
+        const sanitized = sanitizePrayerTimes(data.timings);
+        if (sanitized) {
+          setPrayerTimes(sanitized);
+          setSource(data.source || 'Aladhan API');
+          calculateNextPrayer(sanitized);
+          updateCountdownWithTimes(sanitized);
+          return;
+        }
+      }
+    } catch (e) {}
+    fallbackOfflineCalc(lat, lng);
+  }
+
+  function fallbackOfflineCalc(lat, lng) {
+    const d = new Date();
+    const times = calculatePrayerTimes(lat, lng, d.getFullYear(), d.getMonth() + 1, d.getDate());
+    if (times) {
+      setPrayerTimes(times);
+      setSource('Offline Calculation');
+      calculateNextPrayer(times);
+      updateCountdownWithTimes(times);
+    }
+  }
+
+  function sanitizePrayerTimes(timings) {
+    const result = {};
+    for (const name of PRAYER_NAMES) {
+      const val = timings[name];
+      if (!val) continue;
+      const clean = val.replace(/ \(.*\)/, '');
+      if (/^\d{1,2}:\d{2}$/.test(clean)) {
+        result[name] = clean;
+      }
+    }
+    if (Object.keys(result).length < 3) return null;
+    return result;
   }
 
   function calculateNextPrayer(times) {
@@ -49,21 +115,20 @@ export default function PrayerScreen() {
     for (const prayer of PRAYER_NAMES) {
       const timeStr = times[prayer];
       if (!timeStr) continue;
-      const cleanTime = timeStr.replace(/ \(.*\)/, '');
-      const [h, m] = cleanTime.split(':').map(Number);
+      const [h, m] = timeStr.split(':').map(Number);
       if (h * 60 + m > currentMinutes) {
         setNextPrayer(prayer);
-        setNextPrayerTime(cleanTime);
+        setNextPrayerTime(timeStr);
         return;
       }
     }
     setNextPrayer(PRAYER_NAMES[0]);
-    setNextPrayerTime(times[PRAYER_NAMES[0]]?.replace(/ \(.*\)/, '') || '');
+    setNextPrayerTime(times[PRAYER_NAMES[0]] || '');
   }
 
   function updateCountdownWithTimes(times) {
     const prayer = nextPrayer || PRAYER_NAMES.find(p => times[p]);
-    const timeStr = times[prayer]?.replace(/ \(.*\)/, '');
+    const timeStr = times[prayer];
     if (!timeStr) return;
     const now = new Date();
     const [h, m] = timeStr.split(':').map(Number);
@@ -84,13 +149,12 @@ export default function PrayerScreen() {
     if (!prayerTimes[name]) return false;
     const now = new Date();
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    const cleanTime = prayerTimes[name].replace(/ \(.*\)/, '');
-    const [h, m] = cleanTime.split(':').map(Number);
+    const [h, m] = prayerTimes[name].split(':').map(Number);
     const start = h * 60 + m;
     const idx = PRAYER_NAMES.indexOf(name);
     const nextName = PRAYER_NAMES[idx + 1];
     if (!nextName || !prayerTimes[nextName]) return currentMinutes >= start;
-    const [nh, nm] = prayerTimes[nextName].replace(/ \(.*\)/, '').split(':').map(Number);
+    const [nh, nm] = prayerTimes[nextName].split(':').map(Number);
     return currentMinutes >= start && currentMinutes < (nh * 60 + nm);
   }
 
@@ -100,7 +164,7 @@ export default function PrayerScreen() {
       <ScrollView
         contentContainerStyle={styles.scroll}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={() => { refreshData(); loadPrayerTimes(); }} tintColor={COLORS.secondary} colors={[COLORS.secondary]} />
+          <RefreshControl refreshing={refreshing} onRefresh={() => { refreshData(); getUserLocation(); }} tintColor={COLORS.secondary} colors={[COLORS.secondary]} />
         }
       >
         <Text style={[styles.headerTitle, { color: COLORS.secondary }]}>
@@ -114,16 +178,25 @@ export default function PrayerScreen() {
             </View>
             <View>
               <Text style={[styles.locationText, { color: COLORS.text }]}>{location}</Text>
-              <Text style={[styles.locationCoords, { color: COLORS.textMuted }]}>-1.9403, 29.8739</Text>
+              <Text style={[styles.locationCoords, { color: COLORS.textMuted }]}>
+                {coords.lat.toFixed(4)}, {coords.lng.toFixed(4)}
+              </Text>
             </View>
           </View>
-          <TouchableOpacity style={[styles.refreshBtn, { borderColor: COLORS.border }]} onPress={loadPrayerTimes}>
-            <Ionicons name="refresh" size={18} color={COLORS.secondary} />
+          <TouchableOpacity
+            style={[styles.refreshBtn, { borderColor: COLORS.border }]}
+            onPress={getUserLocation}
+            disabled={locationLoading}
+          >
+            <Ionicons name={locationLoading ? 'sync' : 'refresh'} size={18} color={COLORS.secondary} />
           </TouchableOpacity>
         </View>
 
         <View style={[styles.dateCard, { backgroundColor: 'rgba(212,175,55,0.08)' }]}>
           <Text style={[styles.dateText, { color: COLORS.text }]}>{currentDate}</Text>
+          {hijriDate ? (
+            <Text style={[styles.hijriText, { color: COLORS.secondary }]}>{hijriDate}</Text>
+          ) : null}
         </View>
 
         {source ? (
@@ -134,7 +207,7 @@ export default function PrayerScreen() {
 
         <View style={styles.prayerGrid}>
           {PRAYER_NAMES.map((name, i) => {
-            const time = prayerTimes[name]?.replace(/ \(.*\)/, '') || '--:--';
+            const time = prayerTimes[name] || '--:--';
             const isNext = name === nextPrayer;
             const isCurrent = isCurrentPrayer(name);
             return (
@@ -195,6 +268,7 @@ const styles = StyleSheet.create({
   refreshBtn: { width: 36, height: 36, borderRadius: 18, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   dateCard: { padding: 12, borderRadius: 14, alignItems: 'center' },
   dateText: { fontSize: 13, fontWeight: '500' },
+  hijriText: { fontSize: 13, fontWeight: '600', marginTop: 4 },
   sourceText: { fontSize: 11, textAlign: 'center' },
   prayerGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'space-between' },
   prayerCard: { width: '47%', padding: 18, borderRadius: 14, borderWidth: 1.5, alignItems: 'center', gap: 6, position: 'relative' },

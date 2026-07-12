@@ -4,7 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useApp } from '../context/AppContext';
-import { fetchPrayerTimes } from '../services/api';
+import { fetchPrayerTimes, fetchHijriDate } from '../services/api';
+import SilentBanner from '../components/SilentBanner';
 import ScreenBackground from '../components/ScreenBackground';
 
 const { width } = Dimensions.get('window');
@@ -33,12 +34,13 @@ const FEATURE_CARDS = [
 ];
 
 export default function HomeScreen({ navigation }) {
-  const { t, COLORS, refreshing, refreshData } = useApp();
+  const { t, COLORS, refreshing, refreshData, isEffectivelySilent } = useApp();
   const [prayerTimes, setPrayerTimes] = useState({});
   const [nextPrayer, setNextPrayer] = useState('');
   const [nextPrayerTime, setNextPrayerTime] = useState('');
   const [location, setLocation] = useState('Kigali, Rwanda');
   const [currentDate, setCurrentDate] = useState('');
+  const [hijriDate, setHijriDate] = useState('');
   const [verseOfDay, setVerseOfDay] = useState(QURAN_VERSES[0]);
   const glowAnim = useRef(new Animated.Value(0.3)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
@@ -48,6 +50,7 @@ export default function HomeScreen({ navigation }) {
     const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 86400000);
     setVerseOfDay(QURAN_VERSES[dayOfYear % QURAN_VERSES.length]);
     setCurrentDate(today.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
+    fetchHijriDate().then(h => { if (h) setHijriDate(h); });
   }, []);
 
   useEffect(() => {
@@ -134,6 +137,7 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]}>
+      <SilentBanner visible={isEffectivelySilent} />
       <ScreenBackground imageKey="bg-home">
       <ScrollView
         contentContainerStyle={styles.scroll}
@@ -193,6 +197,7 @@ export default function HomeScreen({ navigation }) {
               </Text>
               <View style={[styles.dateBadge, { backgroundColor: 'rgba(212,175,55,0.12)' }]}>
                 <Text style={[styles.dateText, { color: COLORS.secondary }]} numberOfLines={1}>{currentDate}</Text>
+                {hijriDate ? <Text style={[styles.dateText, { color: COLORS.secondary, marginTop: 2 }]} numberOfLines={1}>{hijriDate}</Text> : null}
               </View>
             </View>
             <View style={[styles.prayerWidgetLine, { backgroundColor: 'rgba(212,175,55,0.15)' }]} />

@@ -3,16 +3,26 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 let checkInterval = null;
 let currentSound = null;
+let lastPlayedDate = '';
 
 const PRAYER_NAMES = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
 
-export async function startAdhanManager(getPrayerTimes, showToast) {
+const ADHAN_FILES = {
+  Adhan1: 'https://sobanukirwa.onrender.com/Sounds/Adhan1.mpeg',
+  Adhan2: 'https://sobanukirwa.onrender.com/Sounds/Adhan2.mpeg',
+  Mansour: 'https://sobanukirwa.onrender.com/Sounds/Mansour_Adhan.mpeg',
+};
+
+export async function startAdhanManager(getPrayerTimes, onAdhanPlay) {
   stopAdhanManager();
 
   checkInterval = setInterval(async () => {
     try {
       const settings = JSON.parse(await AsyncStorage.getItem('app_settings') || '{}');
       if (!settings.adhanEnabled) return;
+
+      const today = new Date().toDateString();
+      if (lastPlayedDate === today) return;
 
       const times = await getPrayerTimes();
       if (!times) return;
@@ -22,19 +32,22 @@ export async function startAdhanManager(getPrayerTimes, showToast) {
 
       for (const prayer of PRAYER_NAMES) {
         const timeStr = times[prayer];
-        if (!timeStr) continue;
+        if (!timeStr || prayer === 'Sunrise') continue;
         const cleanTime = timeStr.replace(/ \(.*\)/, '');
         const [h, m] = cleanTime.split(':').map(Number);
         const prayerMinutes = h * 60 + m;
 
-        if (currentMinutes === prayerMinutes) {
-          await playAdhan(settings.adhanVolume || 80);
-          if (showToast) showToast(`Adhan for ${prayer}`, 'info');
+        if (Math.abs(currentMinutes - prayerMinutes) <= 2) {
+          const reciter = settings.adhanReciter || 'Adhan1';
+          const volume = settings.adhanVolume || 80;
+          await playAdhan(reciter, volume);
+          lastPlayedDate = today;
+          if (onAdhanPlay) onAdhanPlay(prayer);
           break;
         }
       }
     } catch (e) {}
-  }, 60000);
+  }, 30000);
 }
 
 export function stopAdhanManager() {
@@ -44,15 +57,16 @@ export function stopAdhanManager() {
   }
 }
 
-async function playAdhan(volume = 80) {
+async function playAdhan(reciter, volume) {
   try {
     if (currentSound) {
       await currentSound.unloadAsync();
       currentSound = null;
     }
+    const uri = ADHAN_FILES[reciter] || ADHAN_FILES.Adhan1;
     const { sound } = await Audio.Sound.createAsync(
-      { uri: 'https://server7.mp3quran.net/tn/ajms01.mp3' },
-      { shouldPlay: true, volume: volume / 100 }
+      { uri },
+      { shouldPlay: true, volume: (volume || 80) / 100 }
     );
     currentSound = sound;
     sound.setOnPlaybackStatusUpdate((status) => {

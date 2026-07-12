@@ -47,6 +47,7 @@ export function AppProvider({ children }) {
   const [adhanReciter, setAdhanReciter] = useState('Adhan1');
   const [reminderEnabled, setReminderEnabled] = useState(false);
   const [reminderInterval, setReminderInterval] = useState(30);
+  const [adhkarReminder, setAdhkarReminder] = useState(false);
   const [silentMode, setSilentMode] = useState(false);
   const [smartSilent, setSmartSilent] = useState(false);
   const [scheduledSilent, setScheduledSilent] = useState(false);
@@ -56,14 +57,21 @@ export function AppProvider({ children }) {
 
   const pauseAudioRef = useRef(null);
   const pauseVideoRef = useRef(null);
+  const stopAdhanRef = useRef(null);
 
   const registerPauseAudio = useCallback((fn) => { pauseAudioRef.current = fn; }, []);
   const registerPauseVideo = useCallback((fn) => { pauseVideoRef.current = fn; }, []);
+  const registerStopAdhan = useCallback((fn) => { stopAdhanRef.current = fn; }, []);
 
   const stopAllMedia = useCallback(() => {
     if (pauseAudioRef.current) pauseAudioRef.current();
     if (pauseVideoRef.current) pauseVideoRef.current();
+    if (stopAdhanRef.current) stopAdhanRef.current();
   }, []);
+
+  useEffect(() => {
+    if (silentMode) stopAllMedia();
+  }, [silentMode]);
 
   useEffect(() => {
     loadPersistedState();
@@ -87,6 +95,7 @@ export function AppProvider({ children }) {
         if (s.adhanReciter) setAdhanReciter(s.adhanReciter);
         if (s.reminderEnabled !== undefined) setReminderEnabled(s.reminderEnabled);
         if (s.reminderInterval) setReminderInterval(s.reminderInterval);
+        if (s.adhkarReminder !== undefined) setAdhkarReminder(s.adhkarReminder);
         if (s.silentMode !== undefined) setSilentMode(s.silentMode);
         if (s.smartSilent !== undefined) setSmartSilent(s.smartSilent);
         if (s.scheduledSilent !== undefined) setScheduledSilent(s.scheduledSilent);
@@ -117,9 +126,7 @@ export function AppProvider({ children }) {
 
   async function toggleBookmark(surah) {
     const exists = bookmarks.find(b => b.number === surah.number);
-    const newBookmarks = exists
-      ? bookmarks.filter(b => b.number !== surah.number)
-      : [...bookmarks, surah];
+    const newBookmarks = exists ? bookmarks.filter(b => b.number !== surah.number) : [...bookmarks, surah];
     setBookmarks(newBookmarks);
     try { await AsyncStorage.setItem('bookmarks', JSON.stringify(newBookmarks)); } catch (e) {}
   }
@@ -164,9 +171,7 @@ export function AppProvider({ children }) {
 
   useEffect(() => {
     const sub = AppState.addEventListener('change', (nextState) => {
-      if (nextState === 'active') {
-        refreshData();
-      }
+      if (nextState === 'active') refreshData();
     });
     return () => sub.remove();
   }, [refreshData]);
@@ -177,6 +182,20 @@ export function AppProvider({ children }) {
     return rw;
   };
 
+  function isScheduledSilentActive() {
+    if (!scheduledSilent) return false;
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const [sh, sm] = silentFrom.split(':').map(Number);
+    const [eh, em] = silentTo.split(':').map(Number);
+    const startMin = sh * 60 + sm;
+    const endMin = eh * 60 + em;
+    if (startMin <= endMin) return currentMinutes >= startMin && currentMinutes < endMin;
+    return currentMinutes >= startMin || currentMinutes < endMin;
+  }
+
+  const isEffectivelySilent = silentMode || isScheduledSilentActive();
+
   return (
     <AppContext.Provider value={{
       tracks, categories, surahs, videos, books,
@@ -185,12 +204,14 @@ export function AppProvider({ children }) {
       lastRead, saveLastRead, bookmarks, toggleBookmark,
       currentTrack, setCurrentTrack, isPlaying, setIsPlaying,
       currentTrackIndex, setCurrentTrackIndex, currentCategoryTracks, setCurrentCategoryTracks,
-      stopAllMedia, registerPauseAudio, registerPauseVideo,
+      stopAllMedia, registerPauseAudio, registerPauseVideo, registerStopAdhan,
       adhanEnabled, setAdhanEnabled, adhanVolume, setAdhanVolume, adhanReciter, setAdhanReciter,
       reminderEnabled, setReminderEnabled, reminderInterval, setReminderInterval,
+      adhkarReminder, setAdhkarReminder,
       silentMode, setSilentMode, smartSilent, setSmartSilent,
       scheduledSilent, setScheduledSilent, silentFrom, setSilentFrom, silentTo, setSilentTo,
-      silentPrayers, setSilentPrayers
+      silentPrayers, setSilentPrayers,
+      isEffectivelySilent, isScheduledSilentActive,
     }}>
       {children}
     </AppContext.Provider>
