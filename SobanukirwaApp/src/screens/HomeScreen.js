@@ -34,7 +34,8 @@ const FEATURE_CARDS = [
 ];
 
 export default function HomeScreen({ navigation }) {
-  const { t, COLORS, tracks, refreshing, refreshData, isEffectivelySilent } = useApp();
+  const { t, COLORS, tracks, refreshing, refreshData, isEffectivelySilent, language, setLanguage, saveSetting } = useApp();
+  const [showLangDropdown, setShowLangDropdown] = useState(false);
   const [prayerTimes, setPrayerTimes] = useState({});
   const [nextPrayer, setNextPrayer] = useState('');
   const [nextPrayerTime, setNextPrayerTime] = useState('');
@@ -141,7 +142,7 @@ export default function HomeScreen({ navigation }) {
       <ScreenBackground imageKey="bg-home">
       {/* Header Row - Matching Website Header */}
       <View style={[styles.headerRow, { borderBottomColor: 'rgba(212,175,55,0.12)' }]}>
-        <TouchableOpacity onPress={() => {}} style={styles.headerLogo}>
+        <TouchableOpacity onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })} style={styles.headerLogo}>
           <View style={[styles.headerLogoWrap, { borderColor: COLORS.secondary }]}>
             <Ionicons name="mosque" size={16} color={COLORS.secondary} />
           </View>
@@ -150,15 +151,45 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.headerControls}>
           <TouchableOpacity
             style={[styles.headerBtn, { borderColor: 'rgba(212,175,55,0.2)' }]}
-            onPress={() => navigation.navigate('Adhkar')}
+            onPress={() => navigation.navigate('MainTabs', { screen: 'Adhkar' })}
           >
-            <Ionicons name="hands" size={18} color={COLORS.secondary} />
+            <Ionicons name="hands" size={16} color={COLORS.secondary} />
           </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.headerBtn, { borderColor: 'rgba(212,175,55,0.2)', position: 'relative' }]}
+            onPress={() => setShowLangDropdown(!showLangDropdown)}
+          >
+            <Ionicons name="globe" size={16} color={COLORS.secondary} />
+            <Text style={[styles.langBtnText, { color: COLORS.secondary }]}>{language.toUpperCase()}</Text>
+          </TouchableOpacity>
+          {showLangDropdown && (
+            <View style={[styles.langDropdown, { backgroundColor: COLORS.primaryDark, borderColor: COLORS.border }]}>
+              {[
+                { key: 'rw', label: 'Kinyarwanda' },
+                { key: 'en', label: 'English' },
+                { key: 'ar', label: 'العربية' },
+              ].map(lang => (
+                <TouchableOpacity
+                  key={lang.key}
+                  style={[styles.langOption, language === lang.key && { backgroundColor: COLORS.secondary }]}
+                  onPress={() => {
+                    setLanguage(lang.key);
+                    saveSetting('language', lang.key);
+                    setShowLangDropdown(false);
+                  }}
+                >
+                  <Text style={[styles.langOptionText, { color: language === lang.key ? COLORS.primaryDark : COLORS.text }]}>
+                    {lang.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
           <TouchableOpacity
             style={[styles.headerBtn, { borderColor: 'rgba(212,175,55,0.2)' }]}
             onPress={() => navigation.navigate('Settings')}
           >
-            <Ionicons name="settings" size={18} color={COLORS.secondary} />
+            <Ionicons name="settings" size={16} color={COLORS.secondary} />
           </TouchableOpacity>
         </View>
       </View>
@@ -337,8 +368,16 @@ const styles = StyleSheet.create({
   headerLogo: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   headerLogoWrap: { width: 28, height: 28, borderRadius: 14, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   headerLogoText: { fontSize: 16, fontWeight: '700', fontFamily: 'serif' },
-  headerControls: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  headerBtn: { width: 34, height: 34, borderRadius: 17, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(30,60,92,0.3)' },
+  headerControls: { flexDirection: 'row', alignItems: 'center', gap: 6, position: 'relative' },
+  headerBtn: { width: 34, height: 34, borderRadius: 17, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(30,60,92,0.3)', flexDirection: 'row', gap: 2 },
+  langBtnText: { fontSize: 9, fontWeight: '700' },
+  langDropdown: {
+    position: 'absolute', top: 40, right: 80, minWidth: 140,
+    borderRadius: 12, borderWidth: 1.5, overflow: 'hidden', zIndex: 100,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 10,
+  },
+  langOption: { paddingVertical: 10, paddingHorizontal: 14 },
+  langOptionText: { fontSize: 13, fontWeight: '600' },
   scroll: { padding: 20, paddingBottom: 40, gap: 18 },
   hero: { alignItems: 'center', paddingVertical: 20, position: 'relative' },
   heroDecorRing: {

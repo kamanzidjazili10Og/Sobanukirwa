@@ -43,6 +43,10 @@ function HomeTabs() {
         },
         tabBarActiveTintColor: COLORS.secondary,
         tabBarInactiveTintColor: COLORS.textMuted,
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontWeight: '500',
+        },
       }}
     >
       <Tab.Screen name="Home" component={HomeScreen} options={{
@@ -60,6 +64,10 @@ function HomeTabs() {
       <Tab.Screen name="Audio" component={AudioScreen} options={{
         tabBarIcon: ({ color, size }) => <Ionicons name="headset" size={size} color={color} />,
         tabBarLabel: t('Inyigisho', 'Audio', 'الدروس'),
+      }} />
+      <Tab.Screen name="Adhkar" component={AdhkarScreen} options={{
+        tabBarIcon: ({ color, size }) => <Ionicons name="hands" size={size} color={color} />,
+        tabBarLabel: t('Adhkar', 'Adhkar', 'الأذكار'),
       }} />
       <Tab.Screen name="Books" component={BooksScreen} options={{
         tabBarIcon: ({ color, size }) => <Ionicons name="book-open" size={size} color={color} />,
@@ -167,7 +175,6 @@ export default function AppNavigator() {
         <Stack.Screen name="SurahDetail" component={SurahDetailScreen} options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="Qibla" component={QiblaScreen} options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="Settings" component={SettingsScreen} options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="Adhkar" component={AdhkarScreen} options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="Admin" component={AdminNavigator} options={{ animation: 'slide_from_bottom' }} />
       </Stack.Navigator>
     </>
