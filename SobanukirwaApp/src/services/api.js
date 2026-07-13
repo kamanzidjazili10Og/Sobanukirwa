@@ -4,10 +4,7 @@ const LOCAL_IOS = 'http://localhost:5000/api';
 
 import { Platform } from 'react-native';
 
-const IS_DEV = __DEV__;
-const BASE = IS_DEV
-  ? (Platform.OS === 'android' ? LOCAL_ANDROID : LOCAL_IOS)
-  : PRODUCTION_API;
+const BASE = PRODUCTION_API;
 
 export async function fetchTracks(params = {}) {
   try {
