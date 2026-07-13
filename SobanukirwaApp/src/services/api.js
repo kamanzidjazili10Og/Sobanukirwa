@@ -1,4 +1,4 @@
-const PRODUCTION_API = 'https://sobanukirwa.up.railway.app/api';
+const PRODUCTION_API = 'https://sobanukirwa-production.up.railway.app/api';
 const LOCAL_ANDROID = 'http://10.0.2.2:5000/api';
 const LOCAL_IOS = 'http://localhost:5000/api';
 
