@@ -4,12 +4,12 @@ const router = express.Router();
 
 router.get('/dashboard', async (req, res) => {
   try {
-    const [[{ total_artists }]] = await pool.query('SELECT COUNT(*) as total_artists FROM artists WHERE is_active = 1');
-    const [[{ total_tracks }]] = await pool.query('SELECT COUNT(*) as total_tracks FROM tracks WHERE is_active = 1');
-    const [[{ total_videos }]] = await pool.query('SELECT COUNT(*) as total_videos FROM videos WHERE is_active = 1');
-    const [[{ total_books }]] = await pool.query('SELECT COUNT(*) as total_books FROM books WHERE is_active = 1');
-    const [[{ total_plays }]] = await pool.query('SELECT COALESCE(SUM(plays_count), 0) as total_plays FROM tracks');
-    const [[{ total_categories }]] = await pool.query('SELECT COUNT(*) as total_categories FROM categories WHERE is_active = 1');
+    const [artistRows] = await pool.query('SELECT COUNT(*) as total FROM artists WHERE is_active = 1');
+    const [trackRows] = await pool.query('SELECT COUNT(*) as total FROM tracks WHERE is_active = 1');
+    const [videoRows] = await pool.query('SELECT COUNT(*) as total FROM videos WHERE is_active = 1');
+    const [bookRows] = await pool.query('SELECT COUNT(*) as total FROM books WHERE is_active = 1');
+    const [playRows] = await pool.query('SELECT COALESCE(SUM(plays_count), 0) as total FROM tracks');
+    const [catRows] = await pool.query('SELECT COUNT(*) as total FROM categories WHERE is_active = 1');
 
     const [recentTracks] = await pool.query(
       `SELECT t.title, t.plays_count, t.created_at, a.name as artist_name
@@ -24,8 +24,14 @@ router.get('/dashboard', async (req, res) => {
     );
 
     res.json({
-      total_artists, total_tracks, total_videos, total_books, total_plays, total_categories,
-      recentTracks, topTracks
+      total_artists: artistRows[0]?.total || 0,
+      total_tracks: trackRows[0]?.total || 0,
+      total_videos: videoRows[0]?.total || 0,
+      total_books: bookRows[0]?.total || 0,
+      total_plays: playRows[0]?.total || 0,
+      total_categories: catRows[0]?.total || 0,
+      recentTracks: recentTracks || [],
+      topTracks: topTracks || [],
     });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
