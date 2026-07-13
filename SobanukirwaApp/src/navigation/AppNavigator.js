@@ -27,7 +27,7 @@ const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
 function HomeTabs() {
-  const { COLORS } = useApp();
+  const { COLORS, t } = useApp();
 
   return (
     <Tab.Navigator
@@ -47,31 +47,31 @@ function HomeTabs() {
     >
       <Tab.Screen name="Home" component={HomeScreen} options={{
         tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size} color={color} />,
-        tabBarLabel: 'Home',
+        tabBarLabel: t('Ahabanza', 'Home', 'الرئيسية'),
       }} />
       <Tab.Screen name="Prayer" component={PrayerScreen} options={{
         tabBarIcon: ({ color, size }) => <Ionicons name="time" size={size} color={color} />,
-        tabBarLabel: 'Prayer',
+        tabBarLabel: t('Isengesho', 'Prayer', 'الصلاة'),
       }} />
       <Tab.Screen name="Quran" component={QuranScreen} options={{
         tabBarIcon: ({ color, size }) => <Ionicons name="book" size={size} color={color} />,
-        tabBarLabel: 'Quran',
+        tabBarLabel: t('Qur\'an', 'Quran', 'القرآن'),
       }} />
       <Tab.Screen name="Audio" component={AudioScreen} options={{
         tabBarIcon: ({ color, size }) => <Ionicons name="headset" size={size} color={color} />,
-        tabBarLabel: 'Audio',
+        tabBarLabel: t('Inyigisho', 'Audio', 'الدروس'),
       }} />
       <Tab.Screen name="Books" component={BooksScreen} options={{
         tabBarIcon: ({ color, size }) => <Ionicons name="book-open" size={size} color={color} />,
-        tabBarLabel: 'Books',
+        tabBarLabel: t('Ibikubiyemo', 'Books', 'الكتب'),
       }} />
       <Tab.Screen name="Videos" component={VideoScreen} options={{
         tabBarIcon: ({ color, size }) => <Ionicons name="videocam" size={size} color={color} />,
-        tabBarLabel: 'Videos',
+        tabBarLabel: t('Amashusho', 'Videos', 'الفيديو'),
       }} />
       <Tab.Screen name="About" component={AboutScreen} options={{
         tabBarIcon: ({ color, size }) => <Ionicons name="ellipsis-horizontal" size={size} color={color} />,
-        tabBarLabel: 'About',
+        tabBarLabel: t('Ibyerekeye', 'About', 'حول'),
       }} />
     </Tab.Navigator>
   );

@@ -139,6 +139,30 @@ export default function HomeScreen({ navigation }) {
     <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]}>
       <SilentBanner visible={isEffectivelySilent} />
       <ScreenBackground imageKey="bg-home">
+      {/* Header Row - Matching Website Header */}
+      <View style={[styles.headerRow, { borderBottomColor: 'rgba(212,175,55,0.12)' }]}>
+        <TouchableOpacity onPress={() => {}} style={styles.headerLogo}>
+          <View style={[styles.headerLogoWrap, { borderColor: COLORS.secondary }]}>
+            <Ionicons name="mosque" size={16} color={COLORS.secondary} />
+          </View>
+          <Text style={[styles.headerLogoText, { color: COLORS.secondary }]}>Sobanukirwa</Text>
+        </TouchableOpacity>
+        <View style={styles.headerControls}>
+          <TouchableOpacity
+            style={[styles.headerBtn, { borderColor: 'rgba(212,175,55,0.2)' }]}
+            onPress={() => navigation.navigate('Adhkar')}
+          >
+            <Ionicons name="hands" size={18} color={COLORS.secondary} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.headerBtn, { borderColor: 'rgba(212,175,55,0.2)' }]}
+            onPress={() => navigation.navigate('Settings')}
+          >
+            <Ionicons name="settings" size={18} color={COLORS.secondary} />
+          </TouchableOpacity>
+        </View>
+      </View>
+
       <ScrollView
         contentContainerStyle={styles.scroll}
         refreshControl={
@@ -309,6 +333,12 @@ export default function HomeScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12, borderBottomWidth: 1 },
+  headerLogo: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  headerLogoWrap: { width: 28, height: 28, borderRadius: 14, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  headerLogoText: { fontSize: 16, fontWeight: '700', fontFamily: 'serif' },
+  headerControls: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  headerBtn: { width: 34, height: 34, borderRadius: 17, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(30,60,92,0.3)' },
   scroll: { padding: 20, paddingBottom: 40, gap: 18 },
   hero: { alignItems: 'center', paddingVertical: 20, position: 'relative' },
   heroDecorRing: {

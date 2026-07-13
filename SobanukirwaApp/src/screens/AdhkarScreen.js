@@ -21,7 +21,7 @@ const FALLBACK_ADHKAR = [
   { id: 10, arabic: 'اللَّهُمَّ أَنْتَ السَّلَامُ وَمِنْكَ السَّلَامُ', transliteration: 'Allahumma antas-salam wa minkas-salam', translation_en: 'O Allah, You are Peace and from You comes peace', translation_rw: 'Mana, Wowe ni Amahoro, kubera Awowe harubaho Amahoro', count_target: 100 },
 ];
 
-export default function AdhkarScreen() {
+export default function AdhkarScreen({ navigation }) {
   const { t, COLORS, language } = useApp();
   const [counts, setCounts] = useState({});
   const [adhkarList, setAdhkarList] = useState(FALLBACK_ADHKAR);
@@ -150,9 +150,15 @@ export default function AdhkarScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]}>
       <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: COLORS.secondary }]}>
-          {t('Adhkar za Buri Munsi', 'Daily Adhkar', 'أذكار اليومية')}
-        </Text>
+        <View style={styles.headerTop}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <Ionicons name="arrow-back" size={22} color={COLORS.text} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: COLORS.secondary }]}>
+            {t('Adhkar za Buri Munsi', 'Daily Adhkar', 'أذكار اليومية')}
+          </Text>
+          <View style={{ width: 36 }} />
+        </View>
         <View style={styles.headerRow}>
           <Text style={[styles.headerSub, { color: COLORS.textMuted }]}>
             {totalCount} {t('ibikorwa', 'counted', 'عد')}
@@ -234,7 +240,9 @@ export default function AdhkarScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { padding: 20, paddingBottom: 10 },
-  headerTitle: { fontSize: 24, fontWeight: '700' },
+  headerTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
+  backBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(30,60,92,0.3)' },
+  headerTitle: { fontSize: 22, fontWeight: '700' },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
   headerSub: { fontSize: 13 },
   clockText: { fontSize: 14, fontWeight: '700', fontVariant: ['tabular-nums'] },
