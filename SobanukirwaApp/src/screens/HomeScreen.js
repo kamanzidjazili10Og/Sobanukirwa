@@ -34,7 +34,7 @@ const FEATURE_CARDS = [
 ];
 
 export default function HomeScreen({ navigation }) {
-  const { t, COLORS, refreshing, refreshData, isEffectivelySilent } = useApp();
+  const { t, COLORS, tracks, refreshing, refreshData, isEffectivelySilent } = useApp();
   const [prayerTimes, setPrayerTimes] = useState({});
   const [nextPrayer, setNextPrayer] = useState('');
   const [nextPrayerTime, setNextPrayerTime] = useState('');
@@ -235,6 +235,52 @@ export default function HomeScreen({ navigation }) {
           </View>
         )}
 
+        {tracks.length > 0 && (
+          <>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: COLORS.secondary }]}>
+                {t('Inyigisho z\'Icyubahiro', 'Featured Audio', 'الدروس المميزة')}
+              </Text>
+              <TouchableOpacity onPress={() => navigation.navigate('MainTabs', { screen: 'Audio' })}>
+                <Text style={[styles.seeAllText, { color: COLORS.secondary }]}>
+                  {t('Raba Byose', 'See All', 'عرض الكل')} →
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.featuredScroll}>
+              {tracks.slice(0, 6).map((track, index) => {
+                const catName = track.category_name || track.category || '';
+                const artistName = track.artist_name || track.artist || '';
+                return (
+                  <TouchableOpacity
+                    key={track.id || index}
+                    style={[styles.featuredCard, { backgroundColor: COLORS.surface, borderColor: COLORS.border }]}
+                    onPress={() => navigation.navigate('AudioPlayer', { category: catName, tracks: tracks.slice(0, 6), startIndex: index })}
+                    activeOpacity={0.75}
+                  >
+                    <View style={[styles.featuredPlayBtn, { borderColor: COLORS.secondary }]}>
+                      <Ionicons name="play" size={18} color={COLORS.secondary} />
+                    </View>
+                    <Text style={[styles.featuredTitle, { color: COLORS.text }]} numberOfLines={2}>
+                      {t(track.title, track.title_en || track.title, track.title_ar || track.title)}
+                    </Text>
+                    {artistName ? (
+                      <Text style={[styles.featuredArtist, { color: COLORS.textGold }]} numberOfLines={1}>
+                        {artistName}
+                      </Text>
+                    ) : null}
+                    {catName ? (
+                      <Text style={[styles.featuredCategory, { color: COLORS.textMuted }]} numberOfLines={1}>
+                        {catName}
+                      </Text>
+                    ) : null}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </>
+        )}
+
         <Text style={[styles.sectionTitle, { color: COLORS.secondary }]}>
           {t('Hitamwo', 'Quick Access', 'وصول سريع')}
         </Text>
@@ -309,6 +355,14 @@ const styles = StyleSheet.create({
   nextPrayerFooter: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, paddingTop: 10, borderTopWidth: 1 },
   nextPrayerFooterText: { fontSize: 13, fontWeight: '600', flex: 1 },
   sectionTitle: { fontSize: 18, fontWeight: '700', marginTop: 4 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
+  seeAllText: { fontSize: 13, fontWeight: '600' },
+  featuredScroll: { gap: 10, paddingVertical: 4 },
+  featuredCard: { width: 150, padding: 14, borderRadius: 14, borderWidth: 1.5, gap: 6 },
+  featuredPlayBtn: { width: 36, height: 36, borderRadius: 18, borderWidth: 2, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
+  featuredTitle: { fontSize: 13, fontWeight: '600', lineHeight: 17 },
+  featuredArtist: { fontSize: 11, fontWeight: '500' },
+  featuredCategory: { fontSize: 10 },
   featureGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'space-between' },
   featureCard: { width: (width - 52) / 2, paddingVertical: 22, borderRadius: 16, borderWidth: 1.5, alignItems: 'center', gap: 10 },
   featureLabel: { fontSize: 13, fontWeight: '600', textAlign: 'center' },

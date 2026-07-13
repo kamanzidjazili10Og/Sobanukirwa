@@ -1,13 +1,15 @@
 const mysql = require('mysql2/promise');
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 const dbHost = process.env.DB_HOST;
-const isConfigured = dbHost && dbHost !== 'localhost' && dbHost !== '127.0.0.1';
+const isConfigured = dbHost && dbHost.length > 0;
 
 let pool = null;
 
 if (isConfigured) {
-  pool = mysql.createPool({
+  const isCloud = dbHost !== 'localhost' && dbHost !== '127.0.0.1';
+  const config = {
     host: dbHost,
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
@@ -16,10 +18,15 @@ if (isConfigured) {
     connectionLimit: 10,
     queueLimit: 0,
     charset: 'utf8mb4',
-    connectTimeout: 10000,
-  });
+    connectTimeout: 15000,
+  };
+  if (isCloud) {
+    config.ssl = { rejectUnauthorized: false };
+  }
+  pool = mysql.createPool(config);
+  console.log('MySQL pool created for ' + dbHost);
 } else {
-  console.warn('DB_HOST not configured or is localhost. Running without database.');
+  console.warn('DB_HOST not configured. Running without database.');
 }
 
 const safePool = {

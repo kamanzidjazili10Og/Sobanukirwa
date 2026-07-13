@@ -1,11 +1,12 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Audio } from 'expo-av';
 import { useApp } from '../context/AppContext';
-import { fetchAdhkar } from '../services/api';
+import { fetchAdhkar, getMediaUrl } from '../services/api';
 
 const FALLBACK_ADHKAR = [
   { id: 1, arabic: 'سُبْحَانَ اللَّهِ', transliteration: 'Subhanallah', translation_en: 'Glory be to Allah', translation_rw: 'Imana ni yose', count_target: 33 },
@@ -27,6 +28,9 @@ export default function AdhkarScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [currentTime, setCurrentTime] = useState('');
   const clockRef = useRef(null);
+  const soundRef = useRef(null);
+  const [playingId, setPlayingId] = useState(null);
+  const [audioLoading, setAudioLoading] = useState(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -36,7 +40,10 @@ export default function AdhkarScreen() {
         setCurrentTime(new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
       }, 1000);
       setCurrentTime(new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
-      return () => { if (clockRef.current) clearInterval(clockRef.current); };
+      return () => {
+        if (clockRef.current) clearInterval(clockRef.current);
+        stopAudio();
+      };
     }, [])
   );
 
@@ -91,6 +98,45 @@ export default function AdhkarScreen() {
     setRefreshing(true);
     await Promise.all([loadCounts(), loadAdhkarData()]);
     setRefreshing(false);
+  }
+
+  async function stopAudio() {
+    if (soundRef.current) {
+      try { await soundRef.current.unloadAsync(); } catch (e) {}
+      soundRef.current = null;
+    }
+    setPlayingId(null);
+    setAudioLoading(null);
+  }
+
+  async function toggleAudio(adhkar) {
+    if (!adhkar.audio_url) return;
+    if (playingId === adhkar.id) {
+      await stopAudio();
+      return;
+    }
+    await stopAudio();
+    setAudioLoading(adhkar.id);
+    try {
+      const url = getMediaUrl(adhkar.audio_url);
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: url },
+        { shouldPlay: true }
+      );
+      soundRef.current = sound;
+      setPlayingId(adhkar.id);
+      setAudioLoading(null);
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.didJustFinish) {
+          setPlayingId(null);
+          soundRef.current = null;
+        }
+      });
+    } catch (e) {
+      console.log('Adhkar audio error:', e);
+      setAudioLoading(null);
+      setPlayingId(null);
+    }
   }
 
   const totalCount = Object.values(counts).reduce((a, b) => a + b, 0);
@@ -153,6 +199,18 @@ export default function AdhkarScreen() {
                 <Text style={[styles.translationText, { color: COLORS.textMuted }]}>{translation}</Text>
               ) : null}
               <View style={styles.counterRow}>
+                {adhkar.audio_url ? (
+                  <TouchableOpacity
+                    style={[styles.counterBtn, { borderColor: COLORS.border }, playingId === adhkar.id && { backgroundColor: 'rgba(212,175,55,0.15)', borderColor: COLORS.secondary }]}
+                    onPress={() => toggleAudio(adhkar)}
+                  >
+                    {audioLoading === adhkar.id ? (
+                      <ActivityIndicator size="small" color={COLORS.secondary} />
+                    ) : (
+                      <Ionicons name={playingId === adhkar.id ? 'pause' : 'volume-high'} size={18} color={playingId === adhkar.id ? COLORS.secondary : COLORS.text} />
+                    )}
+                  </TouchableOpacity>
+                ) : null}
                 <TouchableOpacity style={[styles.counterBtn, { borderColor: COLORS.border }]} onPress={() => decrement(adhkar.id)}>
                   <Ionicons name="remove" size={18} color={COLORS.text} />
                 </TouchableOpacity>

@@ -1,25 +1,31 @@
 const mysql = require('mysql2/promise');
 const fs = require('fs');
 const path = require('path');
-require('dotenv').config();
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 async function initDb() {
   const dbHost = process.env.DB_HOST;
-  const isConfigured = dbHost && dbHost !== 'localhost' && dbHost !== '127.0.0.1';
+  const isConfigured = dbHost && dbHost.length > 0;
 
   if (!isConfigured) {
     console.warn('DB_HOST not configured. Skipping database initialization.');
     return;
   }
 
-  const connection = await mysql.createConnection({
+  const isCloud = dbHost !== 'localhost' && dbHost !== '127.0.0.1';
+  const config = {
     host: dbHost,
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
     multipleStatements: true,
     charset: 'utf8mb4',
-    connectTimeout: 10000,
-  });
+    connectTimeout: 15000,
+  };
+  if (isCloud) {
+    config.ssl = { rejectUnauthorized: false };
+  }
+
+  const connection = await mysql.createConnection(config);
 
   const db = process.env.DB_NAME || 'sobanukirwa';
   await connection.query(`CREATE DATABASE IF NOT EXISTS \`${db}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
