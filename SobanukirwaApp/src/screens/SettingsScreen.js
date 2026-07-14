@@ -449,7 +449,7 @@ export default function SettingsScreen({ navigation }) {
               {[
                 { count: tracks.length, labelRw: 'Inyigisho', labelEn: 'Lessons', labelAr: 'دروس', icon: 'headset' },
                 { count: videos.length, labelRw: 'Amashusho', labelEn: 'Videos', labelAr: 'فيديو', icon: 'videocam' },
-                { count: books.length, labelRw: 'Amatabo', labelEn: 'Books', labelAr: 'كتب', icon: 'book' },
+                { count: books.length, labelRw: 'Ibitabo', labelEn: 'Books', labelAr: 'كتب', icon: 'book' },
                 { count: surahs.length, labelRw: 'Sura', labelEn: 'Surahs', labelAr: 'سور', icon: 'book-outline' },
               ].map((stat, i) => (
                 <View key={i} style={[styles.statItem, { backgroundColor: 'rgba(212,175,55,0.06)', borderColor: 'rgba(212,175,55,0.12)' }]}>
@@ -463,6 +463,21 @@ export default function SettingsScreen({ navigation }) {
             </View>
           </View>
 
+          {/* Admin Access */}
+          <TouchableOpacity
+            style={[styles.section, { backgroundColor: 'rgba(30,60,92,0.25)', borderColor: COLORS.border, flexDirection: 'row', alignItems: 'center', gap: 12 }]}
+            onPress={() => navigation.navigate('Admin')}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.sectionHeaderLeft]}>
+              <Ionicons name="shield-checkmark" size={18} color={COLORS.secondary} />
+              <Text style={[styles.sectionTitle, { color: COLORS.secondary }]}>
+                {t('Admin', 'Admin Panel', 'لوحة الإدارة')}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
+          </TouchableOpacity>
+
           {/* Footer */}
           <View style={styles.footerSection}>
             <View style={styles.footerDividerRow}>
@@ -474,7 +489,7 @@ export default function SettingsScreen({ navigation }) {
               {t('Sobanukirwa v2.0.0', 'Sobanukirwa v2.0.0', 'Sobanukirwa v2.0.0')}
             </Text>
             <Text style={[styles.footerSubText, { color: COLORS.textMuted }]}>
-              {t('Urumuri rw\'Imyemero', 'Light of Faith', 'نور الإيمان')}
+              {t('Urumuri rw\'abemeramana', 'Light of Faith', 'نور الإيمان')}
             </Text>
           </View>
 

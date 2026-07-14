@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useApp } from '../context/AppContext';
-import { fetchPrayerTimes, fetchHijriDate } from '../services/api';
+import { fetchPrayerTimes, fetchHijriDate, fetchAdhkar } from '../services/api';
 import SilentBanner from '../components/SilentBanner';
 import ScreenBackground from '../components/ScreenBackground';
 
@@ -15,22 +15,29 @@ const QURAN_VERSES = [
   { verse: 'وَمَن يَتَوَكَّلْ عَلَى اللَّهِ فَهُوَ حَسْبُهُ', translation: 'And whoever relies upon Allah, then He is sufficient for him.', surah: 'At-Talaq: 3' },
   { verse: 'رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً', translation: 'Our Lord, give us in this world good and in the Hereafter good.', surah: 'Al-Baqarah: 201' },
   { verse: 'إِنَّ مَعَ الْعُسْرِ يُسْرًا', translation: 'Indeed, with hardship comes ease.', surah: 'Ash-Sharh: 6' },
-  { verse: 'وَإِلَٰهُكُمْ إِلَٰهٌ وَاحِدٌ ۖ لَّا إِلَٰهَ إِلَّا هُوَ الرَّحْمَٰنُ الرَّحِيمُ', translation: 'And your god is one God. There is no deity except Him, the Entirely Merciful, the Especially Merciful.', surah: 'Al-Baqarah: 163' },
   { verse: 'فَاذْكُرُونِي أَذْكُرْكُمْ', translation: 'So remember Me; I will remember you.', surah: 'Al-Baqarah: 152' },
   { verse: 'وَلَا تَيْأَسُوا مِن رَّوْحِ اللَّهِ', translation: 'And do not despair of the mercy of Allah.', surah: 'Yusuf: 87' },
   { verse: 'إِنَّ اللَّهَ مَعَ الصَّابِرِينَ', translation: 'Indeed, Allah is with the patient.', surah: 'Al-Baqarah: 153' },
 ];
 
 const PRAYER_NAMES = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
-const PRAYER_NAMES_RW = ['Subuho', 'Izera', 'Umunsi', 'Impera', 'Imihiganiriro', 'Ijoro'];
-const PRAYER_NAMES_AR = ['الفجر', 'الشروق', 'الظهر', 'العصر', 'المغرب', 'العشاء'];
+
+const FALLBACK_ADHKAR = [
+  { id: 1, arabic: 'سُبْحَانَ اللَّهِ', transliteration: 'Subhanallah', translation_en: 'Glory be to Allah', count_target: 33, category: 'general' },
+  { id: 2, arabic: 'الْحَمْدُ لِلَّهِ', transliteration: 'Alhamdulillah', translation_en: 'All praise is due to Allah', count_target: 33, category: 'general' },
+  { id: 3, arabic: 'اللَّهُ أَكْبَرُ', transliteration: 'Allahu Akbar', translation_en: 'Allah is the Greatest', count_target: 34, category: 'general' },
+  { id: 4, arabic: 'لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ', transliteration: 'La ilaha illallah', translation_en: 'There is no god but Allah alone', count_target: 100, category: 'morning' },
+  { id: 5, arabic: 'أَسْتَغْفِرُ اللَّهَ', transliteration: 'Astaghfirullah', translation_en: 'I seek forgiveness from Allah', count_target: 100, category: 'morning' },
+  { id: 6, arabic: 'اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ', transliteration: 'Allahumma salli ala Muhammad', translation_en: 'O Allah, send blessings upon Muhammad', count_target: 100, category: 'sleep' },
+];
 
 const FEATURE_CARDS = [
-  { key: 'prayer', icon: 'time-outline', labelRw: 'Igihe cy\'Isengesho', labelEn: 'Prayer Times', labelAr: 'أوقات الصلاة', screen: 'Prayer' },
-  { key: 'qibla', icon: 'navigate-outline', labelRw: 'Icyerekezo cya Qibla', labelEn: 'Qibla', labelAr: 'القبلة', screen: 'Qibla' },
+  { key: 'prayer', icon: 'time-outline', labelRw: 'Isengesho', labelEn: 'Prayer Times', labelAr: 'أوقات الصلاة', screen: 'Prayer' },
+  { key: 'qibla', icon: 'compass-outline', labelRw: 'Qibla', labelEn: 'Qibla', labelAr: 'القبلة', screen: 'Qibla' },
   { key: 'quran', icon: 'book-outline', labelRw: 'Qur\'an', labelEn: 'Quran', labelAr: 'القرآن', screen: 'Quran' },
-  { key: 'books', icon: 'book', labelRw: 'Amatabo', labelEn: 'Books', labelAr: 'كتب', screen: 'Books' },
-  { key: 'videos', icon: 'videocam-outline', labelRw: 'Amashusho', labelEn: 'Videos', labelAr: 'فيديو', screen: 'Videos' },
+   { key: 'books', icon: 'library-outline', labelRw: 'Ibitabo', labelEn: 'Books', labelAr: 'كتب', screen: 'Books' },
+  { key: 'videos', icon: 'play-circle-outline', labelRw: 'Amashusho', labelEn: 'Videos', labelAr: 'فيديو', screen: 'Videos' },
+  { key: 'audio', icon: 'headset-outline', labelRw: 'Inyigisho', labelEn: 'Audio', labelAr: 'صوتي', screen: 'Audio' },
 ];
 
 export default function HomeScreen({ navigation }) {
@@ -39,12 +46,12 @@ export default function HomeScreen({ navigation }) {
   const [prayerTimes, setPrayerTimes] = useState({});
   const [nextPrayer, setNextPrayer] = useState('');
   const [nextPrayerTime, setNextPrayerTime] = useState('');
-  const [location, setLocation] = useState('Kigali, Rwanda');
   const [currentDate, setCurrentDate] = useState('');
   const [hijriDate, setHijriDate] = useState('');
   const [verseOfDay, setVerseOfDay] = useState(QURAN_VERSES[0]);
+  const [adhkarList, setAdhkarList] = useState(FALLBACK_ADHKAR);
+  const [adhkarCounts, setAdhkarCounts] = useState({});
   const glowAnim = useRef(new Animated.Value(0.3)).current;
-  const rotateAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const today = new Date();
@@ -61,16 +68,32 @@ export default function HomeScreen({ navigation }) {
         Animated.timing(glowAnim, { toValue: 0.3, duration: 2500, useNativeDriver: true }),
       ])
     ).start();
-    Animated.loop(
-      Animated.timing(rotateAnim, { toValue: 1, duration: 20000, useNativeDriver: true })
-    ).start();
   }, []);
 
   useFocusEffect(
     useCallback(() => {
       loadPrayerTimes();
+      loadAdhkar();
     }, [])
   );
+
+  async function loadAdhkar() {
+    try {
+      const data = await fetchAdhkar();
+      if (data && data.length > 0) {
+        setAdhkarList(data.slice(0, 6).map(a => ({
+          id: a.id,
+          arabic: a.arabic_text,
+          transliteration: a.transliteration,
+          translation_en: a.translation_en || '',
+          count_target: a.count_target || 100,
+          category: a.category || 'general',
+        })));
+      }
+    } catch (e) {
+      setAdhkarList(FALLBACK_ADHKAR);
+    }
+  }
 
   async function loadPrayerTimes() {
     try {
@@ -114,6 +137,14 @@ export default function HomeScreen({ navigation }) {
     return `${mins}m`;
   }
 
+  function incrementAdhkar(id) {
+    const adhkar = adhkarList.find(a => a.id === id);
+    const current = adhkarCounts[id] || 0;
+    if (current < (adhkar?.count_target || 100)) {
+      setAdhkarCounts(prev => ({ ...prev, [id]: current + 1 }));
+    }
+  }
+
   function isCurrentPrayer(name) {
     if (!prayerTimes[name]) return false;
     const now = new Date();
@@ -124,8 +155,7 @@ export default function HomeScreen({ navigation }) {
     const nextName = PRAYER_NAMES[idx + 1];
     if (!nextName || !prayerTimes[nextName]) return currentMinutes >= start;
     const [nh, nm] = prayerTimes[nextName].replace(/ \(.*\)/, '').split(':').map(Number);
-    const end = nh * 60 + nm;
-    return currentMinutes >= start && currentMinutes < end;
+    return currentMinutes >= start && currentMinutes < (nh * 60 + nm);
   }
 
   function navigateToFeature(screen) {
@@ -140,11 +170,11 @@ export default function HomeScreen({ navigation }) {
     <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]}>
       <SilentBanner visible={isEffectivelySilent} />
       <ScreenBackground imageKey="bg-home">
-      {/* Header Row - Matching Website Header */}
+      {/* Header */}
       <View style={[styles.headerRow, { borderBottomColor: 'rgba(212,175,55,0.12)' }]}>
-        <TouchableOpacity onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })} style={styles.headerLogo}>
+        <TouchableOpacity style={styles.headerLogo}>
           <View style={[styles.headerLogoWrap, { borderColor: COLORS.secondary }]}>
-            <Ionicons name="mosque" size={16} color={COLORS.secondary} />
+            <Ionicons name="moon" size={14} color={COLORS.secondary} />
           </View>
           <Text style={[styles.headerLogoText, { color: COLORS.secondary }]}>Sobanukirwa</Text>
         </TouchableOpacity>
@@ -189,7 +219,7 @@ export default function HomeScreen({ navigation }) {
             style={[styles.headerBtn, { borderColor: 'rgba(212,175,55,0.2)' }]}
             onPress={() => navigation.navigate('Settings')}
           >
-            <Ionicons name="settings" size={16} color={COLORS.secondary} />
+            <Ionicons name="settings-outline" size={16} color={COLORS.secondary} />
           </TouchableOpacity>
         </View>
       </View>
@@ -200,13 +230,9 @@ export default function HomeScreen({ navigation }) {
           <RefreshControl refreshing={refreshing} onRefresh={refreshData} tintColor={COLORS.secondary} colors={[COLORS.secondary]} />
         }
       >
+        {/* Hero */}
         <View style={styles.hero}>
-          {/* Rotating decorative ring */}
-          <View style={[styles.heroDecorRing, { borderColor: 'rgba(212,175,55,0.18)' }]}>
-            <Animated.View style={[styles.heroDecorDot, { top: -3, alignSelf: 'center', backgroundColor: COLORS.secondary }]} />
-            <Animated.View style={[styles.heroDecorDot, { bottom: -3, alignSelf: 'center', backgroundColor: COLORS.secondary }]} />
-          </View>
-          <Animated.View style={[styles.heroGlow, { opacity: glowAnim, backgroundColor: 'rgba(212,175,55,0.1)' }]} />
+          <Animated.View style={[styles.heroGlow, { opacity: glowAnim, backgroundColor: 'rgba(212,175,55,0.08)' }]} />
           <View style={[styles.heroLogoWrap, { borderColor: COLORS.secondary }]}>
             <View style={[styles.heroLogoInner, { backgroundColor: 'rgba(212,175,55,0.12)' }]}>
               <Image source={require('../../assets/icon.png')} style={styles.heroLogoImage} resizeMode="contain" />
@@ -214,9 +240,8 @@ export default function HomeScreen({ navigation }) {
           </View>
           <Text style={[styles.heroTitle, { color: COLORS.secondary }]}>Sobanukirwa</Text>
           <Text style={[styles.heroSubtitle, { color: COLORS.textMuted }]}>
-            {t('Urumuri rw\'Imyemero', 'Light of Faith', 'نور الإيمان')}
+            {t('Urumuri rw\'abemeramana', 'Light of Faith', 'نور الإيمان')}
           </Text>
-          {/* Diamond divider */}
           <View style={styles.heroDividerRow}>
             <View style={[styles.heroDividerLine, { backgroundColor: COLORS.secondary }]} />
             <View style={[styles.heroDividerDiamond, { backgroundColor: COLORS.secondary }]}>
@@ -224,18 +249,18 @@ export default function HomeScreen({ navigation }) {
             </View>
             <View style={[styles.heroDividerLine, { backgroundColor: COLORS.secondary }]} />
           </View>
-          {/* Tagline */}
           <View style={[styles.heroTag, { backgroundColor: 'rgba(212,175,55,0.08)', borderColor: 'rgba(212,175,55,0.25)' }]}>
             <Ionicons name="star" size={11} color={COLORS.secondary} />
             <Text style={[styles.heroTagText, { color: COLORS.secondary }]}>
-              {t('Ubumenyi bw\'Igisilamu', 'Islamic Knowledge', 'المعرفة الإسلامية')}
+              {t('Ubumenyi bw\'ubusilamu', 'Islamic Knowledge', 'المعرفة الإسلامية')}
             </Text>
             <Ionicons name="star" size={11} color={COLORS.secondary} />
           </View>
         </View>
 
+        {/* Verse of the Day */}
         <View style={[styles.verseCard, { backgroundColor: 'rgba(212,175,55,0.08)', borderColor: 'rgba(212,175,55,0.25)' }]}>
-          <Ionicons name="book" size={24} color={COLORS.secondary} />
+          <Ionicons name="book" size={22} color={COLORS.secondary} />
           <View style={styles.verseContent}>
             <Text style={[styles.verseArabic, { color: COLORS.secondary }]}>{verseOfDay.verse}</Text>
             <Text style={[styles.verseTranslation, { color: COLORS.textMuted }]}>{verseOfDay.translation}</Text>
@@ -243,12 +268,13 @@ export default function HomeScreen({ navigation }) {
           </View>
         </View>
 
+        {/* Prayer Times Widget */}
         {prayerTimes.Fajr && (
           <View style={[styles.prayerWidget, { backgroundColor: COLORS.surface, borderColor: COLORS.border }]}>
             <View style={styles.prayerWidgetHeader}>
               <Ionicons name="time" size={18} color={COLORS.secondary} />
               <Text style={[styles.prayerWidgetTitle, { color: COLORS.secondary }]}>
-                {t('Ibihe by\'Isengesho', 'Prayer Times', 'أوقات الصلاة')}
+                {t('Isengesho', 'Prayer Times', 'أوقات الصلاة')}
               </Text>
               <View style={[styles.dateBadge, { backgroundColor: 'rgba(212,175,55,0.12)' }]}>
                 <Text style={[styles.dateText, { color: COLORS.secondary }]} numberOfLines={1}>{currentDate}</Text>
@@ -281,7 +307,7 @@ export default function HomeScreen({ navigation }) {
             })}
             {nextPrayer && (
               <View style={[styles.nextPrayerFooter, { borderTopColor: 'rgba(212,175,55,0.15)' }]}>
-                <Ionicons name="notifications" size={16} color={COLORS.secondary} />
+                <Ionicons name="notifications" size={14} color={COLORS.secondary} />
                 <Text style={[styles.nextPrayerFooterText, { color: COLORS.secondary }]}>
                   {nextPrayer}: {nextPrayerTime?.replace(/ \(.*\)/, '')} ({getNextPrayerCountdown()})
                 </Text>
@@ -290,55 +316,56 @@ export default function HomeScreen({ navigation }) {
           </View>
         )}
 
-        {tracks.length > 0 && (
-          <>
-            <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: COLORS.secondary }]}>
-                {t('Inyigisho z\'Icyubahiro', 'Featured Audio', 'الدروس المميزة')}
-              </Text>
-              <TouchableOpacity onPress={() => navigation.navigate('MainTabs', { screen: 'Audio' })}>
-                <Text style={[styles.seeAllText, { color: COLORS.secondary }]}>
-                  {t('Raba Byose', 'See All', 'عرض الكل')} →
-                </Text>
-              </TouchableOpacity>
-            </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.featuredScroll}>
-              {tracks.slice(0, 6).map((track, index) => {
-                const catName = track.category_name || track.category || '';
-                const artistName = track.artist_name || track.artist || '';
-                return (
-                  <TouchableOpacity
-                    key={track.id || index}
-                    style={[styles.featuredCard, { backgroundColor: COLORS.surface, borderColor: COLORS.border }]}
-                    onPress={() => navigation.navigate('AudioPlayer', { category: catName, tracks: tracks.slice(0, 6), startIndex: index })}
-                    activeOpacity={0.75}
-                  >
-                    <View style={[styles.featuredPlayBtn, { borderColor: COLORS.secondary }]}>
-                      <Ionicons name="play" size={18} color={COLORS.secondary} />
-                    </View>
-                    <Text style={[styles.featuredTitle, { color: COLORS.text }]} numberOfLines={2}>
-                      {t(track.title, track.title_en || track.title, track.title_ar || track.title)}
-                    </Text>
-                    {artistName ? (
-                      <Text style={[styles.featuredArtist, { color: COLORS.textGold }]} numberOfLines={1}>
-                        {artistName}
-                      </Text>
-                    ) : null}
-                    {catName ? (
-                      <Text style={[styles.featuredCategory, { color: COLORS.textMuted }]} numberOfLines={1}>
-                        {catName}
-                      </Text>
-                    ) : null}
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          </>
-        )}
+        {/* Daily Adhkar Section */}
+        <View style={styles.sectionHeader}>
+          <View style={styles.sectionHeaderLeft}>
+            <Ionicons name="hands" size={18} color={COLORS.secondary} />
+            <Text style={[styles.sectionTitle, { color: COLORS.secondary }]}>
+              {t('Adhkar za Buri Munsi', 'Daily Adhkar', 'أذكار اليومية')}
+            </Text>
+          </View>
+          <TouchableOpacity onPress={() => navigation.navigate('MainTabs', { screen: 'Adhkar' })}>
+            <Text style={[styles.seeAllText, { color: COLORS.secondary }]}>
+              {t('Raba Byose', 'See All', 'عرض الكل')} →
+            </Text>
+          </TouchableOpacity>
+        </View>
 
-        <Text style={[styles.sectionTitle, { color: COLORS.secondary }]}>
-          {t('Hitamwo', 'Quick Access', 'وصول سريع')}
-        </Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.adhkarScroll}>
+          {adhkarList.map((adhkar) => {
+            const count = adhkarCounts[adhkar.id] || 0;
+            const maxCount = adhkar.count_target || 100;
+            const isComplete = count >= maxCount;
+            const progress = maxCount > 0 ? count / maxCount : 0;
+            return (
+              <TouchableOpacity
+                key={adhkar.id}
+                style={[styles.adhkarCard, { backgroundColor: COLORS.surface, borderColor: isComplete ? '#27ae60' : COLORS.border }]}
+                onPress={() => incrementAdhkar(adhkar.id)}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.adhkarProgressTrack, { backgroundColor: 'rgba(255,255,255,0.06)' }]}>
+                  <View style={[styles.adhkarProgressFill, { width: `${progress * 100}%`, backgroundColor: isComplete ? '#27ae60' : COLORS.secondary }]} />
+                </View>
+                <Text style={[styles.adhkarArabic, { color: COLORS.secondary }]} numberOfLines={2}>{adhkar.arabic}</Text>
+                <Text style={[styles.adhkarTranslit, { color: COLORS.text }]} numberOfLines={1}>{adhkar.transliteration}</Text>
+                <Text style={[styles.adhkarTranslation, { color: COLORS.textMuted }]} numberOfLines={1}>{adhkar.translation_en}</Text>
+                <View style={styles.adhkarCounter}>
+                  <View style={[styles.adhkarCountBadge, { backgroundColor: isComplete ? 'rgba(39,174,96,0.15)' : 'rgba(212,175,55,0.12)' }]}>
+                    <Text style={[styles.adhkarCountText, { color: isComplete ? '#27ae60' : COLORS.secondary }]}>{count}/{maxCount}</Text>
+                  </View>
+                  {isComplete ? (
+                    <Ionicons name="checkmark-circle" size={18} color="#27ae60" />
+                  ) : (
+                    <Ionicons name="add-circle" size={22} color={COLORS.secondary} />
+                  )}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
+        {/* Quick Access Grid */}
         <View style={styles.featureGrid}>
           {FEATURE_CARDS.map((card) => (
             <TouchableOpacity
@@ -347,14 +374,15 @@ export default function HomeScreen({ navigation }) {
               onPress={() => navigateToFeature(card.screen)}
               activeOpacity={0.7}
             >
-              <Ionicons name={card.icon} size={28} color={COLORS.secondary} />
+              <View style={[styles.featureIconWrap, { backgroundColor: 'rgba(212,175,55,0.1)' }]}>
+                <Ionicons name={card.icon} size={26} color={COLORS.secondary} />
+              </View>
               <Text style={[styles.featureLabel, { color: COLORS.text }]}>
                 {t(card.labelRw, card.labelEn, card.labelAr)}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
-
 
       </ScrollView>
       </ScreenBackground>
@@ -378,13 +406,8 @@ const styles = StyleSheet.create({
   },
   langOption: { paddingVertical: 10, paddingHorizontal: 14 },
   langOptionText: { fontSize: 13, fontWeight: '600' },
-  scroll: { padding: 20, paddingBottom: 40, gap: 18 },
-  hero: { alignItems: 'center', paddingVertical: 20, position: 'relative' },
-  heroDecorRing: {
-    position: 'absolute', top: -5, width: 140, height: 140, borderRadius: 70,
-    borderWidth: 1, borderStyle: 'dashed', transform: [{ rotate: '0deg' }],
-  },
-  heroDecorDot: { position: 'absolute', width: 5, height: 5, borderRadius: 2.5 },
+  scroll: { padding: 20, paddingBottom: 40, gap: 16 },
+  hero: { alignItems: 'center', paddingVertical: 16, position: 'relative' },
   heroGlow: { position: 'absolute', top: -20, width: 200, height: 200, borderRadius: 100 },
   heroLogoWrap: {
     width: 80, height: 80, borderRadius: 40, borderWidth: 3,
@@ -395,14 +418,14 @@ const styles = StyleSheet.create({
   heroLogoInner: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   heroLogoImage: { width: 52, height: 52, borderRadius: 26 },
   heroTitle: { fontSize: 26, fontWeight: '700', fontFamily: 'serif', textAlign: 'center' },
-  heroSubtitle: { fontSize: 13, marginTop: 6, textAlign: 'center', letterSpacing: 0.5 },
-  heroDividerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14 },
+  heroSubtitle: { fontSize: 13, marginTop: 4, textAlign: 'center', letterSpacing: 0.5 },
+  heroDividerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12 },
   heroDividerLine: { width: 40, height: 2, borderRadius: 1 },
   heroDividerDiamond: { width: 10, height: 10, borderRadius: 2, transform: [{ rotate: '45deg' }], alignItems: 'center', justifyContent: 'center' },
   heroDividerDiamondInner: { width: 4, height: 4, borderRadius: 1, backgroundColor: '#0a1220' },
   heroTag: {
     flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 6,
-    borderRadius: 20, borderWidth: 1, marginTop: 14,
+    borderRadius: 20, borderWidth: 1, marginTop: 12,
   },
   heroTagText: { fontSize: 11, fontWeight: '600' },
   verseCard: { flexDirection: 'row', padding: 16, borderRadius: 16, borderWidth: 1, gap: 12, alignItems: 'flex-start' },
@@ -423,16 +446,31 @@ const styles = StyleSheet.create({
   nextBadgeText: { fontSize: 9, fontWeight: '800', letterSpacing: 0.5 },
   nextPrayerFooter: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, paddingTop: 10, borderTopWidth: 1 },
   nextPrayerFooterText: { fontSize: 13, fontWeight: '600', flex: 1 },
-  sectionTitle: { fontSize: 18, fontWeight: '700', marginTop: 4 },
+
+  /* Adhkar Section */
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
+  sectionHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  sectionTitle: { fontSize: 18, fontWeight: '700' },
   seeAllText: { fontSize: 13, fontWeight: '600' },
-  featuredScroll: { gap: 10, paddingVertical: 4 },
-  featuredCard: { width: 150, padding: 14, borderRadius: 14, borderWidth: 1.5, gap: 6 },
-  featuredPlayBtn: { width: 36, height: 36, borderRadius: 18, borderWidth: 2, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
-  featuredTitle: { fontSize: 13, fontWeight: '600', lineHeight: 17 },
-  featuredArtist: { fontSize: 11, fontWeight: '500' },
-  featuredCategory: { fontSize: 10 },
+  adhkarScroll: { gap: 12, paddingVertical: 4 },
+  adhkarCard: {
+    width: 180, padding: 14, borderRadius: 16, borderWidth: 1.5, gap: 6,
+    overflow: 'hidden',
+  },
+  adhkarProgressTrack: { position: 'absolute', top: 0, left: 0, right: 0, height: 3 },
+  adhkarProgressFill: { height: '100%', borderRadius: 2 },
+  adhkarArabic: { fontSize: 18, fontFamily: 'serif', textAlign: 'center', lineHeight: 28, marginTop: 6 },
+  adhkarTranslit: { fontSize: 12, fontWeight: '600', textAlign: 'center', marginTop: 4 },
+  adhkarTranslation: { fontSize: 10, textAlign: 'center', fontStyle: 'italic' },
+  adhkarCounter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 8 },
+  adhkarCountBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+  adhkarCountText: { fontSize: 12, fontWeight: '700', fontVariant: ['tabular-nums'] },
+
+  /* Feature Grid */
   featureGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'space-between' },
-  featureCard: { width: (width - 52) / 2, paddingVertical: 22, borderRadius: 16, borderWidth: 1.5, alignItems: 'center', gap: 10 },
-  featureLabel: { fontSize: 13, fontWeight: '600', textAlign: 'center' },
+  featureCard: {
+    width: (width - 52) / 3, paddingVertical: 18, borderRadius: 16, borderWidth: 1.5, alignItems: 'center', gap: 8,
+  },
+  featureIconWrap: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  featureLabel: { fontSize: 11, fontWeight: '600', textAlign: 'center' },
 });

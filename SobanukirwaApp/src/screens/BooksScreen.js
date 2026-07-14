@@ -1,8 +1,7 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, TextInput, Modal, StatusBar, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, TextInput, Modal, StatusBar, RefreshControl, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { WebView } from 'react-native-webview';
 import { useFocusEffect } from '@react-navigation/native';
 import { useApp } from '../context/AppContext';
 import { getMediaUrl } from '../services/api';
@@ -43,7 +42,7 @@ export default function BooksScreen() {
       <ScreenBackground imageKey="bg-quran">
       <View style={styles.header}>
         <Text style={[styles.headerTitle, { color: COLORS.secondary }]}>
-          {t('Amatabo', 'Books', 'الكتب')}
+          {t('Ibitabo', 'Books', 'الكتب')}
         </Text>
         <Text style={[styles.headerSub, { color: COLORS.textMuted }]}>
           {books.length} {t('itabo', 'books', 'كتاب')}
@@ -140,17 +139,20 @@ export default function BooksScreen() {
           </View>
           <View style={styles.readerBody}>
             {selectedBook && selectedBook.fileType === 'pdf' && selectedBook.fileUrl ? (
-              <WebView
-                source={{ uri: getMediaUrl(selectedBook.fileUrl) }}
-                style={{ flex: 1 }}
-                startInLoadingState
-                renderLoading={() => (
-                  <View style={styles.loadingOverlay}>
-                    <Ionicons name="hourglass" size={36} color={COLORS.secondary} />
-                    <Text style={[styles.loadingText, { color: COLORS.textMuted }]}>Loading PDF...</Text>
-                  </View>
-                )}
-              />
+              <View style={styles.loadingOverlay}>
+                <Ionicons name="document-text" size={64} color={COLORS.secondary} />
+                <Text style={[styles.loadingText, { color: COLORS.text, fontSize: 16, fontWeight: '600' }]}>{selectedBook.titleEn || selectedBook.title}</Text>
+                <Text style={[styles.loadingText, { color: COLORS.textMuted }]}>{selectedBook.authorEn || selectedBook.author || ''}</Text>
+                <TouchableOpacity
+                  style={[styles.readBtn, { backgroundColor: COLORS.secondary, paddingHorizontal: 24, paddingVertical: 14, borderRadius: 12, marginTop: 16 }]}
+                  onPress={() => Linking.openURL(getMediaUrl(selectedBook.fileUrl))}
+                >
+                  <Ionicons name="open-outline" size={18} color={COLORS.primaryDark} />
+                  <Text style={[styles.readBtnText, { color: COLORS.primaryDark, fontSize: 15 }]}>
+                    {t('Fungura PDF', 'Open PDF', 'فتح PDF')}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             ) : selectedBook ? (
               <ScrollView contentContainerStyle={styles.textReaderContent}>
                 <Text style={[styles.textReaderTitle, { color: COLORS.secondary }]}>{selectedBook.titleEn || selectedBook.title || ''}</Text>

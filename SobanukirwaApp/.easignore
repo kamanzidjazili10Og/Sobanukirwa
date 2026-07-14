@@ -1,0 +1,14 @@
+node_modules/
+.git/
+.vscode/
+.expo/
+dist/
+android/
+ios/
+web-build/
+*.log
+*.bak
+*.md
+.DS_Store
+package-lock.json
+SobanukirwaApp/serve.js

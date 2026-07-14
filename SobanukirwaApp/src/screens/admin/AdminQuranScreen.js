@@ -9,7 +9,7 @@ import { useApp } from '../../context/AppContext';
 import { useToastContext } from '../../components/Toast';
 import { fetchSurahs, uploadSurahAudio } from '../../services/api';
 
-export default function AdminQuranScreen() {
+export default function AdminQuranScreen({ navigation }) {
   const { COLORS } = useApp();
   const toast = useToastContext();
   const [surahs, setSurahs] = useState([]);
@@ -91,6 +91,13 @@ export default function AdminQuranScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]}>
+      <View style={styles.headerRow}>
+        <TouchableOpacity onPress={() => navigation.navigate('AdminDashboard')} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={22} color={COLORS.textGold} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: COLORS.textGold }]}>Quran</Text>
+        <View style={{ width: 36 }} />
+      </View>
       <View style={styles.searchRow}>
         <View style={[styles.searchBar, { backgroundColor: 'rgba(20,35,55,0.7)', borderColor: 'rgba(201,168,76,0.2)' }]}>
           <Ionicons name="search" size={18} color={COLORS.textMuted} />
@@ -116,6 +123,9 @@ export default function AdminQuranScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
+  backBtn: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: 'rgba(201,168,76,0.3)', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(201,168,76,0.08)' },
+  headerTitle: { fontSize: 18, fontWeight: '700' },
   searchRow: { padding: 12 },
   searchBar: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, borderWidth: 1, paddingHorizontal: 12, height: 44, gap: 8 },
   searchInput: { flex: 1, fontSize: 14 },

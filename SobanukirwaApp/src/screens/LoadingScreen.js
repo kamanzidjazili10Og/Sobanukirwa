@@ -91,7 +91,7 @@ export default function LoadingScreen({ onFinish }) {
           </View>
         </View>
         <Text style={styles.title}>Sobanukirwa</Text>
-        <Text style={styles.subtitle}>Urumuri rw'Imyemero</Text>
+        <Text style={styles.subtitle}>Urumuri rw'abemeramana</Text>
         {/* Diamond divider */}
         <View style={styles.dividerRow}>
           <View style={styles.dividerLine} />

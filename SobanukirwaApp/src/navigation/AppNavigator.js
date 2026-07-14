@@ -35,50 +35,57 @@ function HomeTabs() {
         headerShown: false,
         tabBarStyle: {
           backgroundColor: COLORS.primaryDark,
-          borderTopColor: COLORS.border,
-          borderTopWidth: 2,
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 8,
+          borderTopColor: 'rgba(212,175,55,0.15)',
+          borderTopWidth: 1,
+          height: 62,
+          paddingBottom: 6,
+          paddingTop: 6,
+          elevation: 20,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.3,
+          shadowRadius: 12,
         },
         tabBarActiveTintColor: COLORS.secondary,
         tabBarInactiveTintColor: COLORS.textMuted,
         tabBarLabelStyle: {
-          fontSize: 10,
-          fontWeight: '500',
+          fontSize: 9,
+          fontWeight: '600',
+          marginTop: 2,
         },
+        tabBarHideOnKeyboard: true,
       }}
     >
       <Tab.Screen name="Home" component={HomeScreen} options={{
-        tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size} color={color} />,
+        tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'home' : 'home-outline'} size={size} color={color} />,
         tabBarLabel: t('Ahabanza', 'Home', 'الرئيسية'),
       }} />
       <Tab.Screen name="Prayer" component={PrayerScreen} options={{
-        tabBarIcon: ({ color, size }) => <Ionicons name="time" size={size} color={color} />,
+        tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'time' : 'time-outline'} size={size} color={color} />,
         tabBarLabel: t('Isengesho', 'Prayer', 'الصلاة'),
       }} />
       <Tab.Screen name="Quran" component={QuranScreen} options={{
-        tabBarIcon: ({ color, size }) => <Ionicons name="book" size={size} color={color} />,
+        tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'book' : 'book-outline'} size={size} color={color} />,
         tabBarLabel: t('Qur\'an', 'Quran', 'القرآن'),
       }} />
       <Tab.Screen name="Audio" component={AudioScreen} options={{
-        tabBarIcon: ({ color, size }) => <Ionicons name="headset" size={size} color={color} />,
+        tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'headset' : 'headset-outline'} size={size} color={color} />,
         tabBarLabel: t('Inyigisho', 'Audio', 'الدروس'),
       }} />
       <Tab.Screen name="Adhkar" component={AdhkarScreen} options={{
-        tabBarIcon: ({ color, size }) => <Ionicons name="hands" size={size} color={color} />,
+        tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'hand-left' : 'hand-left-outline'} size={size} color={color} />,
         tabBarLabel: t('Adhkar', 'Adhkar', 'الأذكار'),
       }} />
       <Tab.Screen name="Books" component={BooksScreen} options={{
-        tabBarIcon: ({ color, size }) => <Ionicons name="book-open" size={size} color={color} />,
-        tabBarLabel: t('Ibikubiyemo', 'Books', 'الكتب'),
+        tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'library' : 'library-outline'} size={size} color={color} />,
+        tabBarLabel: t('Ibitabo', 'Books', 'الكتب'),
       }} />
       <Tab.Screen name="Videos" component={VideoScreen} options={{
-        tabBarIcon: ({ color, size }) => <Ionicons name="videocam" size={size} color={color} />,
+        tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'play-circle' : 'play-circle-outline'} size={size} color={color} />,
         tabBarLabel: t('Amashusho', 'Videos', 'الفيديو'),
       }} />
       <Tab.Screen name="About" component={AboutScreen} options={{
-        tabBarIcon: ({ color, size }) => <Ionicons name="ellipsis-horizontal" size={size} color={color} />,
+        tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'ellipsis-horizontal' : 'ellipsis-horizontal'} size={size} color={color} />,
         tabBarLabel: t('Ibyerekeye', 'About', 'حول'),
       }} />
     </Tab.Navigator>

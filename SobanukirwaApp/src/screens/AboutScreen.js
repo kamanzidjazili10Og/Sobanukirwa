@@ -18,7 +18,7 @@ const FEATURES = [
   { icon: 'book', label: 'Quran', labelRw: 'Qur\'an', sublabel: '114 Surahs' },
   { icon: 'headset', label: 'Audio', labelRw: 'Inyigisho', sublabel: 'Lessons' },
   { icon: 'videocam', label: 'Videos', labelRw: 'Amashusho', sublabel: 'Teachings' },
-  { icon: 'book-open', label: 'Books', labelRw: 'Amatabo', sublabel: 'Library' },
+  { icon: 'book-open', label: 'Books', labelRw: 'Ibitabo', sublabel: 'Library' },
 ];
 
 const SOCIALS = [
@@ -85,7 +85,7 @@ export default function AboutScreen({ navigation }) {
           {/* Title */}
           <Text style={[styles.heroTitle, { color: COLORS.secondary }]}>Sobanukirwa</Text>
           <Text style={[styles.heroSubtitle, { color: COLORS.textMuted }]}>
-            {t('Urumuri rw\'Imyemero', 'Light of Faith', 'نور الإيمان')}
+            {t('Urumuri rw\'abemeramana', 'Light of Faith', 'نور الإيمان')}
           </Text>
 
           {/* Decorative divider with diamond */}
@@ -101,7 +101,7 @@ export default function AboutScreen({ navigation }) {
           <View style={[styles.heroTag, { backgroundColor: 'rgba(212,175,55,0.08)', borderColor: 'rgba(212,175,55,0.25)' }]}>
             <Ionicons name="star" size={12} color={COLORS.secondary} />
             <Text style={[styles.heroTagText, { color: COLORS.secondary }]}>
-              {t('Ubumenyi bw\'Igisilamu', 'Islamic Knowledge', 'المعرفة الإسلامية')}
+              {t('Ubumenyi bw\'ubusilamu', 'Islamic Knowledge', 'المعرفة الإسلامية')}
             </Text>
             <Ionicons name="star" size={12} color={COLORS.secondary} />
           </View>
@@ -277,7 +277,7 @@ export default function AboutScreen({ navigation }) {
           </View>
           <Text style={[styles.footerDisclaimer, { color: COLORS.textMuted }]}>
             {t(
-              'Umusanzu wose uri mu Bwoko bw\'Igisilamu',
+              'Umusanzu wose uri mu Bwoko bw\'ubusilamu',
               'All content from Quran and Sunnah',
               'كل المحتوى من القرآن والسنة'
             )}

@@ -10,7 +10,7 @@ import { fetchHealth, fetchDashboard } from '../../services/api';
 
 const API_BASE = Platform.OS === 'android' ? 'http://10.0.2.2:5000/api' : 'http://localhost:5000/api';
 
-export default function AdminSettingsScreen() {
+export default function AdminSettingsScreen({ navigation }) {
   const { COLORS } = useApp();
   const toast = useToastContext();
   const [health, setHealth] = useState(null);
@@ -54,6 +54,13 @@ export default function AdminSettingsScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]}>
+      <View style={styles.headerRow}>
+        <TouchableOpacity onPress={() => navigation.navigate('AdminDashboard')} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={22} color={COLORS.textGold} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: COLORS.textGold }]}>Settings</Text>
+        <View style={{ width: 36 }} />
+      </View>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={[styles.title, { color: COLORS.textGold }]}>Settings</Text>
 
@@ -134,6 +141,9 @@ export default function AdminSettingsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
+  backBtn: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: 'rgba(201,168,76,0.3)', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(201,168,76,0.08)' },
+  headerTitle: { fontSize: 18, fontWeight: '700' },
   scrollContent: { padding: 16, paddingBottom: 32 },
   title: { fontSize: 24, fontWeight: '700', marginBottom: 16 },
   section: { borderRadius: 14, borderWidth: 1, padding: 16, marginBottom: 14 },

@@ -54,6 +54,7 @@ export function AppProvider({ children }) {
   const [silentFrom, setSilentFrom] = useState('22:00');
   const [silentTo, setSilentTo] = useState('06:00');
   const [silentPrayers, setSilentPrayers] = useState({ Fajr: true, Dhuhr: true, Asr: true, Maghrib: true, Isha: true });
+  const [adminLoggedIn, setAdminLoggedIn] = useState(false);
 
   const pauseAudioRef = useRef(null);
   const pauseVideoRef = useRef(null);
@@ -212,6 +213,7 @@ export function AppProvider({ children }) {
       scheduledSilent, setScheduledSilent, silentFrom, setSilentFrom, silentTo, setSilentTo,
       silentPrayers, setSilentPrayers,
       isEffectivelySilent, isScheduledSilentActive,
+      adminLoggedIn, setAdminLoggedIn,
     }}>
       {children}
     </AppContext.Provider>

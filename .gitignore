@@ -3,6 +3,11 @@ node_modules/
 backend/uploads/
 SobanukirwaApp/node_modules/
 SobanukirwaApp/.expo/
+SobanukirwaApp/android/
+SobanukirwaApp/ios/
+SobanukirwaApp/dist/
+SobanukirwaApp/web-build/
+SobanukirwaApp/*.ps1
 *.log
 .DS_Store
 Videos/

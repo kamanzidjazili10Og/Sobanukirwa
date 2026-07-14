@@ -74,7 +74,15 @@ export default function AdminDashboardScreen({ navigation }) {
         contentContainerStyle={styles.scrollContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.secondary} />}
       >
-        <Text style={[styles.title, { color: COLORS.textGold }]}>Admin Dashboard</Text>
+        <View style={styles.headerRow}>
+          <Text style={[styles.title, { color: COLORS.textGold }]}>Admin Dashboard</Text>
+          <TouchableOpacity
+            style={[styles.logoutBtn, { borderColor: 'rgba(231,76,60,0.3)' }]}
+            onPress={() => navigation.navigate('AdminLogin')}
+          >
+            <Ionicons name="log-out" size={18} color="#e74c3c" />
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.statsGrid}>
           {STAT_CONFIG.map((stat) => (
@@ -151,6 +159,12 @@ export default function AdminDashboardScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  logoutBtn: {
+    width: 38, height: 38, borderRadius: 19, borderWidth: 1.5,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(231,76,60,0.1)',
+  },
   scrollContent: { padding: 16, paddingBottom: 32 },
   title: { fontSize: 24, fontWeight: '700', marginBottom: 16 },
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 20 },

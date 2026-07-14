@@ -1,6 +1,7 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
+import AdminLoginScreen from '../screens/AdminLoginScreen';
 import AdminDashboardScreen from '../screens/admin/AdminDashboardScreen';
 import AdminArtistsScreen from '../screens/admin/AdminArtistsScreen';
 import AdminTracksScreen from '../screens/admin/AdminTracksScreen';
@@ -16,6 +17,7 @@ const Stack = createNativeStackNavigator();
 export default function AdminNavigator() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#0a1220' } }}>
+      <Stack.Screen name="AdminLogin" component={AdminLoginScreen} />
       <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} />
       <Stack.Screen name="AdminArtists" component={AdminArtistsScreen} />
       <Stack.Screen name="AdminTracks" component={AdminTracksScreen} />
