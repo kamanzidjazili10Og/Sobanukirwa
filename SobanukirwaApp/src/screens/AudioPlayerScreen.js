@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Animated, PanResponder } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Animated, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 import { useApp } from '../context/AppContext';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function AudioPlayerScreen({ route, navigation }) {
   const { category, tracks: passedTracks, startIndex = 0 } = route.params;
@@ -14,7 +16,7 @@ export default function AudioPlayerScreen({ route, navigation }) {
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
   const [shuffle, setShuffle] = useState(false);
-  const [repeatMode, setRepeatMode] = useState(0); // 0=off, 1=all, 2=one
+  const [repeatMode, setRepeatMode] = useState(0);
   const [volume, setVolume] = useState(0.8);
   const spinAnim = useRef(new Animated.Value(0)).current;
 
@@ -30,14 +32,12 @@ export default function AudioPlayerScreen({ route, navigation }) {
     };
   }, []);
 
-  useEffect(() => {
-    loadTrack();
-  }, [currentIndex]);
+  useEffect(() => { loadTrack(); }, [currentIndex]);
 
   useEffect(() => {
     if (isPlaying) {
       Animated.loop(
-        Animated.timing(spinAnim, { toValue: 1, duration: 8000, useNativeDriver: true })
+        Animated.timing(spinAnim, { toValue: 1, duration: 10000, useNativeDriver: true })
       ).start();
     } else {
       spinAnim.stopAnimation();
@@ -47,17 +47,15 @@ export default function AudioPlayerScreen({ route, navigation }) {
   const spin = spinAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
 
   const pauseAudio = async () => {
-    if (soundRef.current) {
-      await soundRef.current.pauseAsync();
-      setIsPlaying(false);
-    }
+    if (soundRef.current) { await soundRef.current.pauseAsync(); setIsPlaying(false); }
   };
 
   async function loadTrack() {
     if (!currentTrack) return;
     if (soundRef.current) await soundRef.current.unloadAsync();
     try {
-      const audioUrl = currentTrack.audio_url || currentTrack.audioUrl || 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
+      const audioUrl = currentTrack.audio_url || currentTrack.audioUrl || '';
+      if (!audioUrl) return;
       const { sound } = await Audio.Sound.createAsync(
         { uri: audioUrl },
         { shouldPlay: true, volume }
@@ -72,33 +70,21 @@ export default function AudioPlayerScreen({ route, navigation }) {
             if (repeatMode === 2) {
               sound.setPositionAsync(0);
               sound.playAsync();
-            } else {
-              nextTrack();
-            }
+            } else { nextTrack(); }
           }
         }
       });
-    } catch (err) {
-      console.log('Audio load error:', err);
-    }
+    } catch (err) { console.log('Audio error:', err); }
   }
 
   async function togglePlayPause() {
     if (!soundRef.current) return;
-    if (isPlaying) {
-      await soundRef.current.pauseAsync();
-      setIsPlaying(false);
-    } else {
-      await soundRef.current.playAsync();
-      setIsPlaying(true);
-    }
+    if (isPlaying) { await soundRef.current.pauseAsync(); setIsPlaying(false); }
+    else { await soundRef.current.playAsync(); setIsPlaying(true); }
   }
 
   async function seekTo(millis) {
-    if (soundRef.current) {
-      await soundRef.current.setPositionAsync(millis);
-      setPosition(millis);
-    }
+    if (soundRef.current) { await soundRef.current.setPositionAsync(millis); setPosition(millis); }
   }
 
   function nextTrack() {
@@ -109,197 +95,214 @@ export default function AudioPlayerScreen({ route, navigation }) {
       setCurrentIndex(next);
     } else if (currentIndex < tracks.length - 1) {
       setCurrentIndex(currentIndex + 1);
-    } else if (repeatMode === 1) {
-      setCurrentIndex(0);
-    }
+    } else if (repeatMode === 1) { setCurrentIndex(0); }
   }
 
   function previousTrack() {
-    if (position > 3000) {
-      seekTo(0);
-    } else if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
-    } else if (repeatMode === 1) {
-      setCurrentIndex(tracks.length - 1);
-    }
-  }
-
-  function cycleRepeat() {
-    setRepeatMode((repeatMode + 1) % 3);
-  }
-
-  async function changeVolume(val) {
-    setVolume(val);
-    if (soundRef.current) await soundRef.current.setVolumeAsync(val);
+    if (position > 3000) { seekTo(0); }
+    else if (currentIndex > 0) { setCurrentIndex(currentIndex - 1); }
+    else if (repeatMode === 1) { setCurrentIndex(tracks.length - 1); }
   }
 
   function formatTime(ms) {
     if (!ms && ms !== 0) return '0:00';
     const totalSec = Math.floor(ms / 1000);
     if (!isFinite(totalSec)) return '0:00';
-    const min = Math.floor(totalSec / 60);
-    const sec = totalSec % 60;
-    return `${min}:${sec.toString().padStart(2, '0')}`;
+    return `${Math.floor(totalSec / 60)}:${(totalSec % 60).toString().padStart(2, '0')}`;
   }
 
   const progress = duration > 0 ? (position / duration) * 100 : 0;
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: (evt) => {
-        const { locationX } = evt.nativeEvent;
-        const barWidth = 300;
-        const pct = Math.max(0, Math.min(1, locationX / barWidth));
-        seekTo(pct * duration);
-      },
-      onPanResponderMove: (evt) => {
-        const { locationX } = evt.nativeEvent;
-        const barWidth = 300;
-        const pct = Math.max(0, Math.min(1, locationX / barWidth));
-        setPosition(pct * duration);
-      },
-      onPanResponderRelease: (evt) => {
-        const { locationX } = evt.nativeEvent;
-        const barWidth = 300;
-        const pct = Math.max(0, Math.min(1, locationX / barWidth));
-        seekTo(pct * duration);
-      },
-    })
-  ).current;
-
-  const repeatIcons = { 0: 'repeat', 1: 'repeat', 2: 'repeat' };
-
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]}>
-      <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-        <Ionicons name="chevron-down" size={28} color={COLORS.text} />
-      </TouchableOpacity>
-
-      <View style={styles.playerArt}>
-        <Animated.View style={[styles.artCircle, { backgroundColor: COLORS.surface, borderColor: COLORS.secondary, transform: [{ rotate: spin }] }]}>
-          <Ionicons name="headset" size={60} color={COLORS.secondary} />
-        </Animated.View>
+      <View style={[styles.topBar, { borderBottomColor: COLORS.border }]}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.topBtn}>
+          <Ionicons name="chevron-down" size={28} color={COLORS.text} />
+        </TouchableOpacity>
+        <View style={styles.topCenter}>
+          <Text style={[styles.topTitle, { color: COLORS.secondary }]}>
+            {t('Urwego rw\'Inyigisho', 'Now Playing', 'يتم التشغيل')}
+          </Text>
+          <Text style={[styles.topSub, { color: COLORS.textMuted }]}>
+            {category || t('Inyigisho', 'Lessons', 'الدروس')}
+          </Text>
+        </View>
+        <TouchableOpacity style={styles.topBtn}>
+          <Ionicons name="ellipsis-horizontal" size={22} color={COLORS.textMuted} />
+        </TouchableOpacity>
       </View>
 
-      <View style={styles.trackInfo}>
+      <View style={styles.artSection}>
+        <View style={[styles.artOuterRing, { borderColor: 'rgba(212,175,55,0.1)' }]} />
+        <Animated.View style={[styles.artDisc, { backgroundColor: COLORS.surface, borderColor: COLORS.secondary, transform: [{ rotate: spin }] }]}>
+          <View style={[styles.artDiscInner, { backgroundColor: 'rgba(212,175,55,0.06)' }]}>
+            <Ionicons name="headset" size={48} color={COLORS.secondary} />
+          </View>
+        </Animated.View>
+        <View style={[styles.artCenterDot, { backgroundColor: COLORS.secondary }]} />
+      </View>
+
+      <View style={styles.trackInfoSection}>
         <Text style={[styles.trackTitle, { color: COLORS.text }]} numberOfLines={2}>
           {currentTrack?.title || t('Hitamo inyigisho', 'Select a lesson', 'اختر درساً')}
         </Text>
-        <Text style={[styles.categoryName, { color: COLORS.textMuted }]}>
+        <Text style={[styles.trackArtist, { color: COLORS.secondary }]}>
           {currentTrack ? (currentTrack.artist_name || currentTrack.artist || category) : ''}
         </Text>
       </View>
 
       <View style={styles.progressSection}>
-        <View
-          style={[styles.progressBar, { backgroundColor: 'rgba(255,255,255,0.12)' }]}
-          {...panResponder.panHandlers}
+        <TouchableOpacity
+          style={styles.progressBarTouch}
+          onPress={(e) => {
+            if (duration > 0) {
+              const barWidth = SCREEN_WIDTH - 60;
+              const pct = Math.max(0, Math.min(1, e.nativeEvent.locationX / barWidth));
+              seekTo(pct * duration);
+            }
+          }}
         >
-          <View style={[styles.progressFill, { width: `${progress}%`, backgroundColor: COLORS.secondary }]} />
-          <View style={[styles.progressThumb, { left: `${progress}%`, backgroundColor: COLORS.secondary }]} />
-        </View>
+          <View style={[styles.progressBar, { backgroundColor: 'rgba(212,175,55,0.12)' }]}>
+            <View style={[styles.progressFill, { width: `${progress}%`, backgroundColor: COLORS.secondary }]} />
+            {duration > 0 && (
+              <View style={[styles.progressThumb, { left: `${progress}%`, backgroundColor: COLORS.secondary }]} />
+            )}
+          </View>
+        </TouchableOpacity>
         <View style={styles.timeRow}>
-          <Text style={{ color: COLORS.textMuted, fontSize: 12, fontVariant: ['tabular-nums'] }}>
-            {duration > 0 ? formatTime(position) : '0:00'}
-          </Text>
-          <Text style={{ color: COLORS.textMuted, fontSize: 12, fontVariant: ['tabular-nums'] }}>
+          <Text style={[styles.timeText, { color: COLORS.textMuted }]}>{formatTime(position)}</Text>
+          <Text style={[styles.timeText, { color: COLORS.textMuted }]}>
             {duration > 0 ? formatTime(duration) : '0:00'}
           </Text>
         </View>
       </View>
 
-      <View style={styles.controls}>
+      <View style={styles.controlsSection}>
         <TouchableOpacity onPress={() => setShuffle(!shuffle)} style={styles.ctrlBtn}>
           <Ionicons name="shuffle" size={20} color={shuffle ? COLORS.secondary : COLORS.textMuted} />
         </TouchableOpacity>
         <TouchableOpacity onPress={previousTrack} style={styles.ctrlBtn}>
-          <Ionicons name="play-skip-back" size={26} color={COLORS.text} />
+          <Ionicons name="play-skip-back" size={28} color={COLORS.text} />
         </TouchableOpacity>
         <TouchableOpacity style={[styles.playBtn, { backgroundColor: COLORS.secondary }]} onPress={togglePlayPause}>
-          <Ionicons name={isPlaying ? 'pause' : 'play'} size={32} color={COLORS.primaryDark} />
+          <Ionicons name={isPlaying ? 'pause' : 'play'} size={32} color={COLORS.primaryDark} style={!isPlaying ? { marginLeft: 3 } : {}} />
         </TouchableOpacity>
         <TouchableOpacity onPress={nextTrack} style={styles.ctrlBtn}>
-          <Ionicons name="play-skip-forward" size={26} color={COLORS.text} />
+          <Ionicons name="play-skip-forward" size={28} color={COLORS.text} />
         </TouchableOpacity>
-        <TouchableOpacity onPress={cycleRepeat} style={styles.ctrlBtn}>
-          <Ionicons name={repeatIcons[repeatMode]} size={20} color={repeatMode > 0 ? COLORS.secondary : COLORS.textMuted} />
+        <TouchableOpacity onPress={() => setRepeatMode((repeatMode + 1) % 3)} style={styles.ctrlBtn}>
+          <Ionicons name="repeat" size={20} color={repeatMode > 0 ? COLORS.secondary : COLORS.textMuted} />
           {repeatMode === 2 && <Text style={[styles.repeatBadge, { color: COLORS.secondary }]}>1</Text>}
         </TouchableOpacity>
       </View>
 
       <View style={styles.volumeSection}>
-        <Ionicons name="volume-low" size={16} color={COLORS.textMuted} />
-        <View style={[styles.volumeBar, { backgroundColor: 'rgba(255,255,255,0.12)' }]}>
+        <Ionicons name="volume-low" size={14} color={COLORS.textMuted} />
+        <TouchableOpacity
+          style={[styles.volumeBar, { backgroundColor: 'rgba(212,175,55,0.12)' }]}
+          onPress={(e) => {
+            const barWidth = SCREEN_WIDTH - 120;
+            const pct = Math.max(0, Math.min(1, e.nativeEvent.locationX / barWidth));
+            setVolume(pct);
+            if (soundRef.current) soundRef.current.setVolumeAsync(pct);
+          }}
+        >
           <View style={[styles.volumeFill, { width: `${volume * 100}%`, backgroundColor: COLORS.secondary }]} />
-        </View>
-        <Ionicons name="volume-high" size={16} color={COLORS.textMuted} />
+        </TouchableOpacity>
+        <Ionicons name="volume-high" size={14} color={COLORS.textMuted} />
       </View>
 
-      <ScrollView style={styles.playlist} contentContainerStyle={{ gap: 8 }} showsVerticalScrollIndicator={false}>
-        <Text style={[styles.playlistTitle, { color: COLORS.secondary }]}>
-          {t('Urutonde', 'Playlist', 'قائمة التشغيل')} ({tracks.length})
-        </Text>
-        {tracks.map((track, index) => (
-          <TouchableOpacity
-            key={track.id || index}
-            style={[
-              styles.playlistItem,
-              { backgroundColor: index === currentIndex ? 'rgba(212,175,55,0.15)' : COLORS.surface, borderColor: index === currentIndex ? COLORS.secondary : COLORS.border }
-            ]}
-            onPress={() => setCurrentIndex(index)}
-          >
-            <Text style={[styles.playlistNumber, { color: COLORS.textMuted }]}>{index + 1}.</Text>
-            <View style={styles.playlistInfo}>
-              <Text style={[styles.playlistTrack, { color: index === currentIndex ? COLORS.secondary : COLORS.text }]} numberOfLines={1}>
-                {track.title}
-              </Text>
-              <View style={styles.playlistMeta}>
-                <Text style={[styles.playlistArtist, { color: COLORS.textMuted }]} numberOfLines={1}>
-                  {track.artist_name || track.artist || ''}
-                </Text>
-                {track.duration && (
-                  <Text style={[styles.playlistDuration, { color: COLORS.textMuted }]}>{track.duration}</Text>
+      <View style={[styles.playlistSection, { borderTopColor: COLORS.border }]}>
+        <View style={styles.playlistHeader}>
+          <Text style={[styles.playlistTitle, { color: COLORS.secondary }]}>
+            {t('Urutonde', 'Playlist', 'قائمة التشغيل')}
+          </Text>
+          <Text style={[styles.playlistCount, { color: COLORS.textMuted }]}>
+            {tracks.length} {t('inyigisho', 'tracks', 'مقطع')}
+          </Text>
+        </View>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {tracks.map((track, index) => (
+            <TouchableOpacity
+              key={track.id || index}
+              style={[
+                styles.playlistItem,
+                { backgroundColor: index === currentIndex ? 'rgba(212,175,55,0.1)' : 'transparent', borderColor: index === currentIndex ? 'rgba(212,175,55,0.3)' : 'transparent' }
+              ]}
+              onPress={() => setCurrentIndex(index)}
+            >
+              <View style={[styles.plNumWrap, {
+                backgroundColor: index === currentIndex ? COLORS.secondary : 'rgba(212,175,55,0.08)',
+              }]}>
+                {index === currentIndex && isPlaying ? (
+                  <Ionicons name="volume-high" size={12} color={COLORS.primaryDark} />
+                ) : (
+                  <Text style={[styles.plNum, { color: index === currentIndex ? COLORS.primaryDark : COLORS.secondary }]}>{index + 1}</Text>
                 )}
               </View>
-            </View>
-            {index === currentIndex && (
-              <Ionicons name={isPlaying ? 'volume-high' : 'pause'} size={16} color={COLORS.secondary} />
-            )}
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+              <View style={styles.plInfo}>
+                <Text style={[styles.plTitle, { color: index === currentIndex ? COLORS.secondary : COLORS.text }]} numberOfLines={1}>
+                  {track.title}
+                </Text>
+                <Text style={[styles.plArtist, { color: COLORS.textMuted }]} numberOfLines={1}>
+                  {track.artist_name || track.artist || ''}
+                </Text>
+              </View>
+              {index === currentIndex && (
+                <View style={styles.plNowPlaying}>
+                  <View style={[styles.npBar, { backgroundColor: COLORS.secondary }]} />
+                  <View style={[styles.npBar2, { backgroundColor: COLORS.secondary, height: 10 }]} />
+                  <View style={[styles.npBar, { backgroundColor: COLORS.secondary }]} />
+                </View>
+              )}
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  backBtn: { padding: 20, paddingBottom: 0 },
-  playerArt: { alignItems: 'center', marginVertical: 24 },
-  artCircle: { width: 180, height: 180, borderRadius: 90, borderWidth: 3, alignItems: 'center', justifyContent: 'center' },
-  trackInfo: { paddingHorizontal: 30, alignItems: 'center', marginBottom: 24 },
-  trackTitle: { fontSize: 22, fontWeight: '700', textAlign: 'center' },
-  categoryName: { fontSize: 15, marginTop: 6, letterSpacing: 0.3 },
-  progressSection: { paddingHorizontal: 30, marginBottom: 16 },
-  progressBar: { height: 6, borderRadius: 3, overflow: 'visible', position: 'relative' },
-  progressFill: { height: '100%', borderRadius: 3 },
-  progressThumb: { width: 14, height: 14, borderRadius: 7, position: 'absolute', top: -4, marginLeft: -7 },
-  timeRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
-  controls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 24, marginBottom: 16 },
+  topBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 4, borderBottomWidth: 1 },
+  topBtn: { padding: 12 },
+  topCenter: { flex: 1, alignItems: 'center' },
+  topTitle: { fontSize: 13, fontWeight: '700' },
+  topSub: { fontSize: 11, marginTop: 2 },
+  artSection: { alignItems: 'center', marginVertical: 20, position: 'relative' },
+  artOuterRing: { position: 'absolute', width: 200, height: 200, borderRadius: 100, borderWidth: 1 },
+  artDisc: { width: 180, height: 180, borderRadius: 90, borderWidth: 3, alignItems: 'center', justifyContent: 'center' },
+  artDiscInner: { width: 140, height: 140, borderRadius: 70, alignItems: 'center', justifyContent: 'center' },
+  artCenterDot: { position: 'absolute', width: 12, height: 12, borderRadius: 6 },
+  trackInfoSection: { paddingHorizontal: 30, alignItems: 'center', marginBottom: 20 },
+  trackTitle: { fontSize: 20, fontWeight: '700', textAlign: 'center', lineHeight: 28 },
+  trackArtist: { fontSize: 14, marginTop: 6, fontWeight: '500' },
+  progressSection: { paddingHorizontal: 30, marginBottom: 14 },
+  progressBarTouch: { paddingVertical: 8 },
+  progressBar: { height: 5, borderRadius: 2.5, overflow: 'visible', position: 'relative' },
+  progressFill: { height: '100%', borderRadius: 2.5 },
+  progressThumb: { width: 14, height: 14, borderRadius: 7, position: 'absolute', top: -4.5, marginLeft: -7, borderWidth: 2, borderColor: '#fff' },
+  timeRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 },
+  timeText: { fontSize: 11, fontVariant: ['tabular-nums'] },
+  controlsSection: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 20, marginBottom: 12 },
   ctrlBtn: { padding: 8, position: 'relative' },
   repeatBadge: { position: 'absolute', top: 2, right: 0, fontSize: 9, fontWeight: '800' },
-  playBtn: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', shadowColor: '#d4af37', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8 },
-  volumeSection: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 30, marginBottom: 16 },
+  playBtn: { width: 66, height: 66, borderRadius: 33, alignItems: 'center', justifyContent: 'center', elevation: 10, shadowColor: '#d4af37', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 14 },
+  volumeSection: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 30, marginBottom: 8 },
   volumeBar: { flex: 1, height: 4, borderRadius: 2, overflow: 'hidden' },
   volumeFill: { height: '100%', borderRadius: 2 },
-  playlist: { flex: 1, paddingHorizontal: 20 },
-  playlistTitle: { fontSize: 16, fontWeight: '600', marginBottom: 10 },
-  playlistItem: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 12, borderWidth: 1, gap: 10 },
-  playlistNumber: { width: 24, fontSize: 13 },
-  playlistInfo: { flex: 1 },
-  playlistTrack: { fontSize: 14, fontWeight: '500' },
-  playlistMeta: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  playlistArtist: { fontSize: 11, marginTop: 2, flex: 1 },
-  playlistDuration: { fontSize: 11, marginTop: 2 },
+  playlistSection: { flex: 1, borderTopWidth: 1, paddingTop: 12 },
+  playlistHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginBottom: 8 },
+  playlistTitle: { fontSize: 15, fontWeight: '700' },
+  playlistCount: { fontSize: 12 },
+  playlistItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 10, gap: 12, borderWidth: 1, borderRadius: 12, marginHorizontal: 12, marginBottom: 4 },
+  plNumWrap: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  plNum: { fontSize: 11, fontWeight: '700' },
+  plInfo: { flex: 1 },
+  plTitle: { fontSize: 14, fontWeight: '500' },
+  plArtist: { fontSize: 11, marginTop: 2 },
+  plNowPlaying: { flexDirection: 'row', alignItems: 'flex-end', gap: 2, height: 16 },
+  npBar: { width: 3, height: 16, borderRadius: 1.5 },
+  npBar2: { width: 3, borderRadius: 1.5 },
 });
