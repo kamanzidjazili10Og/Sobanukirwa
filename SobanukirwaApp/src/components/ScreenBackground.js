@@ -10,6 +10,8 @@ const BACKGROUNDS = {
   'bg-about': require('../../assets/bg-about.jpg'),
   'bg-loading': require('../../assets/bg-loading.jpg'),
   'bg-qibla': require('../../assets/bg-qibla.jpg'),
+  'bg-settings': require('../../assets/bg-quran.jpg'),
+  'bg-adhkar': require('../../assets/bg-audio.jpg'),
 };
 
 export default function ScreenBackground({ imageKey, children, style }) {
