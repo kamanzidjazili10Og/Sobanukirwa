@@ -61,6 +61,8 @@ export async function fetchVideos() {
         title: v.title,
         videoUrl: v.video_url || v.videoUrl,
         thumbnail: v.thumbnail_url || v.thumbnail || 'Images/logo2.png',
+        author: v.author || v.author_en || '',
+        duration: v.duration || 0,
       }));
     }
     return fallbackVideos;
