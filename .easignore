@@ -9,7 +9,7 @@ admin/
 Css/
 Javascript/
 database/
-assets/
+/assets/
 node_modules/
 .git/
 .vscode/
