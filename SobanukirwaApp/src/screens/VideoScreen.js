@@ -10,6 +10,19 @@ import ScreenBackground from '../components/ScreenBackground';
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 52) / 2;
 
+function ThumbImage({ uri, title, style }) {
+  const [failed, setFailed] = useState(false);
+  if (failed || !uri) {
+    return (
+      <View style={[style, styles.thumbFallback]}>
+        <Ionicons name="videocam" size={32} color="rgba(212,175,55,0.5)" />
+        <Text style={styles.thumbFallbackText} numberOfLines={2}>{title || ''}</Text>
+      </View>
+    );
+  }
+  return <Image source={{ uri }} style={style} resizeMode="cover" onError={() => setFailed(true)} />;
+}
+
 export default function VideoScreen({ navigation }) {
   const { videos, t, COLORS, refreshing, refreshData } = useApp();
   const [search, setSearch] = useState('');
@@ -69,7 +82,7 @@ export default function VideoScreen({ navigation }) {
               activeOpacity={0.85}
             >
               <View style={styles.thumbnailWrap}>
-                <Image source={{ uri: thumbUrl }} style={styles.thumbnail} resizeMode="cover" />
+                <ThumbImage uri={thumbUrl} title={video.title} style={styles.thumbnail} />
                 <View style={styles.overlay}>
                   <View style={[styles.playIconWrap, { backgroundColor: 'rgba(212,175,55,0.25)' }]}>
                     <Ionicons name="play" size={32} color={COLORS.secondary} />
@@ -112,4 +125,6 @@ const styles = StyleSheet.create({
   title: { fontSize: 13, fontWeight: '600', lineHeight: 18 },
   emptyState: { width: '100%', alignItems: 'center', marginTop: 60, gap: 16 },
   emptyText: { fontSize: 14 },
+  thumbFallback: { alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)', gap: 6 },
+  thumbFallbackText: { color: 'rgba(255,255,255,0.4)', fontSize: 11, textAlign: 'center', paddingHorizontal: 6 },
 });

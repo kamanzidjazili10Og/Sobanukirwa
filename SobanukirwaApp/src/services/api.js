@@ -140,7 +140,9 @@ export async function loginAdmin(username, password) {
 export function getMediaUrl(path) {
   if (!path) return '';
   if (path.startsWith('http')) return path;
-  return `${BASE.replace('/api', '')}${path}`;
+  const base = BASE.replace('/api', '');
+  if (path.startsWith('/')) return `${base}${path}`;
+  return `${base}/${path}`;
 }
 
 async function adminFetch(url, options = {}) {
