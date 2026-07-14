@@ -14,7 +14,7 @@ const SURAH_LIST = Array.from({ length: 114 }, (_, i) => ({
   englishName: ['Al-Fatihah','Al-Baqarah','Ali Imran','An-Nisa','Al-Ma\'idah','Al-An\'am','Al-A\'raf','Al-Anfal','At-Tawbah','Yunus','Hud','Yusuf','Ar-Ra\'d','Ibrahim','Al-Hijr','An-Nahl','Al-Isra','Al-Kahf','Maryam','Taha','Al-Anbiya','Al-Hajj','An-Nur','Al-Furqan','Ash-Shu\'ara','Al-Qasas','Al-Ankabut','Ar-Rum','Luqman','As-Sajdah','Ar-Ra\'d','Al-Ahzab','Saba','Fatir','Ya-Sin','As-Saffat','Sad','Az-Zumar','Ghafir','Fussilat','Ash-Shura','Az-Zukhruf','Ad-Dukhan','Al-Jathiyah','Al-Ahqaf','Muhammad','Al-Fath','Al-Hujurat','Qaf','Adh-Dhariyat','At-Tur','An-Najm','Al-Qamar','Ar-Rahman','Al-Waqi\'ah','Al-Hadid','Al-Mujadilah','Al-Hashr','Al-Mumtahanah','As-Saf','Al-Jumu\'ah','Al-Munafiqun','At-At-Taghabun','At-Talaq','At-Tahrim','Al-Mulk','Al-Qalam','Al-Haqqah','Al-Ma\'arij','Nuh','Al-Jinn','Al-Muzzammil','Al-Muddathir','Al-Qiyamah','Al-Insan','Al-Mursalat','An-Naba','An-Naziat','Abasa','At-Takwir','Al-Infitar','Al-Mutaffifin','Al-Inshiqaq','Al-Buruj','At-Tariq','Al-A\'la','Al-Ghashiyah','Al-Fajr','Ash-Sharh','At-Tin','Al-Alaq','Al-Qadr','Al-Bayyinah','Az-Zalzalah','Al-Adiyat','Al-Qari\'ah','At-Takathur','Al-Asr','Al-Humazah','Al-Fil','Quraysh','Al-Ma\'un','Al-Kawthar','Al-Kafirun','An-Nasr','Al-Masad','Al-Ikhlas','Al-Falaq','An-Nas'],
   englishNameTranslation: ['The Opening','The Cow','The Family of Imran','The Table Spread','The Cattle','The Heights','The Spoils of War','Repentance','Jonah','Hud','Joseph','The Thunder','Abraham','The Rocky Tract','The Bee','The Night Journey','The Cave','Mary','Ta-Ha','The Prophets','The Pilgrimage','The Light','The Criterion','The Poets','The Story','The Spider','The Romans','Luqman','The Prophets','The Rustling','The Believers','The Wind-Curled','The Bees','The Creator','Ya-Sin','Those Ranged in Ranks','The Letter Sad','The Troops','The Forgiver','Expounded','The Consultation','The Ornaments','The Smoke','The Crouching','The Wind-Curled','Muhammad','The Victory','The Rooms','The Letter Qaf','The Winnowing Winds','The Mount','The Star','The Moon','The Beneficent','The Inevitable','The Iron','The Pleading Woman','The Exile','She That is to be Examined','The Ranks','The Congregation','The Hypocrites','The Mutual Disillusion','The Divorce','The Prohibition','The Sovereign','The Pen','The Inevitable','The Ways','Noah','The Jinn','The Enshrouded One','The Cloaked One','The Resurrection','Man','The Emissaries','The Tidings','Those Who Drag Forth','He Frowned','The Overthrowing','The Cleaving','The Defrauding','The Splitting Open','The Mansions of the Stars','The Morning Star','The Most High','The Overwhelming','The Dawn','The Relief','The Fig','The Clot','The Power','The Clear Proof','The Earthquake','The Coursers','The Shock','The Rivalry','The Declining Day','The Traducer','The Elephant','Quraysh','The Small Kindnesses','The Abundance','The Disbelievers','The Divine Support','The Palm Fiber','The Sincerity','The Daybreak','Mankind'],
   numberOfAyahs: [7,286,200,176,120,165,206,75,129,109,123,111,43,52,99,128,111,110,98,135,112,78,64,77,227,88,69,60,34,30,73,92,54,45,83,182,88,75,85,54,53,89,59,38,28,38,29,18,45,60,49,62,55,78,96,29,22,72,18,28,18,24,11,11,18,12,12,30,52,52,44,28,28,20,56,40,56,53,19,36,25,22,17,19,26,30,20,15,21,11,8,5,19,5,8,8,11,11,8,3,9,5,4,6,3,6,3,5,4,5,6,3,3,5,4,5,3,3,5,3,3,12,9,9,14],
-  revelationType: ['Meccan','Medinan','Medinan','Medinan','Medinan','Meccan','Meccan','Medinan','Medinan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Medinan','Medinan','Medinan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Medinan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Medinan','Medinan','Medinan','Meccan','Meccan','Meccan','Meccan','Meccan','Medinan','Meccan','Medinan','Medinan','Medinan','Medinan','Medinan','Medinan','Medinan','Medinan','Medinan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan']
+  revelationType: ['Meccan','Medinan','Medinan','Medinan','Medinan','Meccan','Meccan','Medinan','Medinan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Medinan','Medinan','Medinan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Medinan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Medinan','Medinan','Medinan','Meccan','Meccan','Meccan','Meccan','Meccan','Medinan','Meccan','Medinan','Medinan','Medinan','Medinan','Medinan','Medinan','Medinan','Medinan','Medinan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan','Meccan']
 }));
 
 function formatTime(ms) {
@@ -135,26 +135,32 @@ export default function SurahDetailScreen({ route, navigation }) {
         <View style={{ width: 36 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={[styles.heroSection, { backgroundColor: COLORS.surface, borderColor: COLORS.border }]}>
           <View style={[styles.heroDecorCircle, { borderColor: 'rgba(212,175,55,0.08)' }]} />
           <View style={[styles.heroDecorCircle2, { borderColor: 'rgba(212,175,55,0.05)' }]} />
-          <Text style={[styles.heroSurahNumber, { color: COLORS.textMuted }]}>
+
+          <Text style={[styles.heroSurahNum, { color: COLORS.textMuted }]}>
             {t('Sura', 'Surah', 'سورة')} {surah.number}
           </Text>
+
           <Text style={[styles.heroArabicName, { color: COLORS.secondary }]}>
             {surahData.name}
           </Text>
+
           <Text style={[styles.heroBismillah, { color: COLORS.text }]}>
             بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
           </Text>
+
           <View style={[styles.heroDivider, { backgroundColor: 'rgba(212,175,55,0.25)' }]} />
+
           <Text style={[styles.heroEnglishName, { color: COLORS.text }]}>
             {surah.englishName || surahData.englishName}
           </Text>
-          <Text style={[styles.heroTranslationName, { color: COLORS.textMuted }]}>
+          <Text style={[styles.heroTranslation, { color: COLORS.textMuted }]}>
             {surahData.englishNameTranslation}
           </Text>
+
           <View style={styles.heroBadges}>
             <View style={[styles.badge, { backgroundColor: isMeccan ? 'rgba(231,76,60,0.1)' : 'rgba(39,174,96,0.1)' }]}>
               <Ionicons name={isMeccan ? 'flame' : 'leaf'} size={12} color={isMeccan ? '#e74c3c' : '#27ae60'} />
@@ -171,16 +177,20 @@ export default function SurahDetailScreen({ route, navigation }) {
           </View>
         </View>
 
-        <View style={[styles.audioPlayerSection, { backgroundColor: COLORS.surface, borderColor: COLORS.border }]}>
-          <View style={styles.audioPlayerTop}>
-            <Animated.View style={[styles.audioArt, { borderColor: COLORS.secondary, backgroundColor: 'rgba(212,175,55,0.08)', transform: [{ rotate: spin }] }]}>
-              <Ionicons name="book" size={32} color={COLORS.secondary} />
+        <View style={[styles.playerCard, { backgroundColor: COLORS.surface, borderColor: COLORS.border }]}>
+          <View style={styles.playerTop}>
+            <Animated.View style={[styles.playerDisc, {
+              borderColor: playing ? COLORS.secondary : 'rgba(212,175,55,0.2)',
+              backgroundColor: playing ? 'rgba(212,175,55,0.08)' : 'rgba(212,175,55,0.03)',
+              transform: [{ rotate: spin }]
+            }]}>
+              <Ionicons name="book" size={28} color={COLORS.secondary} />
             </Animated.View>
-            <View style={styles.audioInfo}>
-              <Text style={[styles.audioTitle, { color: COLORS.text }]} numberOfLines={1}>
+            <View style={styles.playerInfo}>
+              <Text style={[styles.playerTitle, { color: COLORS.text }]} numberOfLines={1}>
                 {surah.englishName || surahData.englishName}
               </Text>
-              <Text style={[styles.audioSub, { color: COLORS.textMuted }]}>
+              <Text style={[styles.playerSub, { color: COLORS.textMuted }]}>
                 {loading ? t('Turimo gufungura...', 'Loading...', 'جاري التحميل...') :
                  playing ? t('Kuri gukina...', 'Playing...', 'يعمل...') :
                  t('Kanda kugirango ukine', 'Tap to play', 'اضغط للتشغيل')}
@@ -188,9 +198,9 @@ export default function SurahDetailScreen({ route, navigation }) {
             </View>
           </View>
 
-          <View style={styles.progressContainer}>
+          <View style={styles.progressWrap}>
             <TouchableOpacity
-              style={styles.progressBar}
+              style={styles.progressTouch}
               onPress={(e) => {
                 if (duration > 0) {
                   const barWidth = SCREEN_WIDTH - 80;
@@ -214,12 +224,12 @@ export default function SurahDetailScreen({ route, navigation }) {
             </View>
           </View>
 
-          <View style={styles.audioControls}>
-            <TouchableOpacity style={styles.audioCtrlBtn} onPress={stopAudio}>
+          <View style={styles.playerControls}>
+            <TouchableOpacity style={styles.ctrlBtn} onPress={stopAudio}>
               <Ionicons name="stop" size={22} color={COLORS.textMuted} />
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.audioPlayBtn, { backgroundColor: COLORS.secondary }]}
+              style={[styles.playBtn, { backgroundColor: COLORS.secondary }]}
               onPress={togglePlayPause}
             >
               {loading ? (
@@ -228,7 +238,7 @@ export default function SurahDetailScreen({ route, navigation }) {
                 <Ionicons name={playing ? 'pause' : 'play'} size={28} color={COLORS.primaryDark} style={!playing ? { marginLeft: 3 } : {}} />
               )}
             </TouchableOpacity>
-            <TouchableOpacity style={styles.audioCtrlBtn} onPress={() => { stopAudio(); playAudio(); }}>
+            <TouchableOpacity style={styles.ctrlBtn} onPress={() => { stopAudio(); playAudio(); }}>
               <Ionicons name="refresh" size={22} color={COLORS.textMuted} />
             </TouchableOpacity>
           </View>
@@ -246,37 +256,6 @@ export default function SurahDetailScreen({ route, navigation }) {
             <Text style={[styles.infoValue, { color: COLORS.text }]}>بِسْمِ</Text>
           </View>
         </View>
-
-        <View style={styles.sectionHeaderRow}>
-          <Ionicons name="list" size={18} color={COLORS.secondary} />
-          <Text style={[styles.sectionHeaderTitle, { color: COLORS.secondary }]}>
-            {t('Ibihano byose', 'All Ayahs', 'جميع الآيات')} ({totalAyahs})
-          </Text>
-        </View>
-
-        {Array.from({ length: totalAyahs }, (_, i) => i + 1).map((ayahNum) => (
-          <TouchableOpacity
-            key={ayahNum}
-            style={[
-              styles.ayahCard,
-              { backgroundColor: COLORS.surface, borderColor: COLORS.border },
-            ]}
-            onPress={() => { if (playing) stopAudio(); }}
-          >
-            <View style={[styles.ayahNumberWrap, { backgroundColor: 'rgba(212,175,55,0.08)', borderColor: 'rgba(212,175,55,0.2)' }]}>
-              <Text style={[styles.ayahNumber, { color: COLORS.secondary }]}>{ayahNum}</Text>
-            </View>
-            <View style={styles.ayahContent}>
-              <Text style={[styles.ayahText, { color: COLORS.text }]}>
-                {t(`Igice cya ${ayahNum}`, `Ayah ${ayahNum}`, `آية ${ayahNum}`)}
-              </Text>
-              <Text style={[styles.ayahSub, { color: COLORS.textMuted }]}>
-                {t(`Igice`, `Verse`, 'آية')} {ayahNum}
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color={COLORS.textMuted} />
-          </TouchableOpacity>
-        ))}
       </ScrollView>
     </SafeAreaView>
   );
@@ -293,41 +272,33 @@ const styles = StyleSheet.create({
   heroSection: { padding: 28, borderRadius: 24, borderWidth: 1.5, alignItems: 'center', marginBottom: 14, overflow: 'hidden' },
   heroDecorCircle: { position: 'absolute', top: -50, right: -50, width: 140, height: 140, borderRadius: 70, borderWidth: 1 },
   heroDecorCircle2: { position: 'absolute', bottom: -60, left: -30, width: 160, height: 160, borderRadius: 80, borderWidth: 1 },
-  heroSurahNumber: { fontSize: 13, fontWeight: '600', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 },
+  heroSurahNum: { fontSize: 13, fontWeight: '600', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 },
   heroArabicName: { fontSize: 42, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
   heroBismillah: { fontSize: 22, lineHeight: 38, textAlign: 'center', marginBottom: 16 },
   heroDivider: { width: 80, height: 2.5, borderRadius: 1.25, marginBottom: 16 },
   heroEnglishName: { fontSize: 20, fontWeight: '700', marginBottom: 4, textAlign: 'center' },
-  heroTranslationName: { fontSize: 14, marginBottom: 16 },
+  heroTranslation: { fontSize: 14, marginBottom: 16 },
   heroBadges: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', justifyContent: 'center' },
   badge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, gap: 5 },
   badgeText: { fontSize: 12, fontWeight: '600' },
-  audioPlayerSection: { padding: 20, borderRadius: 20, borderWidth: 1.5, marginBottom: 14 },
-  audioPlayerTop: { flexDirection: 'row', alignItems: 'center', marginBottom: 18, gap: 14 },
-  audioArt: { width: 56, height: 56, borderRadius: 28, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  audioInfo: { flex: 1 },
-  audioTitle: { fontSize: 16, fontWeight: '700' },
-  audioSub: { fontSize: 12, marginTop: 3 },
-  progressContainer: { marginBottom: 18 },
-  progressBar: { paddingVertical: 6 },
+  playerCard: { padding: 20, borderRadius: 20, borderWidth: 1.5, marginBottom: 14 },
+  playerTop: { flexDirection: 'row', alignItems: 'center', marginBottom: 18, gap: 14 },
+  playerDisc: { width: 56, height: 56, borderRadius: 28, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  playerInfo: { flex: 1 },
+  playerTitle: { fontSize: 16, fontWeight: '700' },
+  playerSub: { fontSize: 12, marginTop: 3 },
+  progressWrap: { marginBottom: 18 },
+  progressTouch: { paddingVertical: 6 },
   progressTrack: { height: 6, borderRadius: 3, overflow: 'visible', position: 'relative' },
   progressFill: { height: '100%', borderRadius: 3 },
   progressThumb: { width: 16, height: 16, borderRadius: 8, position: 'absolute', top: -5, marginLeft: -8, borderWidth: 2, borderColor: '#fff' },
   progressTimes: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 },
   progressTime: { fontSize: 12, fontVariant: ['tabular-nums'] },
-  audioControls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 28 },
-  audioCtrlBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(212,175,55,0.08)' },
-  audioPlayBtn: { width: 68, height: 68, borderRadius: 34, alignItems: 'center', justifyContent: 'center', elevation: 8, shadowColor: '#d4af37', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 12 },
-  infoRow: { flexDirection: 'row', borderRadius: 16, borderWidth: 1, marginBottom: 20, overflow: 'hidden' },
+  playerControls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 28 },
+  ctrlBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(212,175,55,0.08)' },
+  playBtn: { width: 68, height: 68, borderRadius: 34, alignItems: 'center', justifyContent: 'center', elevation: 8, shadowColor: '#d4af37', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 12 },
+  infoRow: { flexDirection: 'row', borderRadius: 16, borderWidth: 1, overflow: 'hidden' },
   infoItem: { flex: 1, alignItems: 'center', padding: 14, gap: 4, borderRightWidth: 1 },
   infoLabel: { fontSize: 11, fontWeight: '500' },
   infoValue: { fontSize: 13, fontWeight: '700' },
-  sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
-  sectionHeaderTitle: { fontSize: 16, fontWeight: '700' },
-  ayahCard: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 14, borderWidth: 1, marginBottom: 8, gap: 12 },
-  ayahNumberWrap: { width: 40, height: 40, borderRadius: 20, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
-  ayahNumber: { fontSize: 14, fontWeight: '700' },
-  ayahContent: { flex: 1 },
-  ayahText: { fontSize: 14, fontWeight: '600' },
-  ayahSub: { fontSize: 11, marginTop: 2 },
 });
