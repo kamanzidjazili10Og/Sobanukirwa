@@ -1,6 +1,17 @@
 node_modules/
 .env
-backend/uploads/
+backend/
+Images/
+Sounds/
+Videos/
+audio/
+admin/
+Css/
+Javascript/
+database/
+Document/
+font-awasome/
+assets/
 SobanukirwaApp/node_modules/
 SobanukirwaApp/.expo/
 SobanukirwaApp/android/
@@ -10,6 +21,5 @@ SobanukirwaApp/web-build/
 SobanukirwaApp/*.ps1
 *.log
 .DS_Store
-Videos/
-audio/
 *.bak
+*.md
