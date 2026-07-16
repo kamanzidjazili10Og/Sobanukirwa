@@ -1,0 +1,155 @@
+// ===== Sobanukirwa API Layer =====
+const API_BASE = 'http://localhost:5000/api';
+
+async function fetchFromAPI(endpoint, options = {}) {
+    try {
+        const res = await fetch(`${API_BASE}${endpoint}`, {
+            headers: { 'Accept': 'application/json', ...options.headers },
+            ...options
+        });
+        if (!res.ok) return null;
+        return await res.json();
+    } catch (err) {
+        console.log(`API unavailable for ${endpoint}, using local data`);
+        return null;
+    }
+}
+
+async function loadDataFromAPI() {
+    const [apiArtists, apiCategories, apiVideos, apiBooks, apiSurahs, apiAdhkar] = await Promise.all([
+        fetchFromAPI('/artists'),
+        fetchFromAPI('/categories'),
+        fetchFromAPI('/videos'),
+        fetchFromAPI('/books'),
+        fetchFromAPI('/quran/surahs'),
+        fetchFromAPI('/adhkar')
+    ]);
+
+    let hasAPIData = false;
+
+    if (apiArtists && apiArtists.length > 0) {
+        hasAPIData = true;
+        artistsData.length = 0;
+        const artistMap = {};
+        apiArtists.forEach(a => {
+            artistMap[a.id] = a.name;
+            artistsData.push({
+                id: a.id,
+                name: a.name,
+                nameEn: a.name_en || a.name,
+                nameAr: a.name_ar || a.name,
+                image: a.image_url || 'Images/logo2.png',
+                category: '',
+                tracks: []
+            });
+        });
+
+        const tracksRes = await fetchFromAPI('/tracks');
+        if (tracksRes && tracksRes.length > 0) {
+            tracksRes.forEach(t => {
+                const artist = artistsData.find(a => a.id === t.artist_id);
+                if (artist) {
+                    const catName = t.category_name || '';
+                    artist.tracks.push({
+                        id: t.id,
+                        title: t.title,
+                        titleEn: t.title_en || t.title,
+                        titleAr: t.title_ar || t.title,
+                        audioUrl: t.audio_url.startsWith('http') ? t.audio_url : `${API_BASE.replace('/api', '')}${t.audio_url}`,
+                        category: catName
+                    });
+                    if (!artist.category.includes(catName) && catName) {
+                        artist.category = artist.category ? artist.category + ', ' + catName : catName;
+                    }
+                }
+            });
+            artistsData.forEach(a => a.totalLessons = a.tracks.length);
+        }
+    }
+
+    if (apiVideos && apiVideos.length > 0) {
+        hasAPIData = true;
+        videosData.length = 0;
+        apiVideos.forEach(v => {
+            videosData.push({
+                id: v.id,
+                title: v.title,
+                titleEn: v.title_en || v.title,
+                titleAr: v.title_ar || v.title,
+                author: v.author || '',
+                authorEn: v.author_en || v.author || '',
+                authorAr: v.author_ar || v.author || '',
+                thumbnail: v.thumbnail_url || 'Images/logo2.png',
+                videoUrl: v.video_url.startsWith('http') ? v.video_url : `${API_BASE.replace('/api', '')}${v.video_url}`,
+                duration: v.duration ? `${Math.floor(v.duration/60)}:${String(v.duration%60).padStart(2,'0')}` : '00:00'
+            });
+        });
+    }
+
+    if (apiBooks && apiBooks.length > 0) {
+        hasAPIData = true;
+        booksData.length = 0;
+        apiBooks.forEach(b => {
+            booksData.push({
+                id: b.id,
+                title: b.title,
+                titleEn: b.title_en || b.title,
+                titleAr: b.title_ar || b.title,
+                author: b.author || '',
+                authorEn: b.author_en || b.author || '',
+                authorAr: b.author_ar || b.author || '',
+                image: b.image_url || 'Images/logo2.png',
+                category: b.category || 'Islamic',
+                type: b.file_type || 'pdf',
+                pdfUrl: b.file_url.startsWith('http') ? b.file_url : `${API_BASE.replace('/api', '')}${b.file_url}`,
+                content: b.description || ''
+            });
+        });
+    }
+
+    if (apiSurahs && apiSurahs.length > 0) {
+        hasAPIData = true;
+        surahs.length = 0;
+        apiSurahs.forEach(s => {
+            surahs.push({
+                number: s.surah_number,
+                name: s.name,
+                nameArabic: s.name_arabic,
+                ayahs: s.ayahs_count,
+                type: s.revelation_type,
+                audioUrl: s.audio_url
+            });
+        });
+    }
+
+    if (apiAdhkar && apiAdhkar.length > 0) {
+        hasAPIData = true;
+        adhkarList.length = 0;
+        apiAdhkar.forEach(a => {
+            adhkarList.push({
+                id: a.id,
+                arabic: a.arabic_text,
+                transliteration: a.transliteration,
+                translation: a.translation_en || a.translation_rw,
+                count: a.count_target,
+                category: a.category || 'general'
+            });
+        });
+    }
+
+    generateIds();
+
+    if (!hasAPIData) {
+        console.log('API returned no data, using fallback hardcoded data');
+        initFallbackData();
+        return;
+    }
+
+    renderQuran();
+    renderArtists();
+    renderBooks();
+    renderVideos();
+    if (typeof renderCarousel === 'function') renderCarousel();
+    if (typeof updateStats === 'function') updateStats();
+    if (typeof renderVideoFilters === 'function') renderVideoFilters();
+}

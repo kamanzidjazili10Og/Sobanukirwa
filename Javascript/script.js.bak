@@ -1,0 +1,2643 @@
+// ===== AUTO-GENERATE IDS FUNCTION =====
+function generateIds() {
+    // Auto-generate artist IDs and track IDs
+    artistsData.forEach((artist, artistIndex) => {
+        artist.id = artistIndex + 1;
+        artist.totalLessons = artist.tracks.length;
+        
+        artist.tracks.forEach((track, trackIndex) => {
+            track.id = (artistIndex + 1) * 100 + trackIndex + 1;
+        });
+    });
+    
+    // Auto-generate book IDs
+    booksData.forEach((book, index) => {
+        book.id = index + 1;
+    });
+    
+    // Auto-generate video IDs
+    videosData.forEach((video, index) => {
+        video.id = index + 1;
+    });
+}
+
+// ===== DATA ARRAYS (populated by API or fallback data) =====
+const artistsData = [];
+const surahs = [];
+const booksData = [];
+const videosData = [];
+const adhkarList = [];
+
+// ===== TRANSLATIONS =====
+const translations = {
+    rw: {
+        welcomeTitle: "Sobanukirwa Ubu Islam",
+        welcomeSubtitle: "Menya ukuri, ubuhanga, n'ubwiza bwa Islam",
+        home: "Ahabanza",
+        qibla: "Qibla",
+        qiblaDesc: "Shakisha icyerekezo cya Kaaba",
+        prayer: "Isengesho",
+        prayerTimes: "Ibihe by'Isengesho",
+        prayerDesc: "Ibihe nyabyo by'amasengesho",
+        quran: "Qur'an",
+        quranDesc: "Soma untege amatwi",
+        audioLessons: "Inyigisho za Audio",
+        audioDesc: "Amasomo ya audio",
+        books: "Ibisomwa",
+        booksDesc: "Soma ibitabo",
+        videos: "Amashusho",
+        videosDesc: "Reba amashusho",
+        about: "Ibyerekeye",
+        aboutDesc: "Menya byinshi kuri twe",
+        back: "Subira Inyuma",
+        settings: "Igenamiterere",
+        silentMode: "Ibyumweru byo guceceka",
+        enableSilent: "Koresha uburyo bwo guceceka",
+        smartSilent: "Guceceka mu bihe by'amasengesho",
+        from: "Kuva",
+        to: "Kugeza",
+        dailyAdhkar: "Adhkar za buri munsi",
+        gloryBeToAllah: "Ibyubahiro ni ibya Allah",
+        praiseBeToAllah: "Ishimwe n'ikuzo ni ibya Allah",
+        allahIsGreatest: "Allah ni Umukuru w'ikirenga",
+        north: "N",
+        south: "S",
+        east: "E",
+        west: "W",
+        kaaba: "Kaaba",
+        calculating: "Turimo kubara...",
+        calibrate: "Gusana compass",
+        nextPrayer: "Isengesho rikurikira:",
+        nextPrayerIn: "Isengesho rikurikira:",
+        teachers: "Abasobanuzi",
+        lessons: "Inyigisho",
+        footer: "byose bikubiye muri Qur'an na Sunah z'intumwa y'imana Muhamad(S.A.W).",
+        searchSurah: "Shakisha Surati...",
+        searchLesson: "Shakisha inyigisho...",
+        searchArtist: "Shakisha umusobanuzi...",
+        backToArtists: "Subira ku Basobanuzi",
+        aboutText1: "Sobanukirwa ni urubuga rwo kwigisha Islamic mu rurimi rw'Ikinyarwanda. Dufite intego yo gufasha abantu kumenya ukuri, ubuhanga, n'ubwiza bwa Islam.",
+        aboutText2: "Twifuza ko uzabona inyigisho zifatika hano. Allah nawe aduhe gukora ibimushimisha.",
+        loadingSubtitle: "Menya ukuri, ubuhanga, n'ubwiza bwa Islam",
+        silentModeActive: "Ibyumweru byo guceceka birakora",
+        reminders: "Icyibutso",
+        enableReminders: "Koresha icyibutso",
+        interval: "Igihe hagati y'ibyibutso (iminota)",
+        qiblaFinder: "Icyerekezo cya Qibla",
+        adhanSettings: "Igenamiterere rya Adhan",
+        enableAdhan: "Koresha Adhan",
+        volume: "Umuvuduko w'amajwi",
+        prayerTimeMessage: "Ni igihe cy'isengesho",
+        watch: "Reba",
+        read: "Soma",
+        loading: "Ikurura...",
+        download: "Kumanura",
+        customAdhan: "Shyiraho Adhan yawe",
+        chooseFile: "Hitamo fayili y'amajwi",
+        adhanUploadInfo: "Shyiraho fayili ya Adhan ukunda (MP3, WAV, M4A)",
+        removeFile: "Kuraho",
+        playstore: "Kuramo Izindi Porogaramu zacu za Kiyisilamu",
+        featuredContent: "Ibyingenzi",
+        playlist: "Urutonde rw'Inyigisho"
+    },
+    en: {
+        welcomeTitle: "Understand Islam",
+        welcomeSubtitle: "Learn the truth, knowledge, and beauty of Islam",
+        home: "Home",
+        qibla: "Qibla",
+        qiblaDesc: "Find direction of Kaaba",
+        prayer: "Prayer",
+        prayerTimes: "Prayer Times",
+        prayerDesc: "Accurate prayer times",
+        quran: "Qur'an",
+        quranDesc: "Read and listen",
+        audioLessons: "Audio Lessons",
+        audioDesc: "Audio lessons",
+        books: "Books",
+        booksDesc: "Read books",
+        videos: "Videos",
+        videosDesc: "Watch videos",
+        about: "About",
+        aboutDesc: "Learn about us",
+        back: "Back",
+        settings: "Settings",
+        silentMode: "Silent Mode",
+        enableSilent: "Enable Silent Mode",
+        smartSilent: "Smart Silent (Prayer Times)",
+        from: "From",
+        to: "To",
+        dailyAdhkar: "Daily Adhkar",
+        gloryBeToAllah: "Glory be to Allah",
+        praiseBeToAllah: "Praise be to Allah",
+        allahIsGreatest: "Allah is the Greatest",
+        north: "N",
+        south: "S",
+        east: "E",
+        west: "W",
+        kaaba: "Kaaba",
+        calculating: "Calculating...",
+        calibrate: "Calibrate Compass",
+        nextPrayer: "Next prayer:",
+        nextPrayerIn: "Next prayer in:",
+        teachers: "Teachers",
+        lessons: "Lessons",
+        footer: "All rights reserved",
+        searchSurah: "Search Surah...",
+        searchLesson: "Search lesson...",
+        searchArtist: "Search artist...",
+        backToArtists: "Back to Artists",
+        aboutText1: "Sobanukirwa is an Islamic learning platform in Kinyarwanda. Our goal is to help people understand the truth, knowledge, and beauty of Islam.",
+        aboutText2: "We hope you find beneficial lessons here. May Allah help us do what pleases Him.",
+        loadingSubtitle: "Learn the truth, knowledge, and beauty of Islam",
+        silentModeActive: "Silent Mode Active",
+        reminders: "Reminders",
+        enableReminders: "Enable Reminders",
+        interval: "Interval (minutes)",
+        qiblaFinder: "Qibla Finder",
+        adhanSettings: "Adhan Settings",
+        enableAdhan: "Enable Adhan",
+        volume: "Volume",
+        prayerTimeMessage: "It's time for prayer",
+        watch: "Watch",
+        read: "Read",
+        loading: "Loading...",
+        download: "Download",
+        customAdhan: "Upload Custom Adhan",
+        chooseFile: "Choose audio file",
+        adhanUploadInfo: "Upload your favorite Adhan file (MP3, WAV, M4A)",
+        removeFile: "Remove",
+        playstore: "Download Our Other Islamic Apps",
+        featuredContent: "Featured Content",
+        playlist: "Playlist"
+    },
+    ar: {
+        welcomeTitle: "افهم الإسلام",
+        welcomeSubtitle: "تعلم الحقيقة والمعرفة وجمال الإسلام",
+        home: "الرئيسية",
+        qibla: "القبلة",
+        qiblaDesc: "اعثر على اتجاه القبلة",
+        prayer: "الصلاة",
+        prayerTimes: "مواقيت الصلاة",
+        prayerDesc: "مواقيت صلاة دقيقة",
+        quran: "القرآن",
+        quranDesc: "اقرأ واستمع",
+        audioLessons: "الدروس الصوتية",
+        audioDesc: "دروس صوتية",
+        books: "الكتب",
+        booksDesc: "اقرأ الكتب",
+        videos: "الفيديو",
+        videosDesc: "شاهد الفيديو",
+        about: "حول",
+        aboutDesc: "تعرف علينا",
+        back: "رجوع",
+        settings: "الإعدادات",
+        silentMode: "الوضع الصامت",
+        enableSilent: "تفعيل الوضع الصامت",
+        smartSilent: "صامت ذكي (أوقات الصلاة)",
+        from: "من",
+        to: "إلى",
+        dailyAdhkar: "الأذكار اليومية",
+        gloryBeToAllah: "سبحان الله",
+        praiseBeToAllah: "الحمد لله",
+        allahIsGreatest: "الله أكبر",
+        north: "شمال",
+        south: "جنوب",
+        east: "شرق",
+        west: "غرب",
+        kaaba: "الكعبة",
+        calculating: "جاري الحساب...",
+        calibrate: "معايرة البوصلة",
+        nextPrayer: "الصلاة القادمة:",
+        nextPrayerIn: "الصلاة القادمة بعد:",
+        teachers: "المعلمون",
+        lessons: "الدروس",
+        footer: "جميع الحقوق محفوظة",
+        searchSurah: "ابحث عن سورة...",
+        searchLesson: "ابحث عن درس...",
+        searchArtist: "ابحث عن فنان...",
+        backToArtists: "العودة إلى الفنانين",
+        aboutText1: "سوبانوكيروا منصة تعليم إسلامي باللغة الكينيارواندية. هدفنا مساعدة الناس على فهم الحقيقة والمعرفة وجمال الإسلام.",
+        aboutText2: "نأمل أن تجد دروساً مفيدة هنا. وفقنا الله لفعل ما يرضيه.",
+        loadingSubtitle: "تعلم الحقيقة والمعرفة وجمال الإسلام",
+        silentModeActive: "الوضع الصامت نشط",
+        reminders: "تذكيرات",
+        enableReminders: "تفعيل التذكيرات",
+        interval: "الفاصل الزمني (دقائق)",
+        qiblaFinder: "محدد القبلة",
+        adhanSettings: "إعدادات الأذان",
+        enableAdhan: "تفعيل الأذان",
+        volume: "مستوى الصوت",
+        prayerTimeMessage: "حان وقت الصلاة",
+        watch: "شاهد",
+        read: "اقرأ",
+        loading: "جار التحميل...",
+        download: "تحميل",
+        customAdhan: "رفع أذان مخصص",
+        chooseFile: "اختر ملف صوتي",
+        adhanUploadInfo: "رفع ملف الأذان المفضل لديك (MP3, WAV, M4A)",
+        removeFile: "إزالة",
+        playstore: "حمّل تطبيقاتنا الإسلامية الأخرى",
+        featuredContent: "المحتوى المميز",
+        playlist: "قائمة التشغيل"
+    }
+};
+
+// ===== STATE =====
+let currentLanguage = localStorage.getItem('language') || 'rw';
+let silentMode = false;
+let smartSilent = false;
+let adhanEnabled = true;
+let adhanVolume = 70;
+let remindersEnabled = true;
+let counters = [0, 0, 0];
+const maxCounts = [33, 33, 34];
+let currentQibla = 0;
+let compassHeading = 0;
+let watchId = null;
+let prayerTimes = null;
+let userLat = -1.9403;
+let userLng = 29.8739;
+let audioDurationsLoaded = false;
+let videoDurationsLoaded = false;
+let customAdhanBlob = null;
+let customAdhanUrl = null;
+let selectedArtist = null;
+let currentTrack = null;
+let currentTrackIndex = 0;
+let isPlaying = false;
+let isRandom = false;
+let isRepeat = false;
+let audio = new Audio();
+let updateTimer = null;
+let currentTracks = [];
+let currentSurahIndex = -1;
+
+// ===== AUDIO MANAGER =====
+class AudioManager {
+    constructor() {
+        this.audioElements = {
+            quran: document.getElementById('quranAudio'),
+            lessons: audio,
+            adhan: document.getElementById('adhanAudio')
+        };
+        this.currentSource = null;
+        this.setupEventListeners();
+    }
+    
+    setupEventListeners() {
+        if (this.audioElements.quran) {
+            this.audioElements.quran.addEventListener('play', () => {
+                this.stopOtherSources('quran');
+                this.currentSource = 'quran';
+                document.getElementById('quranPlayer')?.classList.add('active');
+            });
+            
+            this.audioElements.quran.addEventListener('pause', () => {
+                if (this.currentSource === 'quran') {
+                    document.getElementById('quranPlayer')?.classList.remove('active');
+                }
+            });
+        }
+        
+        audio.addEventListener('play', () => {
+            this.stopOtherSources('lessons');
+            this.currentSource = 'lessons';
+        });
+    }
+    
+    stopOtherSources(playingSource) {
+        if (playingSource !== 'quran' && this.audioElements.quran && !this.audioElements.quran.paused) {
+            this.audioElements.quran.pause();
+        }
+        if (playingSource !== 'lessons' && !audio.paused) {
+            audio.pause();
+            isPlaying = false;
+            updatePlayPauseButton();
+            playerArt?.classList.remove('rotate');
+        }
+    }
+    
+    stopAll() {
+        if (this.audioElements.quran) this.audioElements.quran.pause();
+        audio.pause();
+        isPlaying = false;
+        updatePlayPauseButton();
+        playerArt?.classList.remove('rotate');
+        this.currentSource = null;
+    }
+}
+
+// ===== PDF MANAGER FOR QUICK OPENING =====
+class PDFManager {
+    constructor() {
+        this.pdfDoc = null;
+        this.currentPage = 1;
+    }
+    
+    async openPDF(url, title) {
+        // Open PDF in new tab for quick viewing
+        window.open(url, '_blank');
+        
+        // Also show in document reader if needed
+        this.showInReader(url, title);
+    }
+    
+    showInReader(url, title) {
+        const documentReader = document.getElementById('documentReader');
+        const documentViewer = document.getElementById('documentViewer');
+        const documentTitle = document.getElementById('documentTitle');
+        
+        if (!documentReader || !documentViewer) return;
+        
+        documentTitle.textContent = title;
+        documentReader.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        
+        // Create PDF viewer with iframe for quick loading
+        documentViewer.innerHTML = `
+            <div class="pdf-quick-viewer">
+                <iframe 
+                    src="${url}" 
+                    class="pdf-iframe"
+                    frameborder="0"
+                    allowfullscreen
+                ></iframe>
+                <div class="pdf-quick-actions">
+                    <a href="${url}" download class="pdf-download-btn">
+                        <i class="fas fa-download"></i> Download PDF
+                    </a>
+                    <a href="${url}" target="_blank" class="pdf-open-btn">
+                        <i class="fas fa-external-link-alt"></i> Open in New Tab
+                    </a>
+                </div>
+            </div>
+        `;
+    }
+}
+
+// ===== SILENT MODE MANAGER =====
+class SilentModeManager {
+    constructor() {
+        this.enabled = localStorage.getItem('scheduledSilent') === 'true';
+        this.startTime = localStorage.getItem('silentStart') || '22:00';
+        this.endTime = localStorage.getItem('silentEnd') || '06:00';
+        this.active = false;
+        this.originalVolumes = new Map();
+        this.prayerMuteTimes = this.loadPrayerMuteSettings();
+        this.startMonitoring();
+    }
+    
+    loadPrayerMuteSettings() {
+        try {
+            const saved = localStorage.getItem('prayerMuteTimes');
+            if (saved) {
+                return JSON.parse(saved);
+            }
+        } catch (e) {
+            console.log('Error loading prayer mute settings:', e);
+        }
+        
+        return [
+            { prayer: 'Fajr', minutes: 15 },
+            { prayer: 'Dhuhr', minutes: 15 },
+            { prayer: 'Asr', minutes: 15 },
+            { prayer: 'Maghrib', minutes: 15 },
+            { prayer: 'Isha', minutes: 15 }
+        ];
+    }
+    
+    startMonitoring() {
+        setInterval(() => this.checkSilentMode(), 30000);
+        this.checkSilentMode();
+    }
+    
+    checkSilentMode() {
+        const now = new Date();
+        const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+        
+        let shouldBeSilent = false;
+        
+        if (this.enabled) {
+            shouldBeSilent = this.isInTimeRange(currentTime, this.startTime, this.endTime);
+        }
+        
+        if (!shouldBeSilent && smartSilent && prayerTimes) {
+            shouldBeSilent = this.isPrayerTime(currentTime);
+        }
+        
+        if (shouldBeSilent && !this.active) {
+            this.activateSilentMode();
+        } else if (!shouldBeSilent && this.active) {
+            this.deactivateSilentMode();
+        }
+    }
+    
+    isPrayerTime(currentTime) {
+        if (!prayerTimes) return false;
+        
+        const currentMins = this.timeToMinutes(currentTime);
+        
+        for (let prayer of this.prayerMuteTimes) {
+            const prayerTime = prayerTimes[prayer.prayer];
+            if (!prayerTime) continue;
+            
+            const prayerMins = this.timeToMinutes(prayerTime);
+            const diff = Math.abs(currentMins - prayerMins);
+            
+            if (diff <= prayer.minutes) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    isInTimeRange(current, start, end) {
+        const currentMins = this.timeToMinutes(current);
+        const startMins = this.timeToMinutes(start);
+        const endMins = this.timeToMinutes(end);
+        
+        if (startMins <= endMins) {
+            return currentMins >= startMins && currentMins <= endMins;
+        } else {
+            return currentMins >= startMins || currentMins <= endMins;
+        }
+    }
+    
+    timeToMinutes(time) {
+        const [hours, minutes] = time.split(':').map(Number);
+        return hours * 60 + minutes;
+    }
+    
+    activateSilentMode() {
+        console.log('Silent mode activated');
+        this.active = true;
+        
+        const audioElements = document.querySelectorAll('audio, video');
+        audioElements.forEach(el => {
+            if (!this.originalVolumes.has(el)) {
+                this.originalVolumes.set(el, el.volume);
+            }
+            el.volume = 0;
+        });
+        
+        const indicator = document.getElementById('silentModeIndicator');
+        if (indicator) {
+            indicator.classList.add('active');
+            
+            clearTimeout(this.indicatorTimeout);
+            this.indicatorTimeout = setTimeout(() => {
+                indicator.classList.remove('active');
+            }, 3000);
+        }
+    }
+    
+    deactivateSilentMode() {
+        console.log('Silent mode deactivated');
+        
+        this.originalVolumes.forEach((volume, el) => {
+            el.volume = volume;
+        });
+        this.originalVolumes.clear();
+        
+        this.active = false;
+        
+        const indicator = document.getElementById('silentModeIndicator');
+        if (indicator) {
+            indicator.classList.remove('active');
+        }
+    }
+    
+    toggle() {
+        this.enabled = !this.enabled;
+        localStorage.setItem('scheduledSilent', this.enabled);
+        
+        if (!this.enabled && this.active) {
+            this.deactivateSilentMode();
+        } else if (this.enabled) {
+            this.checkSilentMode();
+        }
+    }
+    
+    setSchedule(start, end) {
+        this.startTime = start;
+        this.endTime = end;
+        localStorage.setItem('silentStart', start);
+        localStorage.setItem('silentEnd', end);
+        this.checkSilentMode();
+    }
+}
+
+// ===== PRAYER TIMES MANAGER =====
+class PrayerTimesManager {
+    constructor() {
+        this.cache = {};
+        this.methods = {
+            MWL: 3,
+            ISNA: 2,
+            Egypt: 5,
+            Makkahh: 4,
+            Karachi: 1,
+            Tehran: 7,
+            Custom: 99
+        };
+        this.currentMethod = 3;
+    }
+    
+    async getPrayerTimes(lat, lng, date = new Date()) {
+        const cacheKey = `${lat}_${lng}_${date.toDateString()}`;
+        
+        if (this.cache[cacheKey]) {
+            console.log('Using cached prayer times');
+            return this.cache[cacheKey];
+        }
+        
+        const apis = [
+            this.fetchFromAladhan(lat, lng, date),
+            this.calculateOffline(lat, lng, date)
+        ];
+        
+        for (let api of apis) {
+            try {
+                const times = await api;
+                if (times) {
+                    this.cache[cacheKey] = times;
+                    return times;
+                }
+            } catch (error) {
+                console.log('API failed, trying next...');
+            }
+        }
+        
+        return this.calculateOffline(lat, lng, date);
+    }
+    
+    async fetchFromAladhan(lat, lng, date) {
+        const url = `https://api.aladhan.com/v1/timings/${date.getDate()}-${date.getMonth() + 1}-${date.getFullYear()}?latitude=${lat}&longitude=${lng}&method=${this.currentMethod}`;
+        
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            if (data.code === 200 && data.data) {
+                return {
+                    Fajr: data.data.timings.Fajr,
+                    Sunrise: data.data.timings.Sunrise,
+                    Dhuhr: data.data.timings.Dhuhr,
+                    Asr: data.data.timings.Asr,
+                    Maghrib: data.data.timings.Maghrib,
+                    Isha: data.data.timings.Isha,
+                    source: 'Aladhan API'
+                };
+            }
+        } catch (error) {
+            console.log('Aladhan API failed:', error);
+        }
+        return null;
+    }
+    
+    calculateOffline(lat, lng, date) {
+        // Simplified calculation for fallback
+        return {
+            Fajr: "05:00",
+            Sunrise: "06:05",
+            Dhuhr: "12:00",
+            Asr: "15:30",
+            Maghrib: "18:00",
+            Isha: "19:30",
+            source: 'Offline Calculation'
+        };
+    }
+}
+
+// ===== ADHAN MANAGER =====
+class AdhanManager {
+    constructor() {
+        this.audio = document.getElementById('adhanAudio');
+        this.currentReciter = localStorage.getItem('selectedReciter') || 'mishary';
+        this.volume = parseInt(localStorage.getItem('adhanVolume')) || 100;
+        this.enabled = localStorage.getItem('adhanEnabled') !== 'false';
+        this.lastPlayed = {};
+        this.setupAudioListeners();
+    }
+    
+    setupAudioListeners() {
+        this.audio.addEventListener('ended', () => {
+            this.hideAdhanToast();
+        });
+    }
+    
+    async playAdhan(prayer) {
+        if (!this.enabled) return;
+        
+        const now = Date.now();
+        if (this.lastPlayed[prayer] && (now - this.lastPlayed[prayer]) < 30 * 60 * 1000) {
+            return;
+        }
+        
+        console.log(`Playing Adhan for ${prayer}`);
+        this.showAdhanToast(prayer);
+        this.sendNotification(prayer);
+        this.audio.volume = this.volume / 100;
+        
+        const adhanUrls = {
+            mishary: 'audio/Adhan2.mpeg',
+            sudais: 'audio/Adhan1.mpeg',
+            Mansour: 'audio/Mansour_Adhan.mpeg'
+        };
+        
+        try {
+            this.audio.src = adhanUrls[this.currentReciter];
+            await this.audio.play();
+            this.lastPlayed[prayer] = now;
+            this.highlightPrayer(prayer);
+        } catch (error) {
+            console.log('Adhan playback failed');
+        }
+    }
+    
+    showAdhanToast(prayer) {
+        const toast = document.getElementById('adhanToast');
+        if (!toast) return;
+        
+        document.getElementById('adhanToastPrayer').textContent = prayer;
+        document.getElementById('adhanToastMessage').textContent = `Time for ${prayer} prayer has arrived`;
+        toast.classList.add('show');
+        
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 10000);
+    }
+    
+    hideAdhanToast() {
+        document.getElementById('adhanToast')?.classList.remove('show');
+    }
+    
+    sendNotification(prayer) {
+        if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('Adhan Time', {
+                body: `It's time for ${prayer} prayer. Allahu Akbar!`,
+                icon: 'Images/logo2.png'
+            });
+        }
+    }
+    
+    highlightPrayer(prayer) {
+        document.querySelectorAll('.prayer-card').forEach(card => {
+            card.classList.remove('adhan-playing');
+        });
+        
+        const prayerCard = document.getElementById(`prayer-${prayer}`);
+        if (prayerCard) {
+            prayerCard.classList.add('adhan-playing');
+        }
+    }
+    
+    changeReciter(reciter) {
+        this.currentReciter = reciter;
+        localStorage.setItem('selectedReciter', reciter);
+    }
+    
+    setVolume(volume) {
+        this.volume = volume;
+        if (this.audio) {
+            this.audio.volume = this.volume / 100;
+        }
+        localStorage.setItem('adhanVolume', this.volume);
+        
+        const display = document.getElementById('adhanVolumeDisplay');
+        if (display) {
+            display.textContent = volume + '%';
+        }
+    }
+    
+    toggle() {
+        this.enabled = !this.enabled;
+        localStorage.setItem('adhanEnabled', this.enabled);
+        
+        const toggle = document.getElementById('adhanToggle');
+        if (toggle) {
+            toggle.classList.toggle('active', this.enabled);
+        }
+    }
+}
+// ===== ADHKAR REMINDER MANAGER =====
+class AdhkarReminderManager {
+    constructor() {
+        this.enabled = localStorage.getItem('adhkarReminders') !== 'false';
+        this.interval = parseInt(localStorage.getItem('reminderInterval')) || 30;
+        this.lastReminded = null;
+        this.snoozeUntil = null;
+        this.reminderInterval = null;
+        
+        this.reminderAudio = new Audio();
+        this.reminderAudio.volume = 0.5;
+        
+        this.startReminders();
+    }
+
+    get adhkars() {
+        return adhkarList.length > 0 ? adhkarList : [
+            { arabic: "سُبْحَانَ اللَّهِ", transliteration: "Subhanallah", translation: "Glory be to Allah" },
+            { arabic: "الْحَمْدُ لِلَّهِ", transliteration: "Alhamdulillah", translation: "Praise be to Allah" },
+            { arabic: "اللَّهُ أَكْبَرُ", transliteration: "Allahu Akbar", translation: "Allah is the Greatest" },
+            { arabic: "لَا إِلَٰهَ إِلَّا اللَّهُ", transliteration: "La ilaha illallah", translation: "There is no god but Allah" },
+            { arabic: "أَسْتَغْفِرُ اللَّهَ", transliteration: "Astaghfirullah", translation: "I seek forgiveness from Allah" }
+        ];
+    }
+    
+    startReminders() {
+        if (this.reminderInterval) {
+            clearInterval(this.reminderInterval);
+        }
+        
+        this.reminderInterval = setInterval(() => this.checkReminders(), 60000);
+        this.checkReminders();
+    }
+    
+    checkReminders() {
+        if (!this.enabled) return;
+        
+        const now = Date.now();
+        
+        if (this.snoozeUntil && now < this.snoozeUntil) {
+            return;
+        }
+        
+        if (!this.lastReminded || (now - this.lastReminded) > this.interval * 60 * 1000) {
+            this.showReminder();
+        }
+    }
+    
+    showReminder() {
+        const adhkars = this.adhkars;
+        if (adhkars.length === 0) return;
+        const randomIndex = Math.floor(Math.random() * adhkars.length);
+        const randomAdhkar = adhkars[randomIndex];
+        
+        const popup = document.getElementById('adhkarReminderPopup');
+        if (!popup) return;
+        
+        document.getElementById('reminderArabic').textContent = randomAdhkar.arabic;
+        document.getElementById('reminderTransliteration').textContent = randomAdhkar.transliteration;
+        document.getElementById('reminderTranslation').textContent = randomAdhkar.translation;
+        
+        this.playAdhkarSound(randomAdhkar);
+        
+        popup.classList.add('show');
+        
+        this.lastReminded = Date.now();
+        
+        setTimeout(() => {
+            popup.classList.remove('show');
+        }, 120000);
+    }
+    
+    playAdhkarSound(adhkar) {
+        try {
+            if (this.reminderAudio) {
+                this.reminderAudio.pause();
+                this.reminderAudio.src = adhkar.audioFile || '';
+                this.reminderAudio.play().catch(() => {
+                    this.speakAdhkar(adhkar.transliteration);
+                });
+            }
+        } catch (e) {
+            console.log('Audio playback error:', e);
+        }
+    }
+    
+    // Fallback text-to-speech
+    speakAdhkar(text) {
+        if ('speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'ar';
+            window.speechSynthesis.cancel();
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+    
+    snooze() {
+        this.snoozeUntil = Date.now() + (5 * 60 * 1000);
+        this.hideReminder();
+        this.showToast('Reminder snoozed for 5 minutes');
+        
+        // Stop audio when snoozing
+        if (this.reminderAudio) {
+            this.reminderAudio.pause();
+            this.reminderAudio.currentTime = 0;
+        }
+    }
+    
+    dismiss() {
+        this.hideReminder();
+        this.showToast('Alhamdulillah! Remembered to recite Adhkar');
+        
+        // Stop audio when dismissed
+        if (this.reminderAudio) {
+            this.reminderAudio.pause();
+            this.reminderAudio.currentTime = 0;
+        }
+    }
+    
+    hideReminder() {
+        document.getElementById('adhkarReminderPopup')?.classList.remove('show');
+    }
+    
+    showToast(message) {
+        const toast = document.getElementById('adhanToast');
+        if (!toast) return;
+        
+        document.getElementById('adhanToastPrayer').textContent = '📿';
+        document.getElementById('adhanToastMessage').textContent = message;
+        toast.classList.add('show');
+        
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3000);
+    }
+    
+    setInterval(minutes) {
+        this.interval = minutes;
+        localStorage.setItem('reminderInterval', minutes);
+        this.startReminders();
+    }
+    
+    toggle() {
+        this.enabled = !this.enabled;
+        localStorage.setItem('adhkarReminders', this.enabled);
+        
+        if (this.enabled) {
+            this.startReminders();
+        } else {
+            this.hideReminder();
+            // Stop audio when disabled
+            if (this.reminderAudio) {
+                this.reminderAudio.pause();
+                this.reminderAudio.currentTime = 0;
+            }
+        }
+    }
+}
+
+
+// ===== INITIALIZE MANAGERS =====
+let prayerTimesManager, adhanManager, silentModeManager, adhkarReminderManager, audioManager, pdfManager;
+
+// ===== DOM ELEMENTS =====
+const sections = document.querySelectorAll('.section');
+const loadingScreen = document.getElementById('loadingScreen');
+const quranPlayer = document.getElementById('quranPlayer');
+const documentReader = document.getElementById('documentReader');
+const documentViewer = document.getElementById('documentViewer');
+const artistsContainer = document.getElementById('artistsContainer');
+const tracksContainer = document.getElementById('tracksContainer');
+const tracksGrid = document.getElementById('tracksGrid');
+const selectedArtistName = document.getElementById('selectedArtistName');
+
+// Player elements
+const audioPlayerSection = document.getElementById('audioPlayerSection');
+const playerArtImg = document.getElementById('playerArtImg');
+const playerArt = document.querySelector('.player-art');
+const playerTrackTitle = document.getElementById('playerTrackTitle');
+const playerArtistName = document.getElementById('playerArtistName');
+const playPauseBtn = document.getElementById('playPauseBtn');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const currentTimeSpan = document.getElementById('currentTime');
+const totalDurationSpan = document.getElementById('totalDuration');
+const progressFill = document.getElementById('progressFill');
+const volumeFill = document.getElementById('volumeFill');
+
+// ===== AUDIO DURATION LOADING =====
+function loadAudioDurations() {
+    artistsData.forEach(artist => {
+        artist.tracks.forEach(track => {
+            if (!track.duration) {
+                track.duration = '00:00';
+                
+                const tempAudio = new Audio();
+                
+                const timeout = setTimeout(() => {
+                    if (track.duration === '00:00') {
+                        track.duration = '--:--';
+                        if (selectedArtist && selectedArtist.id === artist.id) {
+                            updateTrackListUI();
+                        }
+                    }
+                }, 3000);
+                
+                tempAudio.addEventListener('loadedmetadata', function() {
+                    clearTimeout(timeout);
+                    if (this.duration && isFinite(this.duration)) {
+                        track.duration = formatTime(this.duration);
+                        if (selectedArtist && selectedArtist.id === artist.id) {
+                            updateTrackListUI();
+                        }
+                    }
+                }, { once: true });
+                
+                tempAudio.addEventListener('error', function() {
+                    clearTimeout(timeout);
+                    track.duration = '--:--';
+                    if (selectedArtist && selectedArtist.id === artist.id) {
+                        updateTrackListUI();
+                    }
+                }, { once: true });
+                
+                tempAudio.src = track.audioUrl;
+                tempAudio.load();
+            }
+        });
+    });
+}
+
+// ===== AUDIO PLAYER FUNCTIONS =====
+function setupAudioListeners() {
+    audio.addEventListener('timeupdate', updateProgress);
+    audio.addEventListener('loadedmetadata', () => {
+        if (audio.duration && currentTracks[currentTrackIndex]) {
+            const duration = formatTime(audio.duration);
+            totalDurationSpan.textContent = duration;
+            currentTracks[currentTrackIndex].duration = duration;
+        }
+    });
+    audio.addEventListener('ended', handleTrackEnd);
+    audio.addEventListener('play', () => {
+        isPlaying = true;
+        updatePlayPauseButton();
+        playerArt?.classList.add('rotate');
+        updateTrackListUI();
+    });
+    audio.addEventListener('pause', () => {
+        isPlaying = false;
+        updatePlayPauseButton();
+        playerArt?.classList.remove('rotate');
+        updateTrackListUI();
+    });
+    audio.addEventListener('error', (e) => {
+        console.log('Audio error:', e);
+        if (currentTracks.length > 1) {
+            nextTrack();
+        }
+    });
+}
+
+function playTrack(artistId, trackId) {
+    const artist = artistsData.find(a => a.id === artistId);
+    if (!artist) return;
+    
+    const trackIndex = artist.tracks.findIndex(t => t.id === trackId);
+    if (trackIndex === -1) return;
+    
+    // Stop Quran if playing
+    const quranAudio = document.getElementById('quranAudio');
+    if (quranAudio && !quranAudio.paused) {
+        quranAudio.pause();
+        document.getElementById('quranPlayer')?.classList.remove('active');
+    }
+    
+    selectedArtist = artist;
+    currentTrackIndex = trackIndex;
+    currentTracks = artist.tracks;
+    
+    if (isPlaying) {
+        audio.pause();
+    }
+    
+    loadTrack();
+    audio.play().then(() => {
+        isPlaying = true;
+        updatePlayPauseButton();
+        playerArt?.classList.add('rotate');
+        updateTrackListUI();
+        
+        if (!audioPlayerSection.classList.contains('active')) {
+            audioPlayerSection.classList.add('active');
+        }
+    }).catch(e => {
+        console.log('Playback failed:', e);
+        showToast('Failed to play audio', 'error');
+    });
+}
+
+function loadTrack() {
+    if (!selectedArtist || !currentTracks[currentTrackIndex]) return;
+    
+    const track = currentTracks[currentTrackIndex];
+    const artistName = currentLanguage === 'en' ? selectedArtist.nameEn : 
+                       currentLanguage === 'ar' ? selectedArtist.nameAr : selectedArtist.name;
+    const trackTitle = currentLanguage === 'en' ? track.titleEn : 
+                       currentLanguage === 'ar' ? track.titleAr : track.title;
+    
+    if (playerArtImg) playerArtImg.src = selectedArtist.image;
+    if (playerTrackTitle) playerTrackTitle.textContent = trackTitle;
+    if (playerArtistName) playerArtistName.textContent = artistName;
+    
+    audio.src = track.audioUrl;
+    audio.load();
+    
+    if (currentTimeSpan) currentTimeSpan.textContent = '00:00';
+    if (totalDurationSpan) totalDurationSpan.textContent = track.duration || '00:00';
+    if (progressFill) progressFill.style.width = '0%';
+    
+    document.title = `${trackTitle} - Sobanukirwa`;
+    
+    updateTrackListUI();
+    renderPlaylist();
+}
+
+function togglePlayPause() {
+    if (!selectedArtist) {
+        showToast('Hitamo inyigisho mbere', 'info');
+        return;
+    }
+    
+    if (isPlaying) {
+        audio.pause();
+    } else {
+        audio.play().then(() => {
+            isPlaying = true;
+        }).catch(e => console.log('Playback failed:', e));
+    }
+}
+
+function updatePlayPauseButton() {
+    if (!playPauseBtn) return;
+    const icon = playPauseBtn.querySelector('i');
+    if (icon) {
+        icon.className = isPlaying ? 'fas fa-pause' : 'fas fa-play';
+    }
+}
+
+function nextTrack() {
+    if (!selectedArtist || currentTracks.length === 0) return;
+    
+    if (isRandom) {
+        let randomIndex;
+        do {
+            randomIndex = Math.floor(Math.random() * currentTracks.length);
+        } while (randomIndex === currentTrackIndex && currentTracks.length > 1);
+        currentTrackIndex = randomIndex;
+    } else {
+        currentTrackIndex = (currentTrackIndex + 1) % currentTracks.length;
+    }
+    
+    loadTrack();
+    if (isPlaying) {
+        audio.play().then(() => {
+            updatePlayPauseButton();
+            playerArt?.classList.add('rotate');
+        });
+    }
+}
+
+function previousTrack() {
+    if (!selectedArtist || currentTracks.length === 0) return;
+    
+    currentTrackIndex = (currentTrackIndex - 1 + currentTracks.length) % currentTracks.length;
+    
+    loadTrack();
+    if (isPlaying) {
+        audio.play().then(() => {
+            updatePlayPauseButton();
+            playerArt?.classList.add('rotate');
+        });
+    }
+}
+
+function handleTrackEnd() {
+    if (isRepeat) {
+        audio.currentTime = 0;
+        audio.play();
+    } else {
+        nextTrack();
+    }
+}
+
+function updateProgress() {
+    if (audio.duration && currentTimeSpan && progressFill) {
+        const progress = (audio.currentTime / audio.duration) * 100;
+        progressFill.style.width = progress + '%';
+        currentTimeSpan.textContent = formatTime(audio.currentTime);
+    }
+}
+
+function seekTo(event) {
+    if (!audio.duration) return;
+    
+    const progressBar = event.currentTarget;
+    const rect = progressBar.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const width = rect.width;
+    const percentage = (x / width) * 100;
+    const seekTime = (percentage / 100) * audio.duration;
+    
+    if (!isNaN(seekTime)) {
+        audio.currentTime = seekTime;
+    }
+}
+
+function setVolumeFromClick(event) {
+    const volumeBar = event.currentTarget;
+    const rect = volumeBar.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const width = rect.width;
+    const percentage = (x / width) * 100;
+    
+    audio.volume = percentage / 100;
+    if (volumeFill) volumeFill.style.width = percentage + '%';
+}
+
+function formatTime(seconds) {
+    if (isNaN(seconds) || !isFinite(seconds)) return '00:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
+
+function closePlayer() {
+    audioPlayerSection?.classList.remove('active');
+    audio.pause();
+    isPlaying = false;
+    updatePlayPauseButton();
+    playerArt?.classList.remove('rotate');
+}
+
+function updateTrackListUI() {
+    if (!tracksContainer?.classList.contains('active') || !selectedArtist) return;
+    
+    const trackCards = document.querySelectorAll('.track-card');
+    trackCards.forEach((card, index) => {
+        const track = selectedArtist.tracks[index];
+        if (track) {
+            const durationSpan = card.querySelector('.track-meta span:first-child');
+            if (durationSpan) {
+                durationSpan.innerHTML = `<i class="fas fa-clock"></i> ${track.duration || '00:00'}`;
+            }
+        }
+        
+        const playBtn = card.querySelector('.track-play-btn i');
+        if (index === currentTrackIndex && isPlaying) {
+            card.classList.add('playing');
+            if (playBtn) playBtn.className = 'fas fa-pause';
+        } else {
+            card.classList.remove('playing');
+            if (playBtn) playBtn.className = 'fas fa-play';
+        }
+    });
+}
+
+// ===== ARTISTS FUNCTIONS =====
+function renderArtists() {
+    if (!artistsContainer) return;
+    
+    artistsContainer.innerHTML = '';
+    
+    artistsData.forEach(artist => {
+        const name = currentLanguage === 'en' ? artist.nameEn : 
+                     currentLanguage === 'ar' ? artist.nameAr : artist.name;
+        
+        const card = document.createElement('div');
+        card.className = 'artist-card';
+        card.innerHTML = `
+            <div class="artist-avatar" style="background-image: url('${artist.image}')"></div>
+            <div class="artist-info">
+                <div class="artist-name">${name}</div>
+                <div class="artist-stats">
+                    <span><i class="fas fa-music"></i> ${artist.tracks.length} Inyigisho</span>
+                    <span><i class="fas fa-tag"></i> ${artist.category}</span>
+                </div>
+            </div>
+            <i class="fas fa-chevron-right"></i>
+        `;
+        
+        card.addEventListener('click', () => showArtistTracks(artist));
+        artistsContainer.appendChild(card);
+    });
+}
+
+function filterArtists() {
+    const search = document.getElementById('artistSearch')?.value.toLowerCase() || '';
+    const cards = document.querySelectorAll('.artist-card');
+    cards.forEach(card => {
+        const name = card.querySelector('.artist-name')?.textContent.toLowerCase() || '';
+        card.style.display = name.includes(search) ? 'flex' : 'none';
+    });
+}
+
+function showArtistTracks(artist) {
+    selectedArtist = artist;
+    if (tracksContainer) tracksContainer.classList.add('active');
+    
+    const name = currentLanguage === 'en' ? artist.nameEn : 
+                 currentLanguage === 'ar' ? artist.nameAr : artist.name;
+    if (selectedArtistName) selectedArtistName.textContent = name;
+    
+    if (tracksGrid) tracksGrid.innerHTML = '';
+    
+    artist.tracks.forEach((track, index) => {
+        const title = currentLanguage === 'en' ? track.titleEn : 
+                      currentLanguage === 'ar' ? track.titleAr : track.title;
+        
+        const trackCard = document.createElement('div');
+        trackCard.className = 'track-card';
+        trackCard.innerHTML = `
+            <div class="track-info">
+                <div class="track-number">${index + 1}</div>
+                <div class="track-details">
+                    <div class="track-title">${title}</div>
+                    <div class="track-artist-name">${name}</div>
+                    <div class="track-meta">
+                        <span><i class="fas fa-clock"></i> ${track.duration || '00:00'}</span>
+                        <span><i class="fas fa-tag"></i> ${track.category}</span>
+                    </div>
+                </div>
+            </div>
+            <button class="track-play-btn" onclick="playTrack(${artist.id}, ${track.id})">
+                <i class="${(selectedArtist && selectedArtist.id === artist.id && currentTrackIndex === index && isPlaying) ? 'fas fa-pause' : 'fas fa-play'}"></i>
+            </button>
+        `;
+        
+        if (tracksGrid) tracksGrid.appendChild(trackCard);
+    });
+    
+    // Load durations for tracks that don't have them
+    artist.tracks.forEach(track => {
+        if (!track.duration || track.duration === '00:00' || track.duration === '--:--') {
+            const tempAudio = new Audio();
+            tempAudio.addEventListener('loadedmetadata', function() {
+                track.duration = formatTime(this.duration);
+                updateTrackListUI();
+            }, { once: true });
+            tempAudio.src = track.audioUrl;
+        }
+    });
+    
+    renderPlaylist();
+}
+
+function showArtists() {
+    if (tracksContainer) tracksContainer.classList.remove('active');
+}
+
+// ===== QIBLA FUNCTIONS =====
+function initQibla() {
+    const KAABA_LAT = 21.4225;
+    const KAABA_LNG = 39.8262;
+    
+    const savedLat = localStorage.getItem('userLat');
+    const savedLng = localStorage.getItem('userLng');
+    
+    if (savedLat && savedLng) {
+        userLat = parseFloat(savedLat);
+        userLng = parseFloat(savedLng);
+        calculateAndDisplayQibla(userLat, userLng, KAABA_LAT, KAABA_LNG);
+    }
+    
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                userLat = position.coords.latitude;
+                userLng = position.coords.longitude;
+                
+                localStorage.setItem('userLat', userLat);
+                localStorage.setItem('userLng', userLng);
+                
+                calculateAndDisplayQibla(userLat, userLng, KAABA_LAT, KAABA_LNG);
+            },
+            (error) => {
+                if (!savedLat) {
+                    calculateAndDisplayQibla(-1.9403, 29.8739, KAABA_LAT, KAABA_LNG);
+                }
+            }
+        );
+    }
+    
+    startCompass();
+}
+
+function calculateAndDisplayQibla(lat, lng, kaabaLat, kaabaLng) {
+    const qibla = calculateQibla(lat, lng, kaabaLat, kaabaLng);
+    currentQibla = qibla;
+    
+    const degreeEl = document.getElementById('qiblaDegree');
+    const directionEl = document.getElementById('qiblaDirection');
+    const distanceEl = document.getElementById('distanceInfo');
+    
+    if (degreeEl) degreeEl.textContent = Math.round(qibla) + '°';
+    if (directionEl) directionEl.textContent = `Qibla: ${Math.round(qibla)}° kuva mu majyaruguru`;
+    
+    const distance = calculateDistance(lat, lng, kaabaLat, kaabaLng);
+    if (distanceEl) distanceEl.textContent = `${Math.round(distance)} km kugera Kaaba`;
+}
+
+function calculateQibla(lat1, lon1, lat2, lon2) {
+    const toRad = (deg) => deg * Math.PI / 180;
+    const toDeg = (rad) => rad * 180 / Math.PI;
+    
+    const φ1 = toRad(lat1);
+    const φ2 = toRad(lat2);
+    const Δλ = toRad(lon2 - lon1);
+    
+    const x = Math.sin(Δλ) * Math.cos(φ2);
+    const y = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+    
+    let qibla = toDeg(Math.atan2(x, y));
+    return (qibla + 360) % 360;
+}
+
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const toRad = (deg) => deg * Math.PI / 180;
+    
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+}
+
+function startCompass() {
+    if (window.DeviceOrientationEvent) {
+        window.addEventListener('deviceorientation', handleOrientation);
+    }
+}
+
+function handleOrientation(event) {
+    let heading = null;
+    
+    if (event.webkitCompassHeading !== undefined) {
+        heading = event.webkitCompassHeading;
+    } else if (event.alpha !== null) {
+        heading = 360 - event.alpha;
+    }
+    
+    if (heading !== null) {
+        compassHeading = heading;
+        const needleAngle = (currentQibla - compassHeading + 360) % 360;
+        const needle = document.getElementById('compassNeedle');
+        if (needle) {
+            needle.style.transform = `translate(-50%, -50%) rotate(${needleAngle}deg)`;
+        }
+    }
+}
+
+function calibrateCompass() {
+    showToast('Zunguza igikoresho cyawe mu buryo bwa 8', 'info');
+}
+
+// ===== PRAYER TIMES FUNCTIONS =====
+function initPrayerTimes() {
+    getUserLocation();
+}
+
+function getUserLocation() {
+    const savedLat = localStorage.getItem('userLat');
+    const savedLng = localStorage.getItem('userLng');
+    
+    if (savedLat && savedLng) {
+        userLat = parseFloat(savedLat);
+        userLng = parseFloat(savedLng);
+        const coordsEl = document.getElementById('locationCoords');
+        if (coordsEl) {
+            coordsEl.textContent = `${userLat.toFixed(4)}°, ${userLng.toFixed(4)}°`;
+        }
+        fetchPrayerTimes(userLat, userLng);
+    }
+    
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                userLat = position.coords.latitude;
+                userLng = position.coords.longitude;
+                
+                localStorage.setItem('userLat', userLat);
+                localStorage.setItem('userLng', userLng);
+                
+                const coordsEl = document.getElementById('locationCoords');
+                if (coordsEl) {
+                    coordsEl.textContent = `${userLat.toFixed(4)}°, ${userLng.toFixed(4)}°`;
+                }
+                
+                // Get location name
+                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${userLat}&lon=${userLng}&zoom=10`)
+                    .then(res => res.json())
+                    .then(data => {
+                        const city = data.address.city || data.address.town || data.address.village || 'Kigali';
+                        const country = data.address.country || 'Rwanda';
+                        const locationEl = document.getElementById('locationName');
+                        if (locationEl) locationEl.textContent = `${city}, ${country}`;
+                    })
+                    .catch(() => {
+                        const locationEl = document.getElementById('locationName');
+                        if (locationEl) locationEl.textContent = 'Aho uri';
+                    });
+                
+                fetchPrayerTimes(userLat, userLng);
+            },
+            () => {
+                if (!savedLat) {
+                    const locationEl = document.getElementById('locationName');
+                    if (locationEl) locationEl.textContent = 'Kigali, Rwanda';
+                    fetchPrayerTimes(-1.9403, 29.8739);
+                }
+            }
+        );
+    }
+}
+
+async function fetchPrayerTimes(lat, lng) {
+    if (!prayerTimesManager) return;
+    
+    const times = await prayerTimesManager.getPrayerTimes(lat, lng);
+    if (times) {
+        prayerTimes = times;
+        displayPrayerTimes(times);
+        
+        localStorage.setItem('prayerTimes', JSON.stringify(times));
+        localStorage.setItem('prayerDate', new Date().toDateString());
+        
+        const sourceEl = document.getElementById('prayerSource');
+        if (sourceEl) sourceEl.textContent = `Source: ${times.source}`;
+    }
+}
+
+function displayPrayerTimes(times) {
+    const prayers = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+    let html = '';
+    
+    prayers.forEach(prayer => {
+        html += `
+            <div class="prayer-card" id="prayer-${prayer}">
+                <div class="prayer-name">${prayer}</div>
+                <div class="prayer-time">${times[prayer]}</div>
+            </div>
+        `;
+    });
+    
+    const container = document.getElementById('prayerTimes');
+    if (container) {
+        container.innerHTML = html;
+    }
+    calculateNextPrayer(times);
+}
+
+function calculateNextPrayer(times) {
+    const now = new Date();
+    const current = now.getHours() * 60 + now.getMinutes();
+    
+    const prayers = [
+        { name: 'Fajr', time: times.Fajr },
+        { name: 'Sunrise', time: times.Sunrise },
+        { name: 'Dhuhr', time: times.Dhuhr },
+        { name: 'Asr', time: times.Asr },
+        { name: 'Maghrib', time: times.Maghrib },
+        { name: 'Isha', time: times.Isha }
+    ];
+    
+    let next = null;
+    for (let p of prayers) {
+        const [h, m] = p.time.split(':').map(Number);
+        const prayerMins = h * 60 + m;
+        if (prayerMins > current) {
+            next = p;
+            break;
+        }
+    }
+    
+    const nextPrayerText = document.getElementById('nextPrayerText');
+    const nextPrayerCountdown = document.getElementById('nextPrayerCountdown');
+    
+    if (next) {
+        const [h, m] = next.time.split(':').map(Number);
+        const prayerMins = h * 60 + m;
+        const diff = prayerMins - current;
+        const hours = Math.floor(diff / 60);
+        const mins = diff % 60;
+        
+        if (nextPrayerText) {
+            nextPrayerText.textContent = `${next.name} nyuma ya ${hours}h ${mins}m`;
+        }
+        if (nextPrayerCountdown) {
+            nextPrayerCountdown.innerHTML = `<span data-i18n="nextPrayerIn">Isengesho rikurikira:</span> ${hours}h ${mins}m`;
+        }
+    } else {
+        const [h, m] = prayers[0].time.split(':').map(Number);
+        const fajrMins = h * 60 + m;
+        const diff = (24 * 60 - current) + fajrMins;
+        const hours = Math.floor(diff / 60);
+        const mins = diff % 60;
+        
+        if (nextPrayerText) {
+            nextPrayerText.textContent = `Fajr nyuma ya ${hours}h ${mins}m`;
+        }
+    }
+}
+
+// ===== SECTION NAVIGATION =====
+function switchSection(sectionId) {
+    if (!loadingScreen?.classList.contains('hidden')) return;
+    
+    sections.forEach(s => s.classList.remove('active'));
+    const targetSection = document.getElementById(sectionId);
+    if (targetSection) {
+        targetSection.classList.add('active');
+        
+        if (sectionId === 'qibla') {
+            setTimeout(() => initQibla(), 100);
+        }
+        if (sectionId === 'prayer') {
+            updatePrayerTimes();
+        }
+        if (sectionId === 'audio') {
+            showArtists();
+        }
+    }
+}
+
+// ===== SCROLL BUTTONS =====
+function scrollToTop() {
+    const activeSection = document.querySelector('.section.active');
+    if (activeSection) {
+        activeSection.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+}
+
+function scrollToBottom() {
+    const activeSection = document.querySelector('.section.active');
+    if (activeSection) {
+        activeSection.scrollTo({ top: activeSection.scrollHeight, behavior: 'smooth' });
+    }
+}
+
+// Setup scroll buttons
+document.querySelectorAll('.section').forEach(section => {
+    section.addEventListener('scroll', () => {
+        const scrollTop = section.scrollTop;
+        const scrollHeight = section.scrollHeight;
+        const clientHeight = section.clientHeight;
+        
+        const topBtn = document.getElementById('scrollTopBtn');
+        const bottomBtn = document.getElementById('scrollBottomBtn');
+        
+        if (topBtn) topBtn.classList.toggle('visible', scrollTop > 100);
+        if (bottomBtn) {
+            bottomBtn.classList.toggle('visible', scrollTop + clientHeight < scrollHeight - 100);
+        }
+    });
+});
+
+// ===== DATE/TIME =====
+function updateDateTime() {
+    const now = new Date();
+    const gregorianEl = document.getElementById('gregorianDate');
+    const hijriEl = document.getElementById('hijriDate');
+    
+    if (gregorianEl) {
+        gregorianEl.textContent = now.toLocaleDateString();
+    }
+    
+    const hijri = getHijriDate(now);
+    if (hijriEl) {
+        hijriEl.textContent = hijri;
+    }
+}
+
+function getHijriDate(date) {
+    const hijriMonths = [
+        'Muharram', 'Safar', 'Rabi\' al-Awwal', 'Rabi\' al-Thani',
+        'Jumada al-Ula', 'Jumada al-Thani', 'Rajab', 'Sha\'ban',
+        'Ramadan', 'Shawwal', 'Dhu al-Qi\'dah', 'Dhu al-Hijjah'
+    ];
+    
+    // Simplified - in production use a proper library
+    return `27 ${hijriMonths[date.getMonth()]} 1445`;
+}
+
+// ===== QURAN FUNCTIONS =====
+function renderQuran() {
+    const container = document.getElementById('quranContainer');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    surahs.forEach(surah => {
+        const card = document.createElement('div');
+        card.className = 'surah-card';
+        card.innerHTML = `
+            <div class="surah-info">
+                <div class="surah-number">${surah.number}</div>
+                <div class="surah-details">
+                    <div class="surah-name">${surah.number}. ${surah.name}</div>
+                    <div class="surah-name-arabic">${surah.nameArabic}</div>
+                    <div class="surah-meta">${surah.ayahs} Ayat • ${surah.type}</div>
+                </div>
+            </div>
+            <div class="surah-actions">
+                <button class="surah-play-btn" onclick="playSurah(${surah.number})">
+                    <i class="fas fa-play"></i>
+                </button>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+function filterSurahs() {
+    const search = document.getElementById('quranSearch')?.value.toLowerCase() || '';
+    const cards = document.querySelectorAll('.surah-card');
+    cards.forEach(card => {
+        const name = card.querySelector('.surah-name')?.textContent.toLowerCase() || '';
+        card.style.display = name.includes(search) ? 'flex' : 'none';
+    });
+}
+
+function playSurah(surahNumber) {
+    const surahIndex = surahs.findIndex(s => s.number === surahNumber);
+    if (surahIndex === -1) return;
+    
+    // Stop lessons audio if playing
+    if (isPlaying) {
+        audio.pause();
+        isPlaying = false;
+        updatePlayPauseButton();
+        playerArt?.classList.remove('rotate');
+    }
+    
+    currentSurahIndex = surahIndex;
+    const surah = surahs[surahIndex];
+    
+    if (quranPlayer) {
+        quranPlayer.style.display = 'block';
+        quranPlayer.classList.add('active');
+    }
+    
+    const surahNameEl = document.getElementById('currentSurahName');
+    if (surahNameEl) {
+        surahNameEl.textContent = `${surah.number}. ${surah.name} (${surah.nameArabic})`;
+    }
+    
+    const quranAudio = document.getElementById('quranAudio');
+    if (quranAudio) {
+        quranAudio.src = surah.audioUrl;
+        quranAudio.play().catch(e => {
+            console.log('Quran playback failed:', e);
+            showToast('Failed to play Quran audio', 'error');
+        });
+    }
+    
+    // Update UI for playing state
+    document.querySelectorAll('.surah-play-btn').forEach(btn => {
+        btn.classList.remove('playing');
+        btn.innerHTML = '<i class="fas fa-play"></i>';
+    });
+    
+    const activeBtn = document.querySelector(`.surah-play-btn[onclick="playSurah(${surahNumber})"]`);
+    if (activeBtn) {
+        activeBtn.classList.add('playing');
+        activeBtn.innerHTML = '<i class="fas fa-pause"></i>';
+    }
+    
+    if (quranAudio) {
+        quranAudio.onended = function() {
+            if (currentSurahIndex < surahs.length - 1) {
+                setTimeout(() => {
+                    playSurah(surahs[currentSurahIndex + 1].number);
+                }, 1000);
+            } else {
+                currentSurahIndex = -1;
+                if (quranPlayer) quranPlayer.classList.remove('active');
+                if (activeBtn) {
+                    activeBtn.classList.remove('playing');
+                    activeBtn.innerHTML = '<i class="fas fa-play"></i>';
+                }
+            }
+        };
+        
+        quranAudio.onpause = function() {
+            if (activeBtn) {
+                activeBtn.classList.remove('playing');
+                activeBtn.innerHTML = '<i class="fas fa-play"></i>';
+            }
+        };
+        
+        quranAudio.onplay = function() {
+            if (activeBtn) {
+                activeBtn.classList.add('playing');
+                activeBtn.innerHTML = '<i class="fas fa-pause"></i>';
+            }
+        };
+    }
+}
+
+// ===== BOOKS FUNCTIONS =====
+function renderBooks() {
+    const container = document.getElementById('booksContainer');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    booksData.forEach(book => {
+        const title = currentLanguage === 'en' ? book.titleEn : 
+                     currentLanguage === 'ar' ? book.titleAr : book.title;
+        const author = currentLanguage === 'en' ? book.authorEn : 
+                      currentLanguage === 'ar' ? book.authorAr : book.author;
+        
+        const card = document.createElement('div');
+        card.className = 'book-card';
+        card.innerHTML = `
+            <div class="book-image" style="background-image: url('${book.image}')"></div>
+            <div class="book-info">
+                <h3 class="book-title">${title}</h3>
+                <div class="book-author">
+                    <i class="fas fa-user"></i> ${author}
+                </div>
+                <button class="book-read-btn" onclick="openBook(${book.id})">
+                    <i class="fas fa-book-open"></i> <span data-i18n="read">Soma</span>
+                </button>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+function openBook(bookId) {
+    const book = booksData.find(b => b.id === bookId);
+    if (!book) return;
+    
+    const title = currentLanguage === 'en' ? book.titleEn : 
+                 currentLanguage === 'ar' ? book.titleAr : book.title;
+    const author = currentLanguage === 'en' ? book.authorEn : 
+                  currentLanguage === 'ar' ? book.authorAr : book.author;
+    
+    const titleEl = document.getElementById('documentTitle');
+    if (titleEl) titleEl.textContent = title;
+    
+    if (documentReader) {
+        documentReader.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    const viewer = document.getElementById('documentViewer');
+    if (!viewer) return;
+    
+    if (book.type === 'pdf') {
+        // Initialize PDF manager if not exists
+        if (!pdfManager) {
+            pdfManager = new PDFManager();
+        }
+        
+        // Handle different path types
+        let pdfUrl = book.pdfUrl;
+        if (pdfUrl.startsWith('Document/')) {
+            // Use relative path
+        }
+        
+        // Open PDF quickly
+        pdfManager.openPDF(pdfUrl, title);
+    } else {
+        viewer.innerHTML = `
+            <div class="scrolling-reader">
+                <div class="book-header">
+                    <h1>${title}</h1>
+                    <div class="book-meta">
+                        <span><i class="fas fa-user"></i> ${author}</span>
+                        <span><i class="fas fa-tag"></i> ${book.category || 'Islamic'}</span>
+                    </div>
+                </div>
+                <div class="document-content">
+                    <p>${book.content || 'This book contains beneficial Islamic knowledge.'}</p>
+                    <p>May Allah increase us in knowledge and benefit us with what we learn.</p>
+                </div>
+            </div>
+        `;
+    }
+}
+
+function closeDocumentReader() {
+    if (documentReader) {
+        documentReader.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+}
+
+// ===== VIDEOS FUNCTIONS =====
+function renderVideos() {
+    const container = document.getElementById('videosContainer');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    videosData.forEach(video => {
+        const title = currentLanguage === 'en' ? video.titleEn : 
+                     currentLanguage === 'ar' ? video.titleAr : video.title;
+        const author = currentLanguage === 'en' ? video.authorEn : 
+                      currentLanguage === 'ar' ? video.authorAr : video.author;
+        
+        const card = document.createElement('div');
+        card.className = 'video-card';
+        card.innerHTML = `
+            <div class="video-thumbnail">
+                <img src="${video.thumbnail}" alt="${title}">
+                <div class="video-overlay">
+                    <div class="play-button">
+                        <i class="fas fa-play"></i>
+                    </div>
+                </div>
+                <div class="video-duration">${video.duration || '00:00'}</div>
+            </div>
+            <div class="video-info">
+                <h3 class="video-title">${title}</h3>
+                <div class="video-author">
+                    <i class="fas fa-user"></i> ${author}
+                </div>
+                <button class="watch-btn" onclick="playVideo(${video.id})">
+                    <i class="fas fa-play-circle"></i> <span data-i18n="watch">Reba</span>
+                </button>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+    
+    loadVideoDurations();
+}
+
+function loadVideoDurations() {
+    videosData.forEach(video => {
+        if (!video.duration || video.duration === '00:00') {
+            const tempVideo = document.createElement('video');
+            tempVideo.addEventListener('loadedmetadata', function() {
+                const minutes = Math.floor(this.duration / 60);
+                const seconds = Math.floor(this.duration % 60);
+                video.duration = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                renderVideos();
+            }, { once: true });
+            tempVideo.src = video.videoUrl;
+        }
+    });
+}
+
+function playVideo(videoId) {
+    const video = videosData.find(v => v.id === videoId);
+    if (!video) return;
+    
+    const title = currentLanguage === 'en' ? video.titleEn : 
+                 currentLanguage === 'ar' ? video.titleAr : video.title;
+    
+    const videoElement = document.getElementById('videoElement');
+    const videoTitleEl = document.getElementById('videoTitle');
+    
+    if (videoElement) videoElement.src = video.videoUrl;
+    if (videoTitleEl) videoTitleEl.textContent = title;
+    
+    if (!video.duration || video.duration === '00:00') {
+        if (videoElement) {
+            videoElement.addEventListener('loadedmetadata', function() {
+                const minutes = Math.floor(this.duration / 60);
+                const seconds = Math.floor(this.duration % 60);
+                video.duration = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }, { once: true });
+        }
+    }
+    
+    switchSection('videoPlayer');
+}
+
+function closeVideoPlayer() {
+    const videoElement = document.getElementById('videoElement');
+    if (videoElement) {
+        videoElement.pause();
+        videoElement.src = '';
+    }
+    switchSection('videos');
+}
+
+// ===== ADHKAR FUNCTIONS =====
+function toggleAdhkar() {
+    if (!loadingScreen?.classList.contains('hidden')) return;
+    const panel = document.getElementById('adhkarPanel');
+    if (panel) panel.classList.toggle('active');
+}
+
+function updateCounter(index, delta) {
+    counters[index] = Math.max(0, Math.min(maxCounts[index], counters[index] + delta));
+    const counterEl = document.getElementById(`counter${index}`);
+    if (counterEl) {
+        counterEl.textContent = `${counters[index]}/${maxCounts[index]}`;
+    }
+    localStorage.setItem('adhkarCounts', JSON.stringify(counters));
+}
+
+function updateAdhkarTimer() {
+    const now = new Date();
+    const timeEl = document.getElementById('currentTime');
+    if (timeEl) {
+        timeEl.textContent = now.toLocaleTimeString();
+    }
+    
+    const hours = now.getHours();
+    const nextAdhkarEl = document.getElementById('nextAdhkar');
+    if (nextAdhkarEl) {
+        if (hours < 6) {
+            nextAdhkarEl.textContent = `Adhkar za Fajr nyuma ya ${6 - hours}h`;
+        } else if (hours < 18) {
+            nextAdhkarEl.textContent = 'Adhkar za Buri Munsi';
+        } else {
+            nextAdhkarEl.textContent = 'Adhkar za Fajr saa kumi n\'ebyiri';
+        }
+    }
+}
+
+// ===== SETTINGS FUNCTIONS =====
+function toggleSettings() {
+    if (!loadingScreen?.classList.contains('hidden')) return;
+    const panel = document.getElementById('settingsPanel');
+    if (panel) panel.classList.toggle('active');
+}
+
+function toggleSilentMode() {
+    silentMode = !silentMode;
+    const toggle = document.getElementById('silentToggle');
+    if (toggle) toggle.classList.toggle('active', silentMode);
+    document.body.classList.toggle('silent-mode', silentMode);
+    localStorage.setItem('silentMode', silentMode);
+}
+
+function toggleSmartSilent() {
+    smartSilent = !smartSilent;
+    const toggle = document.getElementById('smartSilentToggle');
+    if (toggle) toggle.classList.toggle('active', smartSilent);
+    localStorage.setItem('smartSilent', smartSilent);
+}
+
+function renderPrayerCheckboxes() {
+    const container = document.getElementById('prayerCheckboxes');
+    if (!container) return;
+    
+    const prayers = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+    
+    container.innerHTML = '';
+    prayers.forEach(prayer => {
+        const div = document.createElement('div');
+        div.className = 'prayer-checkbox';
+        div.innerHTML = `
+            <input type="checkbox" id="silent-${prayer}" value="${prayer}" checked>
+            <label for="silent-${prayer}">${prayer}</label>
+        `;
+        container.appendChild(div);
+    });
+}
+
+function checkSmartSilent() {
+    if (!smartSilent || !prayerTimes) return;
+    
+    const now = new Date();
+    const currentTime = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+    
+    const prayers = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+    let shouldBeSilent = false;
+    
+    for (let prayer of prayers) {
+        const checkbox = document.getElementById(`silent-${prayer}`);
+        if (checkbox && checkbox.checked && prayerTimes[prayer] === currentTime) {
+            shouldBeSilent = true;
+            break;
+        }
+    }
+    
+    if (shouldBeSilent && !silentMode) {
+        silentMode = true;
+        document.body.classList.add('silent-mode');
+        const toggle = document.getElementById('silentToggle');
+        if (toggle) toggle.classList.add('active');
+    } else if (!shouldBeSilent && silentMode) {
+        silentMode = false;
+        document.body.classList.remove('silent-mode');
+        const toggle = document.getElementById('silentToggle');
+        if (toggle) toggle.classList.remove('active');
+    }
+}
+
+function toggleAdhan() {
+    if (adhanManager) {
+        adhanManager.toggle();
+        const toggle = document.getElementById('adhanToggle');
+        if (toggle) toggle.classList.toggle('active', adhanManager.enabled);
+    } else {
+        adhanEnabled = !adhanEnabled;
+        const toggle = document.getElementById('adhanToggle');
+        if (toggle) toggle.classList.toggle('active', adhanEnabled);
+        localStorage.setItem('adhanEnabled', adhanEnabled);
+    }
+}
+
+function changeAdhanReciter(reciter) {
+    if (adhanManager) {
+        adhanManager.changeReciter(reciter);
+    } else {
+        localStorage.setItem('selectedReciter', reciter);
+    }
+}
+
+function updateAdhanVolume(volume) {
+    if (adhanManager) {
+        adhanManager.setVolume(parseInt(volume));
+    } else {
+        const display = document.getElementById('adhanVolumeDisplay');
+        if (display) display.textContent = volume + '%';
+        localStorage.setItem('adhanVolume', volume);
+    }
+}
+
+function setAdhanVolume() {
+    const volume = document.getElementById('adhanVolume')?.value;
+    if (volume) updateAdhanVolume(volume);
+}
+
+function toggleReminders() {
+    remindersEnabled = !remindersEnabled;
+    const toggle = document.getElementById('reminderToggle');
+    if (toggle) toggle.classList.toggle('active', remindersEnabled);
+    localStorage.setItem('remindersEnabled', remindersEnabled);
+}
+
+function updateReminderInterval(val) {
+    const value = parseInt(val);
+    const display = document.getElementById('reminderIntervalDisplay');
+    if (display) display.textContent = value + ' minutes';
+    localStorage.setItem('reminderInterval', value);
+    
+    if (adhkarReminderManager) {
+        adhkarReminderManager.setInterval(value);
+    }
+}
+
+function toggleScheduledSilent() {
+    if (silentModeManager) {
+        silentModeManager.toggle();
+        const toggle = document.getElementById('scheduledSilentToggle');
+        if (toggle) toggle.classList.toggle('active', silentModeManager.enabled);
+    }
+}
+
+function updateSilentTimes() {
+    const start = document.getElementById('silentStart')?.value;
+    const end = document.getElementById('silentEnd')?.value;
+    
+    if (start && end) {
+        if (silentModeManager) {
+            silentModeManager.setSchedule(start, end);
+        } else {
+            localStorage.setItem('silentStart', start);
+            localStorage.setItem('silentEnd', end);
+        }
+    }
+}
+
+function toggleAdhkarReminders() {
+    if (adhkarReminderManager) {
+        adhkarReminderManager.toggle();
+        const toggle = document.getElementById('adhkarReminderToggle');
+        if (toggle) toggle.classList.toggle('active', adhkarReminderManager.enabled);
+    }
+}
+
+function snoozeAdhkar() {
+    if (adhkarReminderManager) {
+        adhkarReminderManager.snooze();
+    }
+}
+
+function dismissAdhkar() {
+    if (adhkarReminderManager) {
+        adhkarReminderManager.dismiss();
+    }
+}
+
+// ===== ADHAN FUNCTIONS =====
+function checkAdhanTime() {
+    if (!adhanManager || !adhanManager.enabled || silentMode) return;
+    
+    if (prayerTimes) {
+        const now = new Date();
+        const currentTime = now.getHours().toString().padStart(2,'0') + ':' + 
+                          now.getMinutes().toString().padStart(2,'0');
+        
+        const prayers = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+        prayers.forEach(prayer => {
+            if (prayerTimes[prayer] === currentTime) {
+                adhanManager.playAdhan(prayer);
+            }
+        });
+    }
+}
+
+function closeAdhanNotification() {
+    const notification = document.getElementById('adhanNotification');
+    if (notification) notification.classList.remove('show');
+}
+
+function setAdhanSource(reciter) {
+    const adhanAudio = document.getElementById('adhanAudio');
+    if (!adhanAudio) return;
+    
+    if (customAdhanUrl) {
+        adhanAudio.src = customAdhanUrl;
+        return;
+    }
+    
+    const adhanUrls = {
+        mishary: 'audio/Adhan2.mpeg',
+        sudais: 'audio/Adhan1.mpeg',
+        abdulbasit: 'audio/Mansour_Adhan.mpeg'
+    };
+    
+    adhanAudio.src = adhanUrls[reciter] || adhanUrls.mishary;
+}
+
+function loadCustomAdhan() {
+    const customAdhanData = localStorage.getItem('customAdhanData');
+    const customAdhanName = localStorage.getItem('customAdhanName');
+    
+    if (customAdhanData) {
+        fetch(customAdhanData)
+            .then(res => res.blob())
+            .then(blob => {
+                customAdhanBlob = blob;
+                customAdhanUrl = URL.createObjectURL(blob);
+                
+                const infoEl = document.getElementById('customAdhanInfo');
+                const fileNameEl = document.getElementById('customAdhanFileName');
+                const sourceEl = document.getElementById('customAdhanSource');
+                const previewEl = document.getElementById('customAdhanPreview');
+                
+                if (infoEl) infoEl.style.display = 'block';
+                if (fileNameEl) fileNameEl.textContent = customAdhanName || 'Custom Adhan';
+                if (sourceEl) sourceEl.src = customAdhanUrl;
+                if (previewEl) previewEl.load();
+                
+                const adhanAudio = document.getElementById('adhanAudio');
+                if (adhanAudio) adhanAudio.src = customAdhanUrl;
+            })
+            .catch(err => console.log('Failed to load custom adhan:', err));
+    }
+}
+
+function removeCustomAdhan() {
+    if (customAdhanUrl) {
+        URL.revokeObjectURL(customAdhanUrl);
+        customAdhanUrl = null;
+    }
+    customAdhanBlob = null;
+    
+    const infoEl = document.getElementById('customAdhanInfo');
+    const fileNameEl = document.getElementById('customAdhanFileName');
+    const sourceEl = document.getElementById('customAdhanSource');
+    
+    if (infoEl) infoEl.style.display = 'none';
+    if (fileNameEl) fileNameEl.textContent = '';
+    if (sourceEl) sourceEl.src = '';
+    
+    localStorage.removeItem('customAdhanData');
+    localStorage.removeItem('customAdhanName');
+    localStorage.removeItem('customAdhanUploaded');
+    
+    const reciter = document.getElementById('adhanReciter')?.value;
+    if (reciter) setAdhanSource(reciter);
+}
+
+function updatePrayerTimes() {
+    if (prayerTimes) {
+        calculateNextPrayer(prayerTimes);
+    }
+}
+
+// ===== TOAST NOTIFICATION =====
+function showToast(message, type = 'info') {
+    const toast = document.getElementById('adhanToast');
+    if (!toast) return;
+    
+    const icon = type === 'error' ? 'fa-exclamation-circle' : 
+                 type === 'success' ? 'fa-check-circle' : 'fa-info-circle';
+    const color = type === 'error' ? '#dc3545' : 
+                  type === 'success' ? '#28a745' : '#d4af37';
+    
+    toast.innerHTML = `
+        <i class="fas ${icon}" style="color: ${color}; font-size: 24px; margin-right: 10px;"></i>
+        <div>
+            <strong>${type === 'error' ? 'Error' : type === 'success' ? 'Success' : 'Info'}</strong>
+            <p style="margin: 5px 0 0; font-size: 14px;">${message}</p>
+        </div>
+    `;
+    
+    toast.classList.add('show');
+    
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3000);
+}
+
+// ===== I18N FUNCTIONS =====
+function applyLanguage(lang) {
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    
+    const currentLangEl = document.getElementById('currentLang');
+    if (currentLangEl) {
+        currentLangEl.textContent = lang === 'rw' ? 'RW' : lang.toUpperCase();
+    }
+    
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (translations[lang] && translations[lang][key]) {
+            el.textContent = translations[lang][key];
+        }
+    });
+    
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        if (translations[lang] && translations[lang][key]) {
+            el.placeholder = translations[lang][key];
+        }
+    });
+    
+    document.querySelectorAll('.lang-option').forEach(opt => opt.classList.remove('active'));
+    const activeOption = document.querySelector(`.lang-option[onclick="changeLanguage('${lang}')"]`);
+    if (activeOption) activeOption.classList.add('active');
+    
+    localStorage.setItem('language', lang);
+    
+    renderQuran();
+    renderArtists();
+    renderBooks();
+    renderVideos();
+}
+
+function changeLanguage(lang) {
+    currentLanguage = lang;
+    applyLanguage(lang);
+    
+    const dropdown = document.querySelector('.lang-dropdown');
+    if (dropdown) dropdown.classList.remove('show');
+}
+
+function detectDeviceLanguage() {
+    const deviceLang = navigator.language.split('-')[0];
+    if (['en', 'fr', 'ar'].includes(deviceLang) && !localStorage.getItem('language')) {
+        changeLanguage(deviceLang);
+    }
+}
+
+// Language dropdown
+const langBtn = document.querySelector('.lang-btn');
+if (langBtn) {
+    langBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const dropdown = document.querySelector('.lang-dropdown');
+        if (dropdown) dropdown.classList.toggle('show');
+    });
+}
+
+document.addEventListener('click', function() {
+    const dropdown = document.querySelector('.lang-dropdown');
+    if (dropdown) dropdown.classList.remove('show');
+});
+
+// ===== LOAD/SAVE STATE =====
+function loadSavedState() {
+    const savedCounts = localStorage.getItem('adhkarCounts');
+    if (savedCounts) {
+        counters = JSON.parse(savedCounts);
+        for (let i = 0; i < 3; i++) {
+            const counterEl = document.getElementById(`counter${i}`);
+            if (counterEl) {
+                counterEl.textContent = `${counters[i]}/${maxCounts[i]}`;
+            }
+        }
+    }
+    
+    const savedSilent = localStorage.getItem('silentMode');
+    if (savedSilent === 'true') {
+        silentMode = true;
+        const toggle = document.getElementById('silentToggle');
+        if (toggle) toggle.classList.add('active');
+        document.body.classList.add('silent-mode');
+    }
+    
+    const savedSmartSilent = localStorage.getItem('smartSilent');
+    if (savedSmartSilent === 'true') {
+        smartSilent = true;
+        const toggle = document.getElementById('smartSilentToggle');
+        if (toggle) toggle.classList.add('active');
+    }
+    
+    const savedAdhan = localStorage.getItem('adhanEnabled');
+    if (savedAdhan !== null) {
+        adhanEnabled = savedAdhan === 'true';
+        const toggle = document.getElementById('adhanToggle');
+        if (toggle) toggle.classList.toggle('active', adhanEnabled);
+    }
+    
+    const savedReminders = localStorage.getItem('remindersEnabled');
+    if (savedReminders !== null) {
+        remindersEnabled = savedReminders === 'true';
+        const toggle = document.getElementById('reminderToggle');
+        if (toggle) toggle.classList.toggle('active', remindersEnabled);
+    }
+}
+
+// ===== CAROUSEL =====
+let carouselIndex = 0;
+
+function renderCarousel() {
+    const track = document.getElementById('carouselTrack');
+    const dots = document.getElementById('carouselDots');
+    if (!track || !dots) return;
+
+    const featured = [];
+    artistsData.forEach(a => {
+        a.tracks.forEach(t => {
+            if (featured.length < 10) {
+                featured.push({ title: t.title, artist: a.name, image: a.image, artistId: a.id, trackId: t.id });
+            }
+        });
+    });
+    if (featured.length === 0) return;
+
+    track.innerHTML = featured.map((item, i) => `
+        <div class="carousel-slide" onclick="playTrack(${item.artistId}, ${item.trackId})">
+            <img src="${item.image}" alt="${item.title}" loading="lazy">
+            <div class="carousel-slide-overlay">
+                <h3>${item.title}</h3>
+                <p>${item.artist}</p>
+            </div>
+        </div>
+    `).join('');
+
+    dots.innerHTML = featured.map((_, i) => `
+        <button class="carousel-dot${i === 0 ? ' active' : ''}" onclick="goToCarousel(${i})"></button>
+    `).join('');
+
+    carouselIndex = 0;
+}
+
+function moveCarousel(dir) {
+    const track = document.getElementById('carouselTrack');
+    const dots = document.querySelectorAll('.carousel-dot');
+    if (!track || !dots.length) return;
+
+    carouselIndex = (carouselIndex + dir + dots.length) % dots.length;
+    track.style.transform = `translateX(-${carouselIndex * 100}%)`;
+    dots.forEach((d, i) => d.classList.toggle('active', i === carouselIndex));
+}
+
+function goToCarousel(index) {
+    const track = document.getElementById('carouselTrack');
+    const dots = document.querySelectorAll('.carousel-dot');
+    if (!track) return;
+
+    carouselIndex = index;
+    track.style.transform = `translateX(-${index * 100}%)`;
+    dots.forEach((d, i) => d.classList.toggle('active', i === index));
+}
+
+// ===== STATS =====
+function updateStats() {
+    const teachers = document.getElementById('statTeachers');
+    const lessons = document.getElementById('statLessons');
+    const videos = document.getElementById('statVideos');
+    const books = document.getElementById('statBooks');
+
+    if (teachers) {
+        let total = 0;
+        artistsData.forEach(a => total += a.tracks.length);
+        teachers.textContent = artistsData.length;
+        if (lessons) lessons.textContent = total;
+    }
+    if (videos) videos.textContent = videosData.length;
+    if (books) books.textContent = booksData.length;
+}
+
+// ===== VIDEO FILTERS =====
+function renderVideoFilters() {
+    const container = document.getElementById('videoFilters');
+    if (!container) return;
+
+    const categories = new Set();
+    categories.add('all');
+    videosData.forEach(v => {
+        const cat = v.category || 'other';
+        categories.add(cat.toLowerCase());
+    });
+
+    container.innerHTML = Array.from(categories).map(cat => `
+        <button class="filter-btn${cat === 'all' ? ' active' : ''}" data-filter="${cat}" onclick="filterVideos('${cat}')">
+            ${cat.charAt(0).toUpperCase() + cat.slice(1)}
+        </button>
+    `).join('');
+}
+
+function filterVideos(filter) {
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.filter === filter);
+    });
+
+    document.querySelectorAll('.video-card').forEach(card => {
+        const cardFilter = card.dataset.category || 'other';
+        card.style.display = filter === 'all' || cardFilter === filter ? '' : 'none';
+    });
+}
+
+// ===== PLAYLIST =====
+function togglePlaylist() {
+    const playlist = document.getElementById('playerPlaylist');
+    if (playlist) playlist.classList.toggle('open');
+}
+
+function renderPlaylist() {
+    const container = document.getElementById('playlistTracks');
+    const count = document.getElementById('playlistCount');
+    if (!container || !selectedArtist) return;
+
+    if (count) count.textContent = `${selectedArtist.tracks.length} inyigisho`;
+
+    const lang = currentLanguage;
+    container.innerHTML = selectedArtist.tracks.map((t, i) => {
+        const title = lang === 'en' ? t.titleEn : lang === 'ar' ? t.titleAr : t.title;
+        const artist = lang === 'en' ? selectedArtist.nameEn : lang === 'ar' ? selectedArtist.nameAr : selectedArtist.name;
+        const isActive = i === currentTrackIndex;
+        return `
+            <div class="playlist-track${isActive ? ' active' : ''}" onclick="playTrack(${selectedArtist.id}, ${t.id})">
+                <img class="playlist-track-img" src="${selectedArtist.image}" alt="">
+                <div class="playlist-track-info">
+                    <div class="playlist-track-title">${title}</div>
+                    <div class="playlist-track-artist">${artist}</div>
+                </div>
+                <span class="playlist-track-duration">${t.duration || '00:00'}</span>
+                ${isActive ? '<span class="play-indicator"><i class="fas fa-volume-up"></i></span>' : ''}
+            </div>
+        `;
+    }).join('');
+}
+
+function toggleShuffle() {
+    isRandom = !isRandom;
+    const btn = document.getElementById('shuffleBtn');
+    if (btn) btn.classList.toggle('active');
+}
+
+function toggleRepeat() {
+    isRepeat = !isRepeat;
+    const btn = document.getElementById('repeatBtn');
+    if (btn) btn.classList.toggle('active');
+}
+
+// ===== INITIALIZATION =====
+document.addEventListener('DOMContentLoaded', function() {
+    let progress = 0;
+    const loadingBar = document.getElementById('loadingBar');
+    const loadingPercentage = document.getElementById('loadingPercentage');
+    
+    const interval = setInterval(() => {
+        progress += 2;
+        if (loadingBar) loadingBar.style.width = progress + '%';
+        if (loadingPercentage) loadingPercentage.textContent = progress + '%';
+        
+        if (progress >= 100) {
+            clearInterval(interval);
+            setTimeout(() => {
+                if (loadingScreen) loadingScreen.classList.add('hidden');
+                
+                // Initialize managers
+                prayerTimesManager = new PrayerTimesManager();
+                adhanManager = new AdhanManager();
+                silentModeManager = new SilentModeManager();
+                adhkarReminderManager = new AdhkarReminderManager();
+                audioManager = new AudioManager();
+                pdfManager = new PDFManager();
+                
+                // Load saved states
+                const scheduledToggle = document.getElementById('scheduledSilentToggle');
+                if (scheduledToggle) scheduledToggle.classList.toggle('active', silentModeManager.enabled);
+                
+                const silentStart = document.getElementById('silentStart');
+                if (silentStart) silentStart.value = silentModeManager.startTime;
+                
+                const silentEnd = document.getElementById('silentEnd');
+                if (silentEnd) silentEnd.value = silentModeManager.endTime;
+                
+                const adhkarToggle = document.getElementById('adhkarReminderToggle');
+                if (adhkarToggle) adhkarToggle.classList.toggle('active', adhkarReminderManager.enabled);
+                
+                const reminderInterval = document.getElementById('reminderInterval');
+                if (reminderInterval) reminderInterval.value = adhkarReminderManager.interval;
+                
+                const intervalDisplay = document.getElementById('reminderIntervalDisplay');
+                if (intervalDisplay) intervalDisplay.textContent = adhkarReminderManager.interval + ' minutes';
+                
+                // Load audio durations
+                loadAudioDurations();
+                
+            }, 500);
+        }
+    }, 50);
+    
+    detectDeviceLanguage();
+    
+    // Load data from API (falls back to local data if server unavailable)
+    loadDataFromAPI();
+    
+    // Try updating prayer times from API
+    fetchFromAPI('/quran/surahs').then(data => {
+        if (data && data.length > 0) {
+            console.log('API data loaded successfully');
+        }
+    });
+    
+    // Initialize with fallback data (API will override if available)
+    initFallbackData();
+    renderCarousel();
+    updateStats();
+    renderVideoFilters();
+    updateDateTime();
+    initPrayerTimes();
+    initQibla();
+    loadSavedState();
+    renderPrayerCheckboxes();
+    
+    loadCustomAdhan();
+    
+    // Set intervals
+    setInterval(updateDateTime, 1000);
+    setInterval(updateAdhkarTimer, 1000);
+    setInterval(checkAdhanTime, 10000);
+    setInterval(checkSmartSilent, 30000);
+    
+    applyLanguage(currentLanguage);
+    
+    if ('Notification' in window) {
+        Notification.requestPermission();
+    }
+    
+    setupAudioListeners();
+    
+    // Close buttons
+    const closeDocBtn = document.getElementById('closeDocument');
+    if (closeDocBtn) {
+        closeDocBtn.addEventListener('click', closeDocumentReader);
+    }
+    
+    const backToTopBtn = document.getElementById('backToTop');
+    if (backToTopBtn) {
+        backToTopBtn.addEventListener('click', () => {
+            const viewer = document.getElementById('documentViewer');
+            if (viewer) viewer.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    }
+});
+
+// Make functions globally available
+window.switchSection = switchSection;
+window.toggleAdhkar = toggleAdhkar;
+window.toggleSettings = toggleSettings;
+window.changeLanguage = changeLanguage;
+window.updateCounter = updateCounter;
+window.toggleSilentMode = toggleSilentMode;
+window.toggleSmartSilent = toggleSmartSilent;
+window.toggleAdhan = toggleAdhan;
+window.setAdhanVolume = setAdhanVolume;
+window.toggleReminders = toggleReminders;
+window.updateReminderInterval = updateReminderInterval;
+window.calibrateCompass = calibrateCompass;
+window.getUserLocation = getUserLocation;
+window.filterSurahs = filterSurahs;
+window.playSurah = playSurah;
+window.filterArtists = filterArtists;
+window.showArtists = showArtists;
+window.playTrack = playTrack;
+window.closeAdhanNotification = closeAdhanNotification;
+window.scrollToTop = scrollToTop;
+window.scrollToBottom = scrollToBottom;
+window.closeVideoPlayer = closeVideoPlayer;
+window.openBook = openBook;
+window.playVideo = playVideo;
+window.removeCustomAdhan = removeCustomAdhan;
+window.togglePlayPause = togglePlayPause;
+window.previousTrack = previousTrack;
+window.nextTrack = nextTrack;
+window.seekTo = seekTo;
+window.setVolumeFromClick = setVolumeFromClick;
+window.closePlayer = closePlayer;
+window.changeAdhanReciter = changeAdhanReciter;
+window.updateAdhanVolume = updateAdhanVolume;
+window.toggleScheduledSilent = toggleScheduledSilent;
+window.updateSilentTimes = updateSilentTimes;
+window.toggleAdhkarReminders = toggleAdhkarReminders;
+window.snoozeAdhkar = snoozeAdhkar;
+window.dismissAdhkar = dismissAdhkar;
+window.moveCarousel = moveCarousel;
+window.goToCarousel = goToCarousel;
+window.filterVideos = filterVideos;
+window.togglePlaylist = togglePlaylist;
+window.toggleShuffle = toggleShuffle;
+window.toggleRepeat = toggleRepeat;
+
