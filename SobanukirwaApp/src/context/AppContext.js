@@ -6,25 +6,36 @@ import { fetchTracks, fetchCategories, fetchSurahs, fetchVideos, fetchBooks } fr
 const AppContext = createContext();
 
 const COLORS = {
-  primary: '#1e3c5c',
-  primaryDark: '#0f2a3f',
-  primaryLight: '#2d5679',
-  secondary: '#d4af37',
-  secondaryLight: '#f1c40f',
-  secondaryDark: '#b4941c',
-  accent: '#8b6b4d',
-  accentLight: '#b5926c',
-  background: '#0b1a2a',
-  surface: 'rgba(30, 60, 92, 0.2)',
-  surfaceDark: 'rgba(11, 26, 42, 0.95)',
-  text: '#f0f4fa',
-  textMuted: '#a8c1d9',
-  textGold: '#d4af37',
-  error: '#e74c3c',
-  success: '#27ae60',
-  warning: '#f39c12',
-  border: 'rgba(212, 175, 55, 0.2)',
+  primary: '#0F766E',
+  primaryDark: '#0D5C56',
+  primaryLight: '#14B8A6',
+  secondary: '#14B8A6',
+  secondaryLight: '#2DD4BF',
+  secondaryDark: '#0D9488',
+  accent: '#F59E0B',
+  accentLight: '#FBBF24',
+  background: '#F8FAFC',
+  surface: '#FFFFFF',
+  surfaceDark: '#F1F5F9',
+  text: '#111827',
+  textMuted: '#6B7280',
+  textGold: '#F59E0B',
+  error: '#EF4444',
+  success: '#10B981',
+  warning: '#F59E0B',
+  border: '#E5E7EB',
 };
+
+const CACHE_KEYS = {
+  tracks: 'cache_tracks',
+  categories: 'cache_categories',
+  surahs: 'cache_surahs',
+  videos: 'cache_videos',
+  books: 'cache_books',
+  cacheTime: 'cache_time',
+};
+
+const CACHE_DURATION = 24 * 60 * 60 * 1000;
 
 export function AppProvider({ children }) {
   const [tracks, setTracks] = useState([]);
@@ -132,6 +143,73 @@ export function AppProvider({ children }) {
     try { await AsyncStorage.setItem('bookmarks', JSON.stringify(newBookmarks)); } catch (e) {}
   }
 
+  async function saveCacheData(data) {
+    try {
+      await Promise.all([
+        AsyncStorage.setItem(CACHE_KEYS.tracks, JSON.stringify(data.tracks || [])),
+        AsyncStorage.setItem(CACHE_KEYS.categories, JSON.stringify(data.categories || [])),
+        AsyncStorage.setItem(CACHE_KEYS.surahs, JSON.stringify(data.surahs || [])),
+        AsyncStorage.setItem(CACHE_KEYS.videos, JSON.stringify(data.videos || [])),
+        AsyncStorage.setItem(CACHE_KEYS.books, JSON.stringify(data.books || [])),
+        AsyncStorage.setItem(CACHE_KEYS.cacheTime, String(Date.now())),
+      ]);
+    } catch (e) {}
+  }
+
+  async function loadCacheData() {
+    try {
+      const [cachedTracks, cachedCategories, cachedSurahs, cachedVideos, cachedBooks] = await Promise.all([
+        AsyncStorage.getItem(CACHE_KEYS.tracks),
+        AsyncStorage.getItem(CACHE_KEYS.categories),
+        AsyncStorage.getItem(CACHE_KEYS.surahs),
+        AsyncStorage.getItem(CACHE_KEYS.videos),
+        AsyncStorage.getItem(CACHE_KEYS.books),
+      ]);
+      return {
+        tracks: cachedTracks ? JSON.parse(cachedTracks) : [],
+        categories: cachedCategories ? JSON.parse(cachedCategories) : [],
+        surahs: cachedSurahs ? JSON.parse(cachedSurahs) : [],
+        videos: cachedVideos ? JSON.parse(cachedVideos) : [],
+        books: cachedBooks ? JSON.parse(cachedBooks) : [],
+      };
+    } catch (e) {
+      return { tracks: [], categories: [], surahs: [], videos: [], books: [] };
+    }
+  }
+
+  async function clearCache() {
+    try {
+      await Promise.all([
+        AsyncStorage.removeItem(CACHE_KEYS.tracks),
+        AsyncStorage.removeItem(CACHE_KEYS.categories),
+        AsyncStorage.removeItem(CACHE_KEYS.surahs),
+        AsyncStorage.removeItem(CACHE_KEYS.videos),
+        AsyncStorage.removeItem(CACHE_KEYS.books),
+        AsyncStorage.removeItem(CACHE_KEYS.cacheTime),
+      ]);
+    } catch (e) {}
+  }
+
+  async function getCacheInfo() {
+    try {
+      const [cacheTime, tracksCount, categoriesCount, surahsCount, videosCount, booksCount] = await Promise.all([
+        AsyncStorage.getItem(CACHE_KEYS.cacheTime),
+        AsyncStorage.getItem(CACHE_KEYS.tracks).then(d => d ? JSON.parse(d).length : 0),
+        AsyncStorage.getItem(CACHE_KEYS.categories).then(d => d ? JSON.parse(d).length : 0),
+        AsyncStorage.getItem(CACHE_KEYS.surahs).then(d => d ? JSON.parse(d).length : 0),
+        AsyncStorage.getItem(CACHE_KEYS.videos).then(d => d ? JSON.parse(d).length : 0),
+        AsyncStorage.getItem(CACHE_KEYS.books).then(d => d ? JSON.parse(d).length : 0),
+      ]);
+      return {
+        lastUpdated: cacheTime ? new Date(parseInt(cacheTime)) : null,
+        itemCounts: { tracks: tracksCount, categories: categoriesCount, surahs: surahsCount, videos: videosCount, books: booksCount },
+        totalItems: tracksCount + categoriesCount + surahsCount + videosCount + booksCount,
+      };
+    } catch (e) {
+      return { lastUpdated: null, itemCounts: { tracks: 0, categories: 0, surahs: 0, videos: 0, books: 0 }, totalItems: 0 };
+    }
+  }
+
   const loadAllData = async () => {
     setLoading(true);
     setError(null);
@@ -144,8 +222,18 @@ export function AppProvider({ children }) {
       setSurahs(s);
       setVideos(v);
       setBooks(b);
+      await saveCacheData({ tracks: t, categories: c, surahs: s, videos: v, books: b });
     } catch (e) {
-      setError('Failed to load data');
+      const cached = await loadCacheData();
+      if (cached.surahs.length > 0 || cached.tracks.length > 0) {
+        setTracks(cached.tracks);
+        setCategories(cached.categories);
+        setSurahs(cached.surahs);
+        setVideos(cached.videos);
+        setBooks(cached.books);
+      } else {
+        setError('Failed to load data');
+      }
     }
     setLoading(false);
   };
@@ -162,8 +250,16 @@ export function AppProvider({ children }) {
       setSurahs(s);
       setVideos(v);
       setBooks(b);
+      await saveCacheData({ tracks: t, categories: c, surahs: s, videos: v, books: b });
     } catch (e) {
-      setError('Failed to refresh');
+      const cached = await loadCacheData();
+      if (cached.surahs.length > 0 || cached.tracks.length > 0) {
+        setTracks(cached.tracks);
+        setCategories(cached.categories);
+        setSurahs(cached.surahs);
+        setVideos(cached.videos);
+        setBooks(cached.books);
+      }
     }
     setRefreshing(false);
   }, []);
@@ -214,6 +310,7 @@ export function AppProvider({ children }) {
       silentPrayers, setSilentPrayers,
       isEffectivelySilent, isScheduledSilentActive,
       adminLoggedIn, setAdminLoggedIn,
+      clearCache, getCacheInfo,
     }}>
       {children}
     </AppContext.Provider>

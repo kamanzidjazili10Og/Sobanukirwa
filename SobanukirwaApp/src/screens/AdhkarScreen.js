@@ -1,13 +1,16 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator, Animated } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator, Animated, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { BookOpen, Search, BookMarked, RotateCcw, ChevronLeft, Hand, Hash } from 'lucide-react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Audio } from 'expo-av';
 import { useApp } from '../context/AppContext';
 import { fetchAdhkar, getMediaUrl } from '../services/api';
-import ScreenBackground from '../components/ScreenBackground';
+
+let Audio = null;
+if (Platform.OS !== 'web') {
+  try { Audio = require('expo-av').Audio; } catch (e) {}
+}
 
 const FALLBACK_ADHKAR = [
   { id: 1, arabic: 'سُبْحَانَ اللَّهِ', transliteration: 'Subhanallah', translation_en: 'Glory be to Allah', translation_rw: 'Imana ni yose', count_target: 33, category: 'general' },
@@ -30,8 +33,31 @@ const CATEGORIES = [
   { key: 'sleep', labelRw: 'Buririro', labelEn: 'Sleep', labelAr: 'نوم', icon: 'bed' },
 ];
 
+const CATEGORY_ICONS = {
+  all: BookOpen,
+  general: BookMarked,
+  morning: Hash,
+  evening: RotateCcw,
+  sleep: Hand,
+};
+
+const COLORS = {
+  primary: '#0F766E',
+  secondary: '#14B8A6',
+  accent: '#F59E0B',
+  background: '#F8FAFC',
+  surface: '#FFFFFF',
+  card: '#FFFFFF',
+  text: '#111827',
+  textSecondary: '#6B7280',
+  textTertiary: '#9CA3AF',
+  border: '#E5E7EB',
+  success: '#10B981',
+  error: '#EF4444',
+};
+
 export default function AdhkarScreen({ navigation }) {
-  const { t, COLORS, language } = useApp();
+  const { t, language } = useApp();
   const [counts, setCounts] = useState({});
   const [adhkarList, setAdhkarList] = useState(FALLBACK_ADHKAR);
   const [refreshing, setRefreshing] = useState(false);
@@ -135,6 +161,7 @@ export default function AdhkarScreen({ navigation }) {
       return;
     }
     await stopAudio();
+    if (!Audio) return;
     setAudioLoading(adhkar.id);
     try {
       const url = getMediaUrl(adhkar.audio_url);
@@ -169,283 +196,269 @@ export default function AdhkarScreen({ navigation }) {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]}>
-      <ScreenBackground imageKey="bg-adhkar">
-        {/* Header */}
-        <View style={[styles.header, { backgroundColor: 'rgba(15,42,63,0.95)' }]}>
-          <View style={styles.headerCenter}>
-            <Ionicons name="hands" size={20} color={COLORS.secondary} />
-            <Text style={[styles.headerTitle, { color: COLORS.secondary }]}>
-              {t('Adhkar za Buri Munsi', 'Daily Adhkar', 'أذكار اليومية')}
-            </Text>
-          </View>
-          {totalCount > 0 ? (
-            <TouchableOpacity style={[styles.resetBtn, { borderColor: 'rgba(212,175,55,0.2)' }]} onPress={resetAll}>
-              <Ionicons name="refresh" size={18} color={COLORS.secondary} />
-            </TouchableOpacity>
-          ) : <View style={{ width: 38 }} />}
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <ChevronLeft size={20} color={COLORS.primary} />
+        </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>
+            {t('Adhkar za Buri Munsi', 'Daily Adhkar', 'أذكار اليومية')}
+          </Text>
         </View>
+        {totalCount > 0 ? (
+          <TouchableOpacity style={styles.resetBtn} onPress={resetAll}>
+            <RotateCcw size={18} color={COLORS.error} />
+          </TouchableOpacity>
+        ) : <View style={styles.backBtn} />}
+      </View>
 
-        {/* Clock & Stats */}
-        <View style={[styles.clockSection, { backgroundColor: 'rgba(212,175,55,0.08)', borderColor: 'rgba(212,175,55,0.2)' }]}>
-          <Animated.View style={[styles.clockGlow, { opacity: pulseAnim, backgroundColor: 'rgba(212,175,55,0.08)' }]} />
-          {currentTime ? (
-            <Text style={[styles.clockTime, { color: COLORS.secondary }]}>{currentTime}</Text>
-          ) : null}
-          <View style={styles.clockStats}>
-            <Ionicons name="finger-print" size={14} color={COLORS.secondary} />
-            <Text style={[styles.clockStatsText, { color: COLORS.textMuted }]}>
-              {totalCount} {t('ibikorwa', 'counted', 'عد')}
-            </Text>
-          </View>
+      <View style={styles.clockSection}>
+        <Animated.View style={[styles.clockGlow, { opacity: pulseAnim }]} />
+        {currentTime ? (
+          <Text style={styles.clockTime}>{currentTime}</Text>
+        ) : null}
+        <View style={styles.clockStats}>
+          <Hash size={14} color={COLORS.secondary} />
+          <Text style={styles.clockStatsText}>
+            {totalCount} {t('ibikorwa', 'counted', 'عد')}
+          </Text>
         </View>
+      </View>
 
-        {/* Category Tabs */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoryRow}
-        >
-          {CATEGORIES.map(cat => (
+      <View style={styles.categoryWrap}>
+        {CATEGORIES.map(cat => {
+          const IconComp = CATEGORY_ICONS[cat.key] || BookOpen;
+          const isActive = activeCategory === cat.key;
+          return (
             <TouchableOpacity
               key={cat.key}
-              style={[
-                styles.categoryTab,
-                { borderColor: 'rgba(212,175,55,0.2)', backgroundColor: 'rgba(255,255,255,0.03)' },
-                activeCategory === cat.key && { backgroundColor: COLORS.secondary, borderColor: COLORS.secondary }
-              ]}
+              style={[styles.categoryTab, isActive && styles.categoryTabActive]}
               onPress={() => setActiveCategory(cat.key)}
               activeOpacity={0.7}
             >
-              <Ionicons
-                name={cat.icon}
+              <IconComp
                 size={13}
-                color={activeCategory === cat.key ? COLORS.primaryDark : COLORS.secondary}
+                color={isActive ? '#FFFFFF' : COLORS.secondary}
               />
-              <Text style={[
-                styles.categoryLabel,
-                { color: activeCategory === cat.key ? COLORS.primaryDark : COLORS.text }
-              ]}>
+              <Text style={[styles.categoryLabel, isActive && styles.categoryLabelActive]}>
                 {t(cat.labelRw, cat.labelEn, cat.labelAr)}
               </Text>
             </TouchableOpacity>
-          ))}
-        </ScrollView>
+          );
+        })}
+      </View>
 
-        {/* Adhkar List */}
-        <ScrollView
-          contentContainerStyle={styles.list}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.secondary} colors={[COLORS.secondary]} />
-          }
-          showsVerticalScrollIndicator={false}
-        >
-          {filteredAdhkar.map((adhkar) => {
-            const count = counts[adhkar.id] || 0;
-            const maxCount = adhkar.count_target || 100;
-            const isComplete = count >= maxCount;
-            const translation = getTranslation(adhkar);
-            const progress = maxCount > 0 ? count / maxCount : 0;
-            return (
-              <View
-                key={adhkar.id}
-                style={[
-                  styles.card,
-                  { backgroundColor: 'rgba(30,60,92,0.25)', borderColor: COLORS.border },
-                  isComplete && { borderColor: 'rgba(39,174,96,0.5)', backgroundColor: 'rgba(39,174,96,0.06)' }
-                ]}
-              >
-                {/* Left accent bar */}
-                <View style={[styles.accentBar, isComplete
-                  ? { backgroundColor: '#27ae60' }
-                  : { backgroundColor: COLORS.secondary }
+      <ScrollView
+        contentContainerStyle={styles.list}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.secondary} colors={[COLORS.secondary]} />
+        }
+        showsVerticalScrollIndicator={false}
+      >
+        {filteredAdhkar.map((adhkar) => {
+          const count = counts[adhkar.id] || 0;
+          const maxCount = adhkar.count_target || 100;
+          const isComplete = count >= maxCount;
+          const translation = getTranslation(adhkar);
+          const progress = maxCount > 0 ? count / maxCount : 0;
+          return (
+            <View
+              key={adhkar.id}
+              style={[styles.card, isComplete && styles.cardComplete]}
+            >
+              <View style={[styles.accentBar, isComplete ? styles.accentBarComplete : styles.accentBarDefault]} />
+
+              <View style={styles.progressTrack}>
+                <View style={[
+                  styles.progressFill,
+                  { width: `${progress * 100}%`, backgroundColor: isComplete ? COLORS.success : COLORS.secondary }
                 ]} />
+              </View>
 
-                {/* Progress indicator */}
-                <View style={[styles.progressTrack, { backgroundColor: 'rgba(255,255,255,0.06)' }]}>
-                  <View style={[
-                    styles.progressFill,
-                    {
-                      width: `${progress * 100}%`,
-                      backgroundColor: isComplete ? '#27ae60' : COLORS.secondary,
-                    }
-                  ]} />
-                </View>
+              <View style={styles.cardContent}>
+                <Text style={styles.arabicText}>{adhkar.arabic}</Text>
+                <Text style={styles.translitText}>{adhkar.transliteration}</Text>
+                {translation ? (
+                  <Text style={styles.translationText}>{translation}</Text>
+                ) : null}
 
-                {/* Content */}
-                <View style={styles.cardContent}>
-                  <Text style={[styles.arabicText, { color: COLORS.secondary }]}>{adhkar.arabic}</Text>
-                  <Text style={[styles.translitText, { color: COLORS.text }]}>{adhkar.transliteration}</Text>
-                  {translation ? (
-                    <Text style={[styles.translationText, { color: COLORS.textMuted }]}>{translation}</Text>
+                <View style={styles.counterRow}>
+                  {adhkar.audio_url ? (
+                  <TouchableOpacity
+                    style={[styles.audioBtn, playingId === adhkar.id && styles.audioBtnActive]}
+                    onPress={() => toggleAudio(adhkar)}
+                    activeOpacity={0.7}
+                  >
+                    {audioLoading === adhkar.id ? (
+                      <ActivityIndicator size="small" color={COLORS.secondary} />
+                    ) : (
+                      <BookMarked
+                        size={16}
+                        color={playingId === adhkar.id ? COLORS.secondary : COLORS.textSecondary}
+                      />
+                    )}
+                  </TouchableOpacity>
                   ) : null}
 
-                  {/* Counter Row */}
-                  <View style={styles.counterRow}>
-                    {adhkar.audio_url ? (
-                      <TouchableOpacity
-                        style={[
-                          styles.audioBtn,
-                          { borderColor: COLORS.border, backgroundColor: 'rgba(255,255,255,0.04)' },
-                          playingId === adhkar.id && { backgroundColor: 'rgba(212,175,55,0.15)', borderColor: COLORS.secondary }
-                        ]}
-                        onPress={() => toggleAudio(adhkar)}
-                        activeOpacity={0.7}
-                      >
-                        {audioLoading === adhkar.id ? (
-                          <ActivityIndicator size="small" color={COLORS.secondary} />
-                        ) : (
-                          <Ionicons
-                            name={playingId === adhkar.id ? 'pause' : 'volume-high'}
-                            size={16}
-                            color={playingId === adhkar.id ? COLORS.secondary : COLORS.text}
-                          />
-                        )}
-                      </TouchableOpacity>
-                    ) : null}
+                  <TouchableOpacity
+                    style={styles.counterBtn}
+                    onPress={() => decrement(adhkar.id)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.counterBtnText}>−</Text>
+                  </TouchableOpacity>
 
-                    <TouchableOpacity
-                      style={[styles.counterBtn, { borderColor: COLORS.border, backgroundColor: 'rgba(255,255,255,0.04)' }]}
-                      onPress={() => decrement(adhkar.id)}
-                      activeOpacity={0.7}
-                    >
-                      <Ionicons name="remove" size={18} color={COLORS.text} />
-                    </TouchableOpacity>
-
-                    <View style={[styles.countDisplay, isComplete && { backgroundColor: 'rgba(39,174,96,0.12)' }]}>
-                      <Text style={[styles.countText, { color: isComplete ? '#27ae60' : COLORS.secondary }]}>
-                        {count}
-                      </Text>
-                      <Text style={[styles.countTarget, { color: COLORS.textMuted }]}>
-                        / {maxCount}
-                      </Text>
-                    </View>
-
-                    <TouchableOpacity
-                      style={[styles.counterBtn, { borderColor: COLORS.border, backgroundColor: 'rgba(255,255,255,0.04)' }]}
-                      onPress={() => increment(adhkar.id)}
-                      activeOpacity={0.7}
-                    >
-                      <Ionicons name="add" size={18} color={COLORS.text} />
-                    </TouchableOpacity>
+                  <View style={[styles.countDisplay, isComplete && styles.countDisplayComplete]}>
+                    <Text style={[styles.countText, isComplete && styles.countTextComplete]}>
+                      {count}
+                    </Text>
+                    <Text style={styles.countTarget}>
+                      / {maxCount}
+                    </Text>
                   </View>
 
-                  {isComplete && (
-                    <View style={styles.completeBadge}>
-                      <Ionicons name="checkmark-circle" size={14} color="#27ae60" />
-                      <Text style={styles.completeText}>{t('Urarangira', 'Complete', 'مكتمل')}</Text>
-                    </View>
-                  )}
+                  <TouchableOpacity
+                    style={styles.counterBtn}
+                    onPress={() => increment(adhkar.id)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.counterBtnText}>+</Text>
+                  </TouchableOpacity>
                 </View>
-              </View>
-            );
-          })}
 
-          {filteredAdhkar.length === 0 && (
-            <View style={styles.emptyState}>
-              <Ionicons name="hands" size={48} color="rgba(212,175,55,0.3)" />
-              <Text style={[styles.emptyText, { color: COLORS.textMuted }]}>
-                {t('Nta adhkar iri mu bwoko', 'No adhkar in this category', 'لا أذكار في هذا التصنيف')}
-              </Text>
+                {isComplete && (
+                  <View style={styles.completeBadge}>
+                    <BookMarked size={14} color={COLORS.success} />
+                    <Text style={styles.completeText}>{t('Urarangira', 'Complete', 'مكتمل')}</Text>
+                  </View>
+                )}
+              </View>
             </View>
-          )}
-        </ScrollView>
-      </ScreenBackground>
+          );
+        })}
+
+        {filteredAdhkar.length === 0 && (
+          <View style={styles.emptyState}>
+            <Hand size={48} color={COLORS.textTertiary} />
+            <Text style={styles.emptyText}>
+              {t('Nta adhkar iri mu bwoko', 'No adhkar in this category', 'لا أذكار في هذا التصنيف')}
+            </Text>
+          </View>
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: COLORS.background },
 
-  /* Header */
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 14,
-    borderBottomWidth: 1, borderBottomColor: 'rgba(212,175,55,0.12)',
+    paddingHorizontal: 16, paddingVertical: 12,
+    backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.border,
   },
-  headerCenter: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, justifyContent: 'center' },
-  headerTitle: { fontSize: 17, fontWeight: '700', fontFamily: 'serif' },
+  backBtn: {
+    width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#CCFBF1',
+  },
+  headerCenter: { flex: 1, alignItems: 'center' },
+  headerTitle: { fontSize: 20, fontWeight: '700', color: COLORS.text },
   resetBtn: {
     width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(30,60,92,0.3)', borderWidth: 1.5,
+    backgroundColor: '#FEE2E2',
   },
 
-  /* Clock */
   clockSection: {
-    margin: 16, marginBottom: 8, borderRadius: 16, borderWidth: 1, padding: 16,
-    alignItems: 'center', position: 'relative', overflow: 'hidden',
+    margin: 16, marginBottom: 8, borderRadius: 16,
+    backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border,
+    padding: 16, alignItems: 'center', position: 'relative', overflow: 'hidden',
   },
   clockGlow: {
-    position: 'absolute', top: -30, left: -30, right: -30, bottom: -30, borderRadius: 60,
+    position: 'absolute', top: -30, left: -30, right: -30, bottom: -30,
+    borderRadius: 60, backgroundColor: '#CCFBF1',
   },
   clockTime: {
     fontSize: 28, fontWeight: '700', fontVariant: ['tabular-nums'], letterSpacing: 3,
-    position: 'relative',
+    color: COLORS.primary, position: 'relative',
   },
   clockStats: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6, position: 'relative' },
-  clockStatsText: { fontSize: 12, fontWeight: '500' },
+  clockStatsText: { fontSize: 12, fontWeight: '500', color: COLORS.textSecondary },
 
-  /* Categories */
-  categoryRow: { paddingHorizontal: 16, paddingBottom: 8, gap: 6 },
+  categoryWrap: {
+    flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center',
+    paddingHorizontal: 16, paddingBottom: 10, gap: 6,
+  },
   categoryTab: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
-    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1.5,
+    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
+    borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surface,
   },
-  categoryLabel: { fontSize: 12, fontWeight: '600' },
+  categoryTabActive: {
+    backgroundColor: COLORS.primary, borderColor: COLORS.primary,
+  },
+  categoryLabel: { fontSize: 12, fontWeight: '600', color: COLORS.text },
+  categoryLabelActive: { color: '#FFFFFF' },
 
-  /* List */
   list: { padding: 16, paddingBottom: 40, gap: 12 },
 
-  /* Card */
   card: {
-    borderRadius: 16, borderWidth: 1.5, overflow: 'hidden', flexDirection: 'row',
+    borderRadius: 16, borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: COLORS.card, overflow: 'hidden', flexDirection: 'row',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05, shadowRadius: 3, elevation: 2,
   },
+  cardComplete: { borderColor: COLORS.success },
   accentBar: { width: 4, opacity: 0.8 },
-  progressTrack: { position: 'absolute', bottom: 0, left: 4, right: 0, height: 3 },
+  accentBarDefault: { backgroundColor: COLORS.secondary },
+  accentBarComplete: { backgroundColor: COLORS.success },
+  progressTrack: { position: 'absolute', bottom: 0, left: 4, right: 0, height: 3, backgroundColor: '#F3F4F6' },
   progressFill: { height: '100%', borderRadius: 2 },
   cardContent: { flex: 1, padding: 16 },
 
   arabicText: {
     fontSize: 22, fontWeight: '700', textAlign: 'center', lineHeight: 36,
-    fontFamily: 'serif', marginTop: 4,
+    fontFamily: 'serif', marginTop: 4, color: COLORS.primary,
   },
   translitText: {
-    fontSize: 14, fontWeight: '600', textAlign: 'center', marginTop: 8,
+    fontSize: 14, fontWeight: '600', textAlign: 'center', marginTop: 8, color: COLORS.text,
   },
   translationText: {
     fontSize: 12, textAlign: 'center', marginTop: 4, fontStyle: 'italic',
-    lineHeight: 18,
+    lineHeight: 18, color: COLORS.textSecondary,
   },
 
-  /* Counter */
   counterRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: 12, marginTop: 14,
   },
   audioBtn: {
-    width: 38, height: 38, borderRadius: 19, borderWidth: 1.5,
-    alignItems: 'center', justifyContent: 'center',
+    width: 38, height: 38, borderRadius: 19, borderWidth: 1, borderColor: COLORS.border,
+    alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.surface,
   },
+  audioBtnActive: { borderColor: COLORS.secondary },
   counterBtn: {
-    width: 42, height: 42, borderRadius: 21, borderWidth: 1.5,
-    alignItems: 'center', justifyContent: 'center',
+    width: 42, height: 42, borderRadius: 21, borderWidth: 1, borderColor: COLORS.border,
+    alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.surface,
   },
+  counterBtnText: { fontSize: 20, fontWeight: '600', color: COLORS.text },
   countDisplay: {
     flexDirection: 'row', alignItems: 'baseline', gap: 2,
     paddingHorizontal: 16, paddingVertical: 8, borderRadius: 16,
-    backgroundColor: 'rgba(212,175,55,0.1)',
+    backgroundColor: '#CCFBF1',
   },
-  countText: { fontSize: 18, fontWeight: '700', fontVariant: ['tabular-nums'] },
-  countTarget: { fontSize: 12, fontWeight: '500' },
+  countDisplayComplete: { backgroundColor: '#D1FAE5' },
+  countText: { fontSize: 18, fontWeight: '700', fontVariant: ['tabular-nums'], color: COLORS.primary },
+  countTextComplete: { color: COLORS.success },
+  countTarget: { fontSize: 12, fontWeight: '500', color: COLORS.textTertiary },
 
   completeBadge: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: 6, marginTop: 10,
   },
-  completeText: { fontSize: 12, fontWeight: '600', color: '#27ae60' },
+  completeText: { fontSize: 12, fontWeight: '600', color: COLORS.success },
 
-  /* Empty */
   emptyState: { alignItems: 'center', paddingVertical: 48, gap: 12 },
-  emptyText: { fontSize: 14, fontWeight: '500' },
+  emptyText: { fontSize: 14, fontWeight: '500', color: COLORS.textSecondary },
 });

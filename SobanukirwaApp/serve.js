@@ -21,4 +21,4 @@ const server = http.createServer((req, res) => {
   fs.createReadStream(filePath).pipe(res);
 });
 
-server.listen(8082, () => console.log('Web mobile app running at http://localhost:8082'));
+server.listen(8081, () => console.log('Web mobile app running at http://localhost:8081'));

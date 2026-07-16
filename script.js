@@ -1888,25 +1888,46 @@ function getHijriDate(date) {
 }
 
 // ===== QURAN FUNCTIONS =====
-function renderQuran() {
+const API_BASE = 'https://sobanukirwa-production.up.railway.app/api';
+
+async function renderQuran() {
     const container = document.getElementById('quranContainer');
     if (!container) return;
     
+    container.innerHTML = '<div style="text-align:center;padding:2rem;color:#a8c1d9;"><i class="fas fa-spinner fa-spin"></i> Loading surahs...</div>';
+    
+    let data = surahs;
+    try {
+        const res = await fetch(`${API_BASE}/quran/surahs`);
+        if (res.ok) {
+            const apiData = await res.json();
+            if (apiData && apiData.length > 0) data = apiData;
+        }
+    } catch (e) {
+        console.log('API fetch failed, using local data');
+    }
+    
     container.innerHTML = '';
-    surahs.forEach(surah => {
+    data.forEach(surah => {
+        const num = surah.surah_number || surah.number;
+        const name = surah.name || `Surah ${num}`;
+        const arabic = surah.name_arabic || surah.nameArabic || '';
+        const ayahs = surah.ayahs_count || surah.ayahs || 0;
+        const audioUrl = surah.audio_url || surah.audioUrl || '';
+        
         const card = document.createElement('div');
         card.className = 'surah-card';
         card.innerHTML = `
             <div class="surah-info">
-                <div class="surah-number">${surah.number}</div>
+                <div class="surah-number">${num}</div>
                 <div class="surah-details">
-                    <div class="surah-name">${surah.number}. ${surah.name}</div>
-                    <div class="surah-name-arabic">${surah.nameArabic}</div>
-                    <div class="surah-meta">${surah.ayahs} Ayat • ${surah.type}</div>
+                    <div class="surah-name">${name}</div>
+                    ${arabic ? `<div class="surah-name-arabic">${arabic}</div>` : ''}
+                    ${ayahs ? `<div class="surah-meta">${ayahs} Ayat</div>` : ''}
                 </div>
             </div>
             <div class="surah-actions">
-                <button class="surah-play-btn" onclick="playSurah(${surah.number})">
+                <button class="surah-play-btn" onclick="playSurahApi(${num}, '${name.replace(/'/g, "\\'")}', '${audioUrl}')">
                     <i class="fas fa-play"></i>
                 </button>
             </div>
@@ -1920,8 +1941,44 @@ function filterSurahs() {
     const cards = document.querySelectorAll('.surah-card');
     cards.forEach(card => {
         const name = card.querySelector('.surah-name')?.textContent.toLowerCase() || '';
-        card.style.display = name.includes(search) ? 'flex' : 'none';
+        const arabic = card.querySelector('.surah-name-arabic')?.textContent || '';
+        const number = card.querySelector('.surah-number')?.textContent || '';
+        card.style.display = (name.includes(search) || arabic.includes(search) || number.includes(search)) ? 'flex' : 'none';
     });
+}
+
+function playSurahApi(surahNumber, surahName, audioUrl) {
+    // Stop lessons audio if playing
+    if (isPlaying) {
+        audio.pause();
+        isPlaying = false;
+        updatePlayPauseButton();
+        playerArt?.classList.remove('rotate');
+    }
+    
+    if (!audioUrl || audioUrl === 'undefined') {
+        const padNum = String(surahNumber).padStart(3, '0');
+        audioUrl = `https://server7.mp3quran.net/ahmed/${padNum}.mp3`;
+    }
+    
+    if (quranPlayer) {
+        quranPlayer.style.display = 'block';
+        quranPlayer.classList.add('active');
+    }
+    
+    const surahNameEl = document.getElementById('currentSurahName');
+    if (surahNameEl) {
+        surahNameEl.textContent = `${surahNumber}. ${surahName}`;
+    }
+    
+    const quranAudio = document.getElementById('quranAudio');
+    if (quranAudio) {
+        quranAudio.src = audioUrl;
+        quranAudio.play().catch(e => {
+            console.log('Quran playback failed:', e);
+            showToast('Failed to play Quran audio', 'error');
+        });
+    }
 }
 
 function playSurah(surahNumber) {

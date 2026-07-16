@@ -58,14 +58,14 @@ export default function AdminBooksScreen({ navigation }) {
   const openEdit = (book) => {
     setEditing(book);
     setFormTitle(book.title || '');
-    setFormTitleEn(book.titleEn || book.title_en || '');
-    setFormTitleAr(book.titleAr || book.title_ar || '');
+    setFormTitleEn(book.title_en || '');
+    setFormTitleAr(book.title_ar || '');
     setFormAuthor(book.author || '');
     setFormDesc(book.description || '');
     setFormCategory(book.category || '');
-    setFormFileType(book.fileType || book.file_type || 'pdf');
+    setFormFileType(book.file_type || 'pdf');
     setFormFile(null);
-    setFormCover(book.imageUrl || book.image_url ? { uri: getMediaUrl(book.imageUrl || book.image_url) } : null);
+    setFormCover(book.image_url ? { uri: getMediaUrl(book.image_url) } : null);
     setModalVisible(true);
   };
 
@@ -137,8 +137,8 @@ export default function AdminBooksScreen({ navigation }) {
 
   const renderItem = ({ item }) => (
     <TouchableOpacity style={[styles.card, { backgroundColor: 'rgba(20,35,55,0.7)', borderColor: 'rgba(201,168,76,0.2)' }]} onPress={() => openEdit(item)} onLongPress={() => handleDelete(item)}>
-      {(item.imageUrl || item.image_url) ? (
-        <Image source={{ uri: getMediaUrl(item.imageUrl || item.image_url) }} style={styles.cover} />
+      {(item.image_url) ? (
+        <Image source={{ uri: getMediaUrl(item.image_url) }} style={styles.cover} />
       ) : (
         <View style={[styles.cover, styles.coverPlaceholder, { backgroundColor: 'rgba(201,168,76,0.1)' }]}>
           <Ionicons name="book" size={28} color={COLORS.secondary} />
@@ -148,8 +148,8 @@ export default function AdminBooksScreen({ navigation }) {
         <Text style={[styles.cardTitle, { color: COLORS.text }]} numberOfLines={2}>{item.title}</Text>
         {item.author ? <Text style={[styles.cardSub, { color: COLORS.textMuted }]} numberOfLines={1}>{item.author}</Text> : null}
         <View style={styles.cardFooter}>
-          <View style={[styles.typeBadge, { backgroundColor: getFileTypeColor(item.fileType || item.file_type) + '22' }]}>
-            <Text style={{ color: getFileTypeColor(item.fileType || item.file_type), fontSize: 11, fontWeight: '700', textTransform: 'uppercase' }}>{item.fileType || item.file_type || 'pdf'}</Text>
+          <View style={[styles.typeBadge, { backgroundColor: getFileTypeColor(item.file_type) + '22' }]}>
+            <Text style={{ color: getFileTypeColor(item.file_type), fontSize: 11, fontWeight: '700', textTransform: 'uppercase' }}>{item.file_type || 'pdf'}</Text>
           </View>
         </View>
       </View>

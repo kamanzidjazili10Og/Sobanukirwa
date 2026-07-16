@@ -1,14 +1,19 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Animated, Dimensions, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Audio } from 'expo-av';
+
+let Audio = null;
+if (Platform.OS !== 'web') {
+  try { Audio = require('expo-av').Audio; } catch (e) {}
+}
 
 const { width } = Dimensions.get('window');
 
+const ADHAN_BASE = 'https://sobanukirwa-production.up.railway.app';
 const ADHAN_FILES = {
-  Adhan1: 'https://sobanukirwa.onrender.com/Sounds/Adhan1.mpeg',
-  Adhan2: 'https://sobanukirwa.onrender.com/Sounds/Adhan2.mpeg',
-  Mansour: 'https://sobanukirwa.onrender.com/Sounds/Mansour_Adhan.mpeg',
+  Adhan1: `${ADHAN_BASE}/Sounds/Adhan1.mpeg`,
+  Adhan2: `${ADHAN_BASE}/Sounds/Adhan2.mpeg`,
+  Mansour: `${ADHAN_BASE}/Sounds/Mansour_Adhan.mpeg`,
 };
 
 export default function AdhanNotification({ visible, prayerName, reciter, volume, onDismiss }) {
@@ -27,6 +32,7 @@ export default function AdhanNotification({ visible, prayerName, reciter, volume
   }, [visible]);
 
   async function playAdhan() {
+    if (!Audio) return;
     try {
       if (soundRef.current) await soundRef.current.unloadAsync();
       const uri = ADHAN_FILES[reciter] || ADHAN_FILES.Adhan1;

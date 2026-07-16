@@ -1,47 +1,76 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Switch, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Switch, Image, ImageBackground } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Settings, Globe, Bell, Volume2, Moon, Shield, ChevronLeft, ChevronRight, Check, HardDrive } from 'lucide-react-native';
 import { useApp } from '../context/AppContext';
-import ScreenBackground from '../components/ScreenBackground';
 import SilentBanner from '../components/SilentBanner';
 
+const COLORS = {
+  primary: '#0F766E',
+  secondary: '#14B8A6',
+  accent: '#F59E0B',
+  bg: '#F8FAFC',
+  surface: '#FFFFFF',
+  card: '#FFFFFF',
+  text: '#111827',
+  textSecondary: '#6B7280',
+  textTertiary: '#9CA3AF',
+  border: '#E5E7EB',
+  success: '#10B981',
+  error: '#EF4444',
+};
+
 const RECITER_OPTIONS = [
-  { key: 'Adhan1', label: 'Adhan 1 (Makkah)', labelRw: 'Adhan 1 (Makka)', icon: 'mic' },
-  { key: 'Adhan2', label: 'Adhan 2 (Madinah)', labelRw: 'Adhan 2 (Madina)', icon: 'mic' },
-  { key: 'Mansour', label: 'Mansour Al-Qahtani', labelRw: 'Mansour Al-Qahtani', icon: 'mic' },
+  { key: 'Adhan1', label: 'Adhan 1 (Makkah)', labelRw: 'Adhan 1 (Makka)' },
+  { key: 'Adhan2', label: 'Adhan 2 (Madinah)', labelRw: 'Adhan 2 (Madina)' },
+  { key: 'Mansour', label: 'Mansour Al-Qahtani', labelRw: 'Mansour Al-Qahtani' },
 ];
 
 const PRAYER_KEYS = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
 const VOLUME_LEVELS = [0, 25, 50, 75, 100];
 const INTERVAL_OPTIONS = [5, 15, 30, 45, 60];
 
-function GoldToggle({ value, onValueChange }) {
+function TealToggle({ value, onValueChange }) {
   return (
     <Switch
       value={value}
       onValueChange={onValueChange}
-      trackColor={{ false: 'rgba(255,255,255,0.1)', true: '#d4af37' }}
-      thumbColor={value ? '#0f2a3f' : '#f4f3f4'}
-      ios_backgroundColor="rgba(255,255,255,0.1)"
+      trackColor={{ false: '#E5E7EB', true: COLORS.secondary }}
+      thumbColor={value ? COLORS.surface : '#F3F4F6'}
+      ios_backgroundColor="#E5E7EB"
     />
   );
 }
 
-function SectionDivider() {
-  return <View style={styles.sectionDivider} />;
-}
-
 export default function SettingsScreen({ navigation }) {
+  const [cacheInfo, setCacheInfo] = useState({ lastUpdated: null, itemCounts: {}, totalItems: 0 });
+
+  useEffect(() => {
+    loadCacheInfo();
+  }, []);
+
+  async function loadCacheInfo() {
+    if (getCacheInfo) {
+      const info = await getCacheInfo();
+      setCacheInfo(info);
+    }
+  }
+
+  async function handleClearCache() {
+    if (clearCache) {
+      await clearCache();
+      loadCacheInfo();
+    }
+  }
   const {
-    t, COLORS, language, setLanguage, tracks, videos, books, surahs,
+    t, COLORS: appColors, language, setLanguage, tracks, videos, books, surahs,
     adhanEnabled, setAdhanEnabled, adhanVolume, setAdhanVolume, adhanReciter, setAdhanReciter,
     reminderEnabled, setReminderEnabled, reminderInterval, setReminderInterval,
     silentMode, setSilentMode, smartSilent, setSmartSilent,
     scheduledSilent, setScheduledSilent, silentFrom, setSilentFrom, silentTo, setSilentTo,
     silentPrayers, setSilentPrayers,
     saveSetting, adhkarReminder, setAdhkarReminder,
-    isEffectivelySilent,
+    isEffectivelySilent, clearCache, getCacheInfo,
   } = useApp();
 
   function handleReciterChange(key) {
@@ -66,513 +95,529 @@ export default function SettingsScreen({ navigation }) {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]}>
-      <SilentBanner visible={isEffectivelySilent} />
-      <ScreenBackground imageKey="bg-settings">
-        {/* Header with gradient */}
-        <View style={[styles.header, { backgroundColor: 'rgba(15,42,63,0.95)' }]}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={22} color={COLORS.text} />
-          </TouchableOpacity>
-          <View style={styles.headerCenter}>
-            <Ionicons name="settings" size={20} color={COLORS.secondary} />
-            <Text style={[styles.headerTitle, { color: COLORS.secondary }]}>
-              {t('Igenamiterere', 'Settings', 'الإعدادات')}
-            </Text>
+    <ImageBackground source={require('../../assets/bg-loading.jpg')} style={styles.bgImage} resizeMode="cover">
+      <View style={styles.overlay} />
+      <SafeAreaView style={styles.container}>
+        <SilentBanner visible={isEffectivelySilent} />
+
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <ChevronLeft size={22} color={COLORS.primary} />
+        </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <View style={styles.headerIconWrap}>
+            <Settings size={16} color={COLORS.surface} />
           </View>
-          <View style={{ width: 38 }} />
+          <Text style={styles.headerTitle}>
+            {t('Igenamiterere', 'Settings', 'الإعدادات')}
+          </Text>
+        </View>
+        <View style={{ width: 38 }} />
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+
+        {/* Language */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionHeaderLeft}>
+              <Globe size={18} color={COLORS.primary} />
+              <Text style={styles.sectionTitle}>
+                {t('Ururimi', 'Language', 'اللغة')}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.sectionDividerLine} />
+          <View style={styles.langRow}>
+            {[
+              { key: 'rw', label: 'Kinyarwanda', flag: '🇷🇼' },
+              { key: 'en', label: 'English', flag: '🇬🇧' },
+              { key: 'ar', label: 'العربية', flag: '🇸🇦' },
+            ].map(lang => (
+              <TouchableOpacity
+                key={lang.key}
+                style={[
+                  styles.langBtn,
+                  language === lang.key && styles.langBtnActive
+                ]}
+                onPress={() => {
+                  setLanguage(lang.key);
+                  saveSetting('language', lang.key);
+                }}
+                activeOpacity={0.7}
+              >
+                {language === lang.key && <Check size={12} color={COLORS.surface} style={styles.langCheck} />}
+                <Text style={styles.langFlag}>{lang.flag}</Text>
+                <Text style={[styles.langLabel, language === lang.key && styles.langLabelActive]}>
+                  {lang.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-          {/* Logo Section */}
-          <View style={styles.logoSection}>
-            <View style={[styles.logoRing, { borderColor: 'rgba(212,175,55,0.25)' }]}>
-              <View style={[styles.logoGlow, { backgroundColor: 'rgba(212,175,55,0.1)' }]} />
-              <View style={[styles.logoIcon, { borderColor: COLORS.secondary, backgroundColor: 'rgba(212,175,55,0.12)' }]}>
-                <Image source={require('../../assets/icon.png')} style={styles.logoImage} resizeMode="contain" />
-              </View>
-            </View>
-            <Text style={[styles.logoText, { color: COLORS.secondary }]}>Sobanukirwa</Text>
-            <Text style={[styles.versionText, { color: COLORS.textMuted }]}>v2.0.0</Text>
-            <View style={styles.diamondRow}>
-              <View style={[styles.diamondLine, { backgroundColor: COLORS.secondary }]} />
-              <View style={[styles.diamond, { backgroundColor: COLORS.secondary }]}>
-                <View style={styles.diamondInner} />
-              </View>
-              <View style={[styles.diamondLine, { backgroundColor: COLORS.secondary }]} />
+        {/* Adhan Settings */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionHeaderLeft}>
+              <Volume2 size={18} color={COLORS.primary} />
+              <Text style={styles.sectionTitle}>
+                {t('Amategeko y\'Adhan', 'Adhan Settings', 'إعدادات الأذان')}
+              </Text>
             </View>
           </View>
+          <View style={styles.sectionDividerLine} />
 
-          {/* Language */}
-          <View style={[styles.section, { backgroundColor: 'rgba(30,60,92,0.25)', borderColor: COLORS.border }]}>
-            <View style={styles.sectionHeader}>
-              <View style={styles.sectionHeaderLeft}>
-                <Ionicons name="globe" size={18} color={COLORS.secondary} />
-                <Text style={[styles.sectionTitle, { color: COLORS.secondary }]}>
-                  {t('Ururimi', 'Language', 'اللغة')}
-                </Text>
-              </View>
+          <View style={styles.settingItem}>
+            <View style={styles.settingItemLeft}>
+              <Bell size={16} color={COLORS.textSecondary} />
+              <Text style={styles.settingLabel}>
+                {t('Kubasha Adhan', 'Enable Adhan', 'تشغيل الأذان')}
+              </Text>
             </View>
-            <View style={styles.sectionDividerLine} />
-            <View style={styles.langRow}>
-              {[
-                { key: 'rw', label: 'Kinyarwanda', flag: '🇷🇼' },
-                { key: 'en', label: 'English', flag: '🇬🇧' },
-                { key: 'ar', label: 'العربية', flag: '🇸🇦' },
-              ].map(lang => (
-                <TouchableOpacity
-                  key={lang.key}
-                  style={[
-                    styles.langBtn,
-                    { borderColor: 'rgba(212,175,55,0.2)', backgroundColor: 'rgba(255,255,255,0.03)' },
-                    language === lang.key && { backgroundColor: COLORS.secondary, borderColor: COLORS.secondary }
-                  ]}
-                  onPress={() => {
-                    setLanguage(lang.key);
-                    saveSetting('language', lang.key);
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.langFlag}>{lang.flag}</Text>
-                  <Text style={[styles.langLabel, { color: language === lang.key ? COLORS.primaryDark : COLORS.text }]}>
-                    {lang.label}
+            <TealToggle
+              value={adhanEnabled}
+              onValueChange={(v) => { setAdhanEnabled(v); saveSetting('adhanEnabled', v); }}
+            />
+          </View>
+
+          {adhanEnabled && (
+            <>
+              <View style={styles.settingItem}>
+                <View style={styles.settingItemLeft}>
+                  <Text style={[styles.settingLabel, { paddingLeft: 26 }]}>
+                    {t('Igicuruzwa cya Adhan', 'Adhan Reciter', 'قارئ الأذان')}
                   </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          {/* Adhan Settings */}
-          <View style={[styles.section, { backgroundColor: 'rgba(30,60,92,0.25)', borderColor: COLORS.border }]}>
-            <View style={styles.sectionHeader}>
-              <View style={styles.sectionHeaderLeft}>
-                <Ionicons name="volume-high" size={18} color={COLORS.secondary} />
-                <Text style={[styles.sectionTitle, { color: COLORS.secondary }]}>
-                  {t('Amategeko y\'Adhan', 'Adhan Settings', 'إعدادات الأذان')}
-                </Text>
+                </View>
               </View>
-            </View>
-            <View style={styles.sectionDividerLine} />
-
-            <View style={styles.settingItem}>
-              <View style={styles.settingItemLeft}>
-                <Ionicons name="notifications" size={16} color={COLORS.textMuted} />
-                <Text style={[styles.settingLabel, { color: COLORS.text }]}>
-                  {t('Kubasha Adhan', 'Enable Adhan', 'تشغيل الأذان')}
-                </Text>
+              <View style={styles.reciterRow}>
+                {RECITER_OPTIONS.map(r => (
+                  <TouchableOpacity
+                    key={r.key}
+                    style={[
+                      styles.reciterBtn,
+                      adhanReciter === r.key && styles.reciterBtnActive
+                    ]}
+                    onPress={() => handleReciterChange(r.key)}
+                    activeOpacity={0.7}
+                  >
+                    {adhanReciter === r.key && <Check size={12} color={COLORS.surface} />}
+                    <Text style={[styles.reciterText, adhanReciter === r.key && styles.reciterTextActive]}>
+                      {t(r.labelRw, r.label, r.label)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
               </View>
-              <GoldToggle
-                value={adhanEnabled}
-                onValueChange={(v) => { setAdhanEnabled(v); saveSetting('adhanEnabled', v); }}
-              />
-            </View>
 
-            {adhanEnabled && (
-              <>
-                <View style={styles.settingItem}>
-                  <View style={styles.settingItemLeft}>
-                    <Ionicons name="person" size={16} color={COLORS.textMuted} />
-                    <Text style={[styles.settingLabel, { color: COLORS.text }]}>
-                      {t('Igicuruzwa cya Adhan', 'Adhan Reciter', 'قارئ الأذان')}
-                    </Text>
-                  </View>
+              <View style={styles.settingItem}>
+                <View style={styles.settingItemLeft}>
+                  <Volume2 size={16} color={COLORS.textSecondary} />
+                  <Text style={styles.settingLabel}>
+                    {t('Igiteretero', 'Volume', 'الصوت')}
+                  </Text>
                 </View>
-                <View style={styles.reciterRow}>
-                  {RECITER_OPTIONS.map(r => (
-                    <TouchableOpacity
-                      key={r.key}
-                      style={[
-                        styles.reciterBtn,
-                        { borderColor: 'rgba(212,175,55,0.2)', backgroundColor: 'rgba(255,255,255,0.03)' },
-                        adhanReciter === r.key && { backgroundColor: COLORS.secondary, borderColor: COLORS.secondary }
-                      ]}
-                      onPress={() => handleReciterChange(r.key)}
-                      activeOpacity={0.7}
-                    >
-                      <Ionicons name={r.icon} size={14} color={adhanReciter === r.key ? COLORS.primaryDark : COLORS.secondary} />
-                      <Text style={[styles.reciterText, { color: adhanReciter === r.key ? COLORS.primaryDark : COLORS.text }]}>
-                        {t(r.labelRw, r.label, r.label)}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-
-                <View style={styles.settingItem}>
-                  <View style={styles.settingItemLeft}>
-                    <Ionicons name="volume-low" size={16} color={COLORS.textMuted} />
-                    <Text style={[styles.settingLabel, { color: COLORS.text }]}>
-                      {t('Igiteretero', 'Volume', 'الصوت')}
-                    </Text>
-                  </View>
-                  <Text style={[styles.settingValue, { color: COLORS.secondary }]}>{adhanVolume}%</Text>
-                </View>
-                <View style={styles.volumeBarRow}>
-                  {VOLUME_LEVELS.map(v => {
-                    const isActive = adhanVolume >= v;
-                    const isExact = adhanVolume === v;
-                    return (
-                      <TouchableOpacity
-                        key={v}
-                        style={styles.volumeBarItem}
-                        onPress={() => handleVolumeChange(v)}
-                        activeOpacity={0.7}
-                      >
-                        <View style={[styles.volumeBarTrack, { backgroundColor: 'rgba(255,255,255,0.08)' }]}>
-                          <View style={[
-                            styles.volumeBarFill,
-                            {
-                              height: `${Math.max(30, (v / 100) * 100)}%`,
-                              backgroundColor: isActive ? COLORS.secondary : 'rgba(255,255,255,0.15)',
-                            }
-                          ]} />
-                        </View>
-                        <Text style={[styles.volumeBarLabel, { color: isExact ? COLORS.secondary : COLORS.textMuted }]}>
-                          {v}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </>
-            )}
-          </View>
-
-          {/* Reminders */}
-          <View style={[styles.section, { backgroundColor: 'rgba(30,60,92,0.25)', borderColor: COLORS.border }]}>
-            <View style={styles.sectionHeader}>
-              <View style={styles.sectionHeaderLeft}>
-                <Ionicons name="notifications" size={18} color={COLORS.secondary} />
-                <Text style={[styles.sectionTitle, { color: COLORS.secondary }]}>
-                  {t('Umwirondoro', 'Reminders', 'التذكيرات')}
-                </Text>
+                <Text style={styles.settingValue}>{adhanVolume}%</Text>
               </View>
-            </View>
-            <View style={styles.sectionDividerLine} />
-
-            <View style={styles.settingItem}>
-              <View style={styles.settingItemLeft}>
-                <Ionicons name="alarm" size={16} color={COLORS.textMuted} />
-                <Text style={[styles.settingLabel, { color: COLORS.text }]}>
-                  {t('Kubasha Ukwirondoro', 'Enable Reminders', 'تفعيل التذكيرات')}
-                </Text>
-              </View>
-              <GoldToggle
-                value={reminderEnabled}
-                onValueChange={(v) => { setReminderEnabled(v); saveSetting('reminderEnabled', v); }}
-              />
-            </View>
-
-            {reminderEnabled && (
-              <>
-                <View style={styles.settingItem}>
-                  <View style={styles.settingItemLeft}>
-                    <Ionicons name="hands" size={16} color={COLORS.textMuted} />
-                    <Text style={[styles.settingLabel, { color: COLORS.text }]}>
-                      {t('Adhkar Reminder', 'Adhkar Reminder', 'تذكير الأذكار')}
-                    </Text>
-                  </View>
-                  <GoldToggle
-                    value={adhkarReminder}
-                    onValueChange={(v) => { setAdhkarReminder(v); saveSetting('adhkarReminder', v); }}
-                  />
-                </View>
-                <View style={styles.settingItem}>
-                  <View style={styles.settingItemLeft}>
-                    <Ionicons name="time" size={16} color={COLORS.textMuted} />
-                    <Text style={[styles.settingLabel, { color: COLORS.text }]}>
-                      {t('Igihe gitera', 'Interval', 'الفترة')}
-                    </Text>
-                  </View>
-                  <Text style={[styles.settingValue, { color: COLORS.secondary }]}>{reminderInterval} min</Text>
-                </View>
-                <View style={styles.intervalRow}>
-                  {INTERVAL_OPTIONS.map(v => (
+              <View style={styles.volumeBarRow}>
+                {VOLUME_LEVELS.map(v => {
+                  const isActive = adhanVolume >= v;
+                  const isExact = adhanVolume === v;
+                  return (
                     <TouchableOpacity
                       key={v}
-                      style={[
-                        styles.intervalBtn,
-                        { borderColor: 'rgba(212,175,55,0.2)', backgroundColor: 'rgba(255,255,255,0.03)' },
-                        reminderInterval === v && { backgroundColor: COLORS.secondary, borderColor: COLORS.secondary }
-                      ]}
-                      onPress={() => handleReminderIntervalChange(v)}
+                      style={styles.volumeBarItem}
+                      onPress={() => handleVolumeChange(v)}
                       activeOpacity={0.7}
                     >
-                      <Text style={[styles.intervalText, { color: reminderInterval === v ? COLORS.primaryDark : COLORS.text }]}>
+                      <View style={styles.volumeBarTrack}>
+                        <View style={[
+                          styles.volumeBarFill,
+                          {
+                            height: `${Math.max(30, (v / 100) * 100)}%`,
+                            backgroundColor: isActive ? COLORS.secondary : '#F3F4F6',
+                          }
+                        ]} />
+                      </View>
+                      <Text style={[styles.volumeBarLabel, { color: isExact ? COLORS.primary : COLORS.textTertiary }]}>
                         {v}
                       </Text>
                     </TouchableOpacity>
-                  ))}
-                </View>
-              </>
-            )}
-          </View>
-
-          {/* Silent Mode */}
-          <View style={[styles.section, { backgroundColor: 'rgba(30,60,92,0.25)', borderColor: COLORS.border }]}>
-            <View style={styles.sectionHeader}>
-              <View style={styles.sectionHeaderLeft}>
-                <Ionicons name="volume-mute" size={18} color={COLORS.secondary} />
-                <Text style={[styles.sectionTitle, { color: COLORS.secondary }]}>
-                  {t('Ubwiyumvire', 'Silent Mode', 'الوضع الصامت')}
-                </Text>
+                  );
+                })}
               </View>
-            </View>
-            <View style={styles.sectionDividerLine} />
+            </>
+          )}
+        </View>
 
-            <View style={styles.settingItem}>
-              <View style={styles.settingItemLeft}>
-                <Ionicons name="moon" size={16} color={COLORS.textMuted} />
-                <Text style={[styles.settingLabel, { color: COLORS.text }]}>
-                  {t('Kubasha Ukwiyumvire', 'Enable Silent Mode', 'تفعيل الوضع الصامت')}
-                </Text>
-              </View>
-              <GoldToggle
-                value={silentMode}
-                onValueChange={(v) => { setSilentMode(v); saveSetting('silentMode', v); }}
-              />
-            </View>
-
-            <View style={styles.settingItem}>
-              <View style={styles.settingItemLeft}>
-                <Ionicons name="flash" size={16} color={COLORS.textMuted} />
-                <Text style={[styles.settingLabel, { color: COLORS.text }]}>
-                  {t('Smart Silent', 'Smart Silent (during prayer)', 'صامت ذكي')}
-                </Text>
-              </View>
-              <GoldToggle
-                value={smartSilent}
-                onValueChange={(v) => { setSmartSilent(v); saveSetting('smartSilent', v); }}
-              />
-            </View>
-
-            {smartSilent && (
-              <View style={styles.prayerCheckboxes}>
-                <Text style={[styles.checkboxLabel, { color: COLORS.textMuted }]}>
-                  {t('Isengesho rigomba guceceka', 'Prayers for silent', 'صلوات للصمت')}
-                </Text>
-                <View style={styles.checkboxRow}>
-                  {PRAYER_KEYS.map(p => (
-                    <TouchableOpacity
-                      key={p}
-                      style={[
-                        styles.checkbox,
-                        { borderColor: 'rgba(212,175,55,0.2)', backgroundColor: 'rgba(255,255,255,0.03)' },
-                        silentPrayers[p] && { backgroundColor: COLORS.secondary, borderColor: COLORS.secondary }
-                      ]}
-                      onPress={() => togglePrayerSilent(p)}
-                      activeOpacity={0.7}
-                    >
-                      <Ionicons
-                        name={silentPrayers[p] ? 'checkmark-circle' : 'ellipse-outline'}
-                        size={14}
-                        color={silentPrayers[p] ? COLORS.primaryDark : COLORS.textMuted}
-                      />
-                      <Text style={[styles.checkboxText, { color: silentPrayers[p] ? COLORS.primaryDark : COLORS.text }]}>
-                        {t(p, p, p)}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-            )}
-
-            <View style={styles.settingItem}>
-              <View style={styles.settingItemLeft}>
-                <Ionicons name="calendar" size={16} color={COLORS.textMuted} />
-                <Text style={[styles.settingLabel, { color: COLORS.text }]}>
-                  {t('Scheduled Silent', 'Scheduled Silent', 'صامت مجدول')}
-                </Text>
-              </View>
-              <GoldToggle
-                value={scheduledSilent}
-                onValueChange={(v) => { setScheduledSilent(v); saveSetting('scheduledSilent', v); }}
-              />
-            </View>
-
-            {scheduledSilent && (
-              <View style={styles.timeRangeRow}>
-                <View style={styles.timeInput}>
-                  <Text style={[styles.timeLabel, { color: COLORS.textMuted }]}>{t('Kuva', 'From', 'من')}</Text>
-                  <TouchableOpacity
-                    style={[styles.timeBtn, { borderColor: COLORS.border, backgroundColor: 'rgba(255,255,255,0.04)' }]}
-                    onPress={() => {
-                      const h = parseInt(silentFrom.split(':')[0]);
-                      const newH = (h + 1) % 24;
-                      const val = `${String(newH).padStart(2, '0')}:${silentFrom.split(':')[1]}`;
-                      setSilentFrom(val);
-                      saveSetting('silentFrom', val);
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="time" size={14} color={COLORS.secondary} />
-                    <Text style={[styles.timeText, { color: COLORS.text }]}>{silentFrom}</Text>
-                    <Ionicons name="chevron-up" size={12} color={COLORS.textMuted} />
-                  </TouchableOpacity>
-                </View>
-                <View style={styles.timeArrow}>
-                  <Ionicons name="arrow-forward" size={16} color={COLORS.secondary} />
-                </View>
-                <View style={styles.timeInput}>
-                  <Text style={[styles.timeLabel, { color: COLORS.textMuted }]}>{t('Kugeza', 'To', 'إلى')}</Text>
-                  <TouchableOpacity
-                    style={[styles.timeBtn, { borderColor: COLORS.border, backgroundColor: 'rgba(255,255,255,0.04)' }]}
-                    onPress={() => {
-                      const h = parseInt(silentTo.split(':')[0]);
-                      const newH = (h + 1) % 24;
-                      const val = `${String(newH).padStart(2, '0')}:${silentTo.split(':')[1]}`;
-                      setSilentTo(val);
-                      saveSetting('silentTo', val);
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="time" size={14} color={COLORS.secondary} />
-                    <Text style={[styles.timeText, { color: COLORS.text }]}>{silentTo}</Text>
-                    <Ionicons name="chevron-up" size={12} color={COLORS.textMuted} />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            )}
-          </View>
-
-          {/* Statistics */}
-          <View style={[styles.section, { backgroundColor: 'rgba(30,60,92,0.25)', borderColor: COLORS.border }]}>
-            <View style={styles.sectionHeader}>
-              <View style={styles.sectionHeaderLeft}>
-                <Ionicons name="bar-chart" size={18} color={COLORS.secondary} />
-                <Text style={[styles.sectionTitle, { color: COLORS.secondary }]}>
-                  {t('Ibiharuro', 'Statistics', 'الإحصائيات')}
-                </Text>
-              </View>
-            </View>
-            <View style={styles.sectionDividerLine} />
-            <View style={styles.statsGrid}>
-              {[
-                { count: tracks.length, labelRw: 'Inyigisho', labelEn: 'Lessons', labelAr: 'دروس', icon: 'headset' },
-                { count: videos.length, labelRw: 'Amashusho', labelEn: 'Videos', labelAr: 'فيديو', icon: 'videocam' },
-                { count: books.length, labelRw: 'Ibitabo', labelEn: 'Books', labelAr: 'كتب', icon: 'book' },
-                { count: surahs.length, labelRw: 'Sura', labelEn: 'Surahs', labelAr: 'سور', icon: 'book-outline' },
-              ].map((stat, i) => (
-                <View key={i} style={[styles.statItem, { backgroundColor: 'rgba(212,175,55,0.06)', borderColor: 'rgba(212,175,55,0.12)' }]}>
-                  <View style={[styles.statIconWrap, { backgroundColor: 'rgba(212,175,55,0.12)' }]}>
-                    <Ionicons name={stat.icon} size={18} color={COLORS.secondary} />
-                  </View>
-                  <Text style={[styles.statNumber, { color: COLORS.secondary }]}>{stat.count}</Text>
-                  <Text style={[styles.statLabel, { color: COLORS.textMuted }]}>{t(stat.labelRw, stat.labelEn, stat.labelAr)}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
-
-          {/* Admin Access */}
-          <TouchableOpacity
-            style={[styles.section, { backgroundColor: 'rgba(30,60,92,0.25)', borderColor: COLORS.border, flexDirection: 'row', alignItems: 'center', gap: 12 }]}
-            onPress={() => navigation.navigate('Admin')}
-            activeOpacity={0.7}
-          >
-            <View style={[styles.sectionHeaderLeft]}>
-              <Ionicons name="shield-checkmark" size={18} color={COLORS.secondary} />
-              <Text style={[styles.sectionTitle, { color: COLORS.secondary }]}>
-                {t('Admin', 'Admin Panel', 'لوحة الإدارة')}
+        {/* Reminders */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionHeaderLeft}>
+              <Bell size={18} color={COLORS.primary} />
+              <Text style={styles.sectionTitle}>
+                {t('Umwirondoro', 'Reminders', 'التذكيرات')}
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
-          </TouchableOpacity>
+          </View>
+          <View style={styles.sectionDividerLine} />
 
-          {/* Footer */}
-          <View style={styles.footerSection}>
-            <View style={styles.footerDividerRow}>
-              <View style={[styles.footerLine, { backgroundColor: 'rgba(212,175,55,0.15)' }]} />
-              <Ionicons name="star" size={10} color={COLORS.secondary} />
-              <View style={[styles.footerLine, { backgroundColor: 'rgba(212,175,55,0.15)' }]} />
+          <View style={styles.settingItem}>
+            <View style={styles.settingItemLeft}>
+              <Bell size={16} color={COLORS.textSecondary} />
+              <Text style={styles.settingLabel}>
+                {t('Kubasha Ukwirondoro', 'Enable Reminders', 'تفعيل التذكيرات')}
+              </Text>
             </View>
-            <Text style={[styles.footerText, { color: COLORS.textMuted }]}>
-              {t('Sobanukirwa v2.0.0', 'Sobanukirwa v2.0.0', 'Sobanukirwa v2.0.0')}
-            </Text>
-            <Text style={[styles.footerSubText, { color: COLORS.textMuted }]}>
-              {t('Urumuri rw\'abemeramana', 'Light of Faith', 'نور الإيمان')}
-            </Text>
+            <TealToggle
+              value={reminderEnabled}
+              onValueChange={(v) => { setReminderEnabled(v); saveSetting('reminderEnabled', v); }}
+            />
           </View>
 
-        </ScrollView>
-      </ScreenBackground>
-    </SafeAreaView>
+          {reminderEnabled && (
+            <>
+              <View style={styles.settingItem}>
+                <View style={styles.settingItemLeft}>
+                  <Moon size={16} color={COLORS.textSecondary} />
+                  <Text style={styles.settingLabel}>
+                    {t('Adhkar Reminder', 'Adhkar Reminder', 'تذكير الأذكار')}
+                  </Text>
+                </View>
+                <TealToggle
+                  value={adhkarReminder}
+                  onValueChange={(v) => { setAdhkarReminder(v); saveSetting('adhkarReminder', v); }}
+                />
+              </View>
+              <View style={styles.settingItem}>
+                <View style={styles.settingItemLeft}>
+                  <Bell size={16} color={COLORS.textSecondary} />
+                  <Text style={styles.settingLabel}>
+                    {t('Igihe gitera', 'Interval', 'الفترة')}
+                  </Text>
+                </View>
+                <Text style={styles.settingValue}>{reminderInterval} min</Text>
+              </View>
+              <View style={styles.intervalRow}>
+                {INTERVAL_OPTIONS.map(v => (
+                  <TouchableOpacity
+                    key={v}
+                    style={[
+                      styles.intervalBtn,
+                      reminderInterval === v && styles.intervalBtnActive
+                    ]}
+                    onPress={() => handleReminderIntervalChange(v)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.intervalText, reminderInterval === v && styles.intervalTextActive]}>
+                      {v}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </>
+          )}
+        </View>
+
+        {/* Silent Mode */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionHeaderLeft}>
+              <Moon size={18} color={COLORS.primary} />
+              <Text style={styles.sectionTitle}>
+                {t('Ubwiyumvire', 'Silent Mode', 'الوضع الصامت')}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.sectionDividerLine} />
+
+          <View style={styles.settingItem}>
+            <View style={styles.settingItemLeft}>
+              <Moon size={16} color={COLORS.textSecondary} />
+              <Text style={styles.settingLabel}>
+                {t('Kubasha Ukwiyumvire', 'Enable Silent Mode', 'تفعيل الوضع الصامت')}
+              </Text>
+            </View>
+            <TealToggle
+              value={silentMode}
+              onValueChange={(v) => { setSilentMode(v); saveSetting('silentMode', v); }}
+            />
+          </View>
+
+          <View style={styles.settingItem}>
+            <View style={styles.settingItemLeft}>
+              <Moon size={16} color={COLORS.textSecondary} />
+              <Text style={styles.settingLabel}>
+                {t('Smart Silent', 'Smart Silent (during prayer)', 'صامت ذكي')}
+              </Text>
+            </View>
+            <TealToggle
+              value={smartSilent}
+              onValueChange={(v) => { setSmartSilent(v); saveSetting('smartSilent', v); }}
+            />
+          </View>
+
+          {smartSilent && (
+            <View style={styles.prayerCheckboxes}>
+              <Text style={styles.checkboxLabel}>
+                {t('Isengesho rigomba guceceka', 'Prayers for silent', 'صلوات للصمت')}
+              </Text>
+              <View style={styles.checkboxRow}>
+                {PRAYER_KEYS.map(p => (
+                  <TouchableOpacity
+                    key={p}
+                    style={[
+                      styles.checkbox,
+                      silentPrayers[p] && styles.checkboxActive
+                    ]}
+                    onPress={() => togglePrayerSilent(p)}
+                    activeOpacity={0.7}
+                  >
+                    {silentPrayers[p] ? (
+                      <Check size={14} color={COLORS.surface} />
+                    ) : (
+                      <View style={styles.checkboxEmpty} />
+                    )}
+                    <Text style={[styles.checkboxText, silentPrayers[p] && styles.checkboxTextActive]}>
+                      {t(p, p, p)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          )}
+
+          <View style={styles.settingItem}>
+            <View style={styles.settingItemLeft}>
+              <Bell size={16} color={COLORS.textSecondary} />
+              <Text style={styles.settingLabel}>
+                {t('Scheduled Silent', 'Scheduled Silent', 'صامت مجدول')}
+              </Text>
+            </View>
+            <TealToggle
+              value={scheduledSilent}
+              onValueChange={(v) => { setScheduledSilent(v); saveSetting('scheduledSilent', v); }}
+            />
+          </View>
+
+          {scheduledSilent && (
+            <View style={styles.timeRangeRow}>
+              <View style={styles.timeInput}>
+                <Text style={styles.timeLabel}>{t('Kuva', 'From', 'من')}</Text>
+                <TouchableOpacity
+                  style={styles.timeBtn}
+                  onPress={() => {
+                    const h = parseInt(silentFrom.split(':')[0]);
+                    const newH = (h + 1) % 24;
+                    const val = `${String(newH).padStart(2, '0')}:${silentFrom.split(':')[1]}`;
+                    setSilentFrom(val);
+                    saveSetting('silentFrom', val);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.timeText}>{silentFrom}</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.timeArrow}>
+                <ChevronRight size={16} color={COLORS.secondary} style={{ transform: [{ rotate: '0deg' }] }} />
+              </View>
+              <View style={styles.timeInput}>
+                <Text style={styles.timeLabel}>{t('Kugeza', 'To', 'إلى')}</Text>
+                <TouchableOpacity
+                  style={styles.timeBtn}
+                  onPress={() => {
+                    const h = parseInt(silentTo.split(':')[0]);
+                    const newH = (h + 1) % 24;
+                    const val = `${String(newH).padStart(2, '0')}:${silentTo.split(':')[1]}`;
+                    setSilentTo(val);
+                    saveSetting('silentTo', val);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.timeText}>{silentTo}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </View>
+
+        {/* Statistics */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionHeaderLeft}>
+              <Settings size={18} color={COLORS.primary} />
+              <Text style={styles.sectionTitle}>
+                {t('Ibiharuro', 'Statistics', 'الإحصائيات')}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.sectionDividerLine} />
+          <View style={styles.statsGrid}>
+            {[
+              { count: tracks.length, labelRw: 'Inyigisho', labelEn: 'Lessons', labelAr: 'دروس', icon: 'headset' },
+              { count: videos.length, labelRw: 'Amashusho', labelEn: 'Videos', labelAr: 'فيديو', icon: 'videocam' },
+              { count: books.length, labelRw: 'Ibitabo', labelEn: 'Books', labelAr: 'كتب', icon: 'book' },
+              { count: surahs.length, labelRw: 'Sura', labelEn: 'Surahs', labelAr: 'سور', icon: 'book-outline' },
+            ].map((stat, i) => (
+              <View key={i} style={styles.statItem}>
+                <View style={styles.statIconWrap}>
+                  <Volume2 size={18} color={COLORS.primary} />
+                </View>
+                <Text style={styles.statNumber}>{stat.count}</Text>
+                <Text style={styles.statLabel}>{t(stat.labelRw, stat.labelEn, stat.labelAr)}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Offline Cache */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionHeaderLeft}>
+              <HardDrive size={18} color={COLORS.primary} />
+              <Text style={styles.sectionTitle}>
+                {t('Ubukungu bw\'Offine', 'Offline Cache', 'التخزين المؤقت')}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.sectionDividerLine} />
+          <View style={styles.settingItem}>
+            <View style={styles.settingItemLeft}>
+              <HardDrive size={16} color={COLORS.textSecondary} />
+              <Text style={styles.settingLabel}>
+                {t('Ibihinguro vyabitswe', 'Cached Items', 'العناصر المخزنة')}
+              </Text>
+            </View>
+            <Text style={styles.settingValue}>{cacheInfo.totalItems}</Text>
+          </View>
+          {cacheInfo.lastUpdated && (
+            <View style={styles.settingItem}>
+              <View style={styles.settingItemLeft}>
+                <Text style={[styles.settingLabel, { paddingLeft: 26 }]}>
+                  {t('Igihe yavuguruwe', 'Last Updated', 'آخر تحديث')}
+                </Text>
+              </View>
+              <Text style={[styles.settingValue, { fontSize: 11, color: COLORS.textSecondary }]}>
+                {cacheInfo.lastUpdated.toLocaleDateString()} {cacheInfo.lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </Text>
+            </View>
+          )}
+          <TouchableOpacity style={styles.clearCacheBtn} onPress={handleClearCache} activeOpacity={0.7}>
+            <Text style={styles.clearCacheBtnText}>
+              {t('Siba Ubukungu', 'Clear Cache', 'مسح التخزين المؤقت')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Admin Access */}
+        <TouchableOpacity
+          style={[styles.section, styles.adminSection]}
+          onPress={() => navigation.navigate('Admin')}
+          activeOpacity={0.7}
+        >
+          <View style={styles.sectionHeaderLeft}>
+            <Shield size={18} color={COLORS.primary} />
+            <Text style={styles.sectionTitle}>
+              {t('Admin', 'Admin Panel', 'لوحة الإدارة')}
+            </Text>
+          </View>
+          <ChevronRight size={18} color={COLORS.textTertiary} />
+        </TouchableOpacity>
+
+        {/* Footer */}
+        <View style={styles.footerSection}>
+          <View style={styles.footerDividerRow}>
+            <View style={styles.footerLine} />
+            <Settings size={10} color={COLORS.textTertiary} />
+            <View style={styles.footerLine} />
+          </View>
+          <Text style={styles.footerText}>
+            {t('Sobanukirwa v2.0.0', 'Sobanukirwa v2.0.0', 'Sobanukirwa v2.0.0')}
+          </Text>
+          <Text style={styles.footerSubText}>
+            {t('Urumuri rw\'abemeramana', 'Light of Faith', 'نور الإيمان')}
+          </Text>
+        </View>
+
+      </ScrollView>
+      </SafeAreaView>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  bgImage: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(248, 250, 252, 0.85)',
+  },
+  container: { flex: 1, backgroundColor: 'transparent' },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingVertical: 14,
-    borderBottomWidth: 1, borderBottomColor: 'rgba(212,175,55,0.12)',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderBottomWidth: 1, borderBottomColor: COLORS.border,
   },
   backBtn: {
     width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(30,60,92,0.3)', borderWidth: 1.5, borderColor: 'rgba(212,175,55,0.2)',
+    backgroundColor: '#F0FDFA', borderWidth: 1, borderColor: '#CCFBF1',
   },
   headerCenter: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  headerTitle: { fontSize: 20, fontWeight: '700', fontFamily: 'serif' },
+  headerIconWrap: {
+    width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: COLORS.primary,
+  },
+  headerTitle: { fontSize: 20, fontWeight: '700', color: COLORS.text },
   scroll: { padding: 16, paddingBottom: 40, gap: 14 },
 
-  /* Logo */
-  logoSection: { alignItems: 'center', paddingVertical: 16, gap: 6 },
-  logoRing: {
-    width: 88, height: 88, borderRadius: 44, borderWidth: 3,
-    alignItems: 'center', justifyContent: 'center', position: 'relative',
-    shadowColor: '#d4af37', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.3, shadowRadius: 16, elevation: 8,
-  },
-  logoGlow: {
-    position: 'absolute', top: -12, left: -12, right: -12, bottom: -12,
-    borderRadius: 56, opacity: 0.5,
-  },
-  logoIcon: {
-    width: 72, height: 72, borderRadius: 36, borderWidth: 2,
-    alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
-  },
-  logoImage: { width: 58, height: 58, borderRadius: 29 },
-  logoText: { fontSize: 24, fontWeight: '700', fontFamily: 'serif', marginTop: 8 },
-  versionText: { fontSize: 12, marginTop: 2 },
-  diamondRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
-  diamondLine: { width: 36, height: 1.5, borderRadius: 1 },
-  diamond: {
-    width: 8, height: 8, borderRadius: 2, transform: [{ rotate: '45deg' }],
-    alignItems: 'center', justifyContent: 'center',
-  },
-  diamondInner: { width: 3, height: 3, borderRadius: 1, backgroundColor: '#0a1220' },
-
   /* Sections */
-  section: { borderRadius: 16, borderWidth: 1.5, padding: 16, overflow: 'hidden' },
+  section: {
+    borderRadius: 16, borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)', padding: 16, overflow: 'hidden',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 1,
+  },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   sectionHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
-  sectionTitle: { fontSize: 15, fontWeight: '600', fontFamily: 'serif' },
-  sectionDividerLine: { height: 1, backgroundColor: 'rgba(212,175,55,0.15)', marginVertical: 12 },
-  sectionDivider: { height: 1, backgroundColor: 'rgba(212,175,55,0.1)', marginVertical: 4 },
+  sectionTitle: { fontSize: 15, fontWeight: '600', color: COLORS.text },
+  sectionDividerLine: { height: 1, backgroundColor: COLORS.border, marginVertical: 12 },
 
   /* Language */
   langRow: { flexDirection: 'row', gap: 8 },
   langBtn: {
-    flex: 1, paddingVertical: 14, borderRadius: 12, borderWidth: 1.5,
+    flex: 1, paddingVertical: 14, borderRadius: 12, borderWidth: 1,
+    borderColor: COLORS.border, backgroundColor: COLORS.bg,
     alignItems: 'center', gap: 4,
   },
+  langBtnActive: {
+    backgroundColor: COLORS.primary, borderColor: COLORS.primary,
+  },
+  langCheck: { position: 'absolute', top: 6, right: 6 },
   langFlag: { fontSize: 22 },
-  langLabel: { fontSize: 11, fontWeight: '600', textAlign: 'center' },
+  langLabel: { fontSize: 11, fontWeight: '600', textAlign: 'center', color: COLORS.textSecondary },
+  langLabelActive: { color: COLORS.surface },
 
   /* Settings */
   settingItem: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.04)',
+    paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#F3F4F6',
   },
   settingItemLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
-  settingLabel: { fontSize: 13, flex: 1 },
-  settingValue: { fontSize: 13, fontWeight: '700' },
+  settingLabel: { fontSize: 13, flex: 1, color: COLORS.text },
+  settingValue: { fontSize: 13, fontWeight: '700', color: COLORS.primary },
 
   /* Reciter */
   reciterRow: { flexDirection: 'row', gap: 6, marginBottom: 12 },
   reciterBtn: {
-    flex: 1, paddingVertical: 10, borderRadius: 10, borderWidth: 1.5,
-    alignItems: 'center', gap: 4,
+    flex: 1, paddingVertical: 10, borderRadius: 10, borderWidth: 1,
+    borderColor: COLORS.border, backgroundColor: COLORS.bg,
+    alignItems: 'center', gap: 4, flexDirection: 'row', justifyContent: 'center',
   },
-  reciterText: { fontSize: 10, fontWeight: '600', textAlign: 'center' },
+  reciterBtnActive: { backgroundColor: COLORS.secondary, borderColor: COLORS.secondary },
+  reciterText: { fontSize: 10, fontWeight: '600', textAlign: 'center', color: COLORS.textSecondary },
+  reciterTextActive: { color: COLORS.surface },
 
   /* Volume Bars */
   volumeBarRow: {
@@ -582,7 +627,7 @@ const styles = StyleSheet.create({
   volumeBarItem: { alignItems: 'center', gap: 6, flex: 1 },
   volumeBarTrack: {
     width: 28, height: 50, borderRadius: 6, overflow: 'hidden',
-    justifyContent: 'flex-end',
+    justifyContent: 'flex-end', backgroundColor: '#F3F4F6',
   },
   volumeBarFill: { width: '100%', borderRadius: 6 },
   volumeBarLabel: { fontSize: 10, fontWeight: '600' },
@@ -590,45 +635,67 @@ const styles = StyleSheet.create({
   /* Interval */
   intervalRow: { flexDirection: 'row', gap: 6, marginBottom: 8 },
   intervalBtn: {
-    flex: 1, paddingVertical: 10, borderRadius: 10, borderWidth: 1.5, alignItems: 'center',
+    flex: 1, paddingVertical: 10, borderRadius: 10, borderWidth: 1,
+    alignItems: 'center', borderColor: COLORS.border, backgroundColor: COLORS.bg,
   },
-  intervalText: { fontSize: 12, fontWeight: '700' },
+  intervalBtnActive: { backgroundColor: COLORS.secondary, borderColor: COLORS.secondary },
+  intervalText: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary },
+  intervalTextActive: { color: COLORS.surface },
 
   /* Prayer Checkboxes */
   prayerCheckboxes: { paddingVertical: 8 },
-  checkboxLabel: { fontSize: 12, marginBottom: 8 },
+  checkboxLabel: { fontSize: 12, marginBottom: 8, color: COLORS.textSecondary },
   checkboxRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   checkbox: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, borderWidth: 1.5,
+    paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, borderWidth: 1,
+    borderColor: COLORS.border, backgroundColor: COLORS.bg,
   },
-  checkboxText: { fontSize: 12, fontWeight: '600' },
+  checkboxActive: { backgroundColor: COLORS.secondary, borderColor: COLORS.secondary },
+  checkboxEmpty: { width: 14, height: 14, borderRadius: 7, borderWidth: 1.5, borderColor: COLORS.textTertiary },
+  checkboxText: { fontSize: 12, fontWeight: '600', color: COLORS.textSecondary },
+  checkboxTextActive: { color: COLORS.surface },
 
   /* Time Range */
   timeRangeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8 },
   timeInput: { flex: 1, gap: 4 },
-  timeLabel: { fontSize: 11, textAlign: 'center', fontWeight: '500' },
+  timeLabel: { fontSize: 11, textAlign: 'center', fontWeight: '500', color: COLORS.textSecondary },
   timeBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
-    paddingVertical: 10, borderRadius: 10, borderWidth: 1.5,
+    paddingVertical: 10, borderRadius: 10, borderWidth: 1,
+    borderColor: COLORS.border, backgroundColor: COLORS.bg,
   },
-  timeText: { fontSize: 14, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  timeText: { fontSize: 14, fontWeight: '700', fontVariant: ['tabular-nums'], color: COLORS.text },
   timeArrow: { paddingTop: 16 },
+
+  /* Clear Cache */
+  clearCacheBtn: {
+    width: '100%', paddingVertical: 12, borderRadius: 12, borderWidth: 1,
+    borderColor: '#EF4444', backgroundColor: '#FEF2F2',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  clearCacheBtnText: { fontSize: 14, fontWeight: '700', color: '#EF4444' },
 
   /* Stats */
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   statItem: {
-    width: '47%', padding: 14, borderRadius: 12, borderWidth: 1,
-    alignItems: 'center', gap: 6,
+    width: '47%', padding: 14, borderRadius: 12, borderWidth: 1, borderColor: COLORS.border,
+    alignItems: 'center', gap: 6, backgroundColor: COLORS.bg,
   },
-  statIconWrap: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  statNumber: { fontSize: 22, fontWeight: '700' },
-  statLabel: { fontSize: 11, fontWeight: '500' },
+  statIconWrap: {
+    width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#F0FDFA',
+  },
+  statNumber: { fontSize: 22, fontWeight: '700', color: COLORS.primary },
+  statLabel: { fontSize: 11, fontWeight: '500', color: COLORS.textSecondary },
+
+  /* Admin */
+  adminSection: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'rgba(255, 255, 255, 0.9)' },
 
   /* Footer */
   footerSection: { alignItems: 'center', paddingVertical: 16, gap: 6 },
   footerDividerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
-  footerLine: { width: 30, height: 1.5, borderRadius: 1 },
-  footerText: { fontSize: 12, fontWeight: '600' },
-  footerSubText: { fontSize: 11, fontStyle: 'italic' },
+  footerLine: { width: 30, height: 1.5, borderRadius: 1, backgroundColor: COLORS.border },
+  footerText: { fontSize: 12, fontWeight: '600', color: COLORS.textSecondary },
+  footerSubText: { fontSize: 11, fontStyle: 'italic', color: COLORS.textTertiary },
 });

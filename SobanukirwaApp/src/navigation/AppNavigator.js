@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ImageBackground } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -26,68 +27,63 @@ import AdminNavigator from './AdminNavigator';
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
+const TAB_ICONS = {
+  Home: { active: 'home', inactive: 'home-outline' },
+  Prayer: { active: 'time', inactive: 'time-outline' },
+  Quran: { active: 'book', inactive: 'book-outline' },
+  Audio: { active: 'headset', inactive: 'headset-outline' },
+  Books: { active: 'library', inactive: 'library-outline' },
+  Videos: { active: 'film', inactive: 'film-outline' },
+  About: { active: 'ellipsis-horizontal', inactive: 'ellipsis-horizontal-outline' },
+};
+
 function HomeTabs() {
-  const { COLORS, t } = useApp();
+  const { t } = useApp();
 
   return (
     <Tab.Navigator
-      screenOptions={{
+      screenOptions={({ route }) => ({
         headerShown: false,
+        tabBarActiveTintColor: '#5EEAD4',
+        tabBarInactiveTintColor: 'rgba(255,255,255,0.45)',
         tabBarStyle: {
-          backgroundColor: COLORS.primaryDark,
-          borderTopColor: 'rgba(212,175,55,0.15)',
+          backgroundColor: 'rgba(6, 48, 44, 0.92)',
+          borderTopColor: 'rgba(255,255,255,0.1)',
           borderTopWidth: 1,
-          height: 62,
-          paddingBottom: 6,
+          height: 65,
+          paddingBottom: 8,
           paddingTop: 6,
-          elevation: 20,
+          elevation: 8,
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: -4 },
+          shadowOffset: { width: 0, height: -2 },
           shadowOpacity: 0.3,
-          shadowRadius: 12,
+          shadowRadius: 8,
         },
-        tabBarActiveTintColor: COLORS.secondary,
-        tabBarInactiveTintColor: COLORS.textMuted,
         tabBarLabelStyle: {
-          fontSize: 9,
-          fontWeight: '600',
+          fontSize: 10,
+          fontWeight: '500',
           marginTop: 2,
+          letterSpacing: 0.3,
         },
         tabBarHideOnKeyboard: true,
-      }}
+        tabBarIcon: ({ color, size, focused }) => {
+          const icons = TAB_ICONS[route.name] || { active: 'ellipse', inactive: 'ellipse-outline' };
+          return <Ionicons name={focused ? icons.active : icons.inactive} size={size} color={color} />;
+        },
+        tabBarLabel: t(
+          route.name === 'Home' ? 'Ahabanza' : route.name === 'Prayer' ? 'Isengesho' : route.name === 'Quran' ? 'Qor\'an' : route.name === 'Audio' ? 'Inyigisho' : route.name === 'Books' ? 'Ibitabo' : route.name === 'Videos' ? 'Amashusho' : 'Ibyerekeye',
+          route.name === 'Home' ? 'Home' : route.name === 'Prayer' ? 'Prayer' : route.name === 'Quran' ? 'Quran' : route.name === 'Audio' ? 'Audio' : route.name === 'Books' ? 'Books' : route.name === 'Videos' ? 'Videos' : 'About',
+          route.name === 'Home' ? 'الرئيسية' : route.name === 'Prayer' ? 'الصلاة' : route.name === 'Quran' ? 'القرآن' : route.name === 'Audio' ? 'الدروس' : route.name === 'Books' ? 'الكتب' : route.name === 'Videos' ? 'الفيديو' : 'حول'
+        ),
+      })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} options={{
-        tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'home' : 'home-outline'} size={size} color={color} />,
-        tabBarLabel: t('Ahabanza', 'Home', 'الرئيسية'),
-      }} />
-      <Tab.Screen name="Prayer" component={PrayerScreen} options={{
-        tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'time' : 'time-outline'} size={size} color={color} />,
-        tabBarLabel: t('Isengesho', 'Prayer', 'الصلاة'),
-      }} />
-      <Tab.Screen name="Quran" component={QuranScreen} options={{
-        tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'book' : 'book-outline'} size={size} color={color} />,
-        tabBarLabel: t('Qur\'an', 'Quran', 'القرآن'),
-      }} />
-      <Tab.Screen name="Audio" component={AudioScreen} options={{
-        tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'headset' : 'headset-outline'} size={size} color={color} />,
-        tabBarLabel: t('Inyigisho', 'Audio', 'الدروس'),
-      }} />
-      <Tab.Screen name="Adhkar" component={AdhkarScreen} options={{
-        tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'hand-left' : 'hand-left-outline'} size={size} color={color} />,
-        tabBarLabel: t('Adhkar', 'Adhkar', 'الأذكار'),
-      }} />
-      <Tab.Screen name="Books" component={BooksScreen} options={{
-        tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'library' : 'library-outline'} size={size} color={color} />,
-        tabBarLabel: t('Ibitabo', 'Books', 'الكتب'),
-      }} />
-      <Tab.Screen name="Videos" component={VideoScreen} options={{
-        tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'play-circle' : 'play-circle-outline'} size={size} color={color} />,
-        tabBarLabel: t('Amashusho', 'Videos', 'الفيديو'),
-      }} />
-      <Tab.Screen name="About" component={AboutScreen} options={{
-        tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'ellipsis-horizontal' : 'ellipsis-horizontal'} size={size} color={color} />,
-        tabBarLabel: t('Ibyerekeye', 'About', 'حول'),
-      }} />
+      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Prayer" component={PrayerScreen} />
+      <Tab.Screen name="Quran" component={QuranScreen} />
+      <Tab.Screen name="Audio" component={AudioScreen} />
+      <Tab.Screen name="Books" component={BooksScreen} />
+      <Tab.Screen name="Videos" component={VideoScreen} />
+      <Tab.Screen name="About" component={AboutScreen} />
     </Tab.Navigator>
   );
 }
@@ -182,6 +178,7 @@ export default function AppNavigator() {
         <Stack.Screen name="SurahDetail" component={SurahDetailScreen} options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="Qibla" component={QiblaScreen} options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="Settings" component={SettingsScreen} options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="Adhkar" component={AdhkarScreen} options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="Admin" component={AdminNavigator} options={{ animation: 'slide_from_bottom' }} />
       </Stack.Navigator>
     </>

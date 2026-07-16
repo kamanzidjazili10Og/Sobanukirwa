@@ -1,15 +1,32 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Animated, Dimensions } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Animated, Dimensions, Platform, ImageBackground } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Audio } from 'expo-av';
 import { useApp } from '../context/AppContext';
+
+let Audio = null;
+if (Platform.OS !== 'web') {
+  try { Audio = require('expo-av').Audio; } catch (e) {}
+}
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+const C = {
+  primary: '#0F766E',
+  secondary: '#14B8A6',
+  accent: '#F59E0B',
+  bg: '#F8FAFC',
+  surface: '#FFFFFF',
+  card: '#FFFFFF',
+  text: '#111827',
+  textSec: '#6B7280',
+  textTer: '#9CA3AF',
+  border: '#E5E7EB',
+};
+
 export default function AudioPlayerScreen({ route, navigation }) {
   const { category, tracks: passedTracks, startIndex = 0 } = route.params;
-  const { t, COLORS, stopAllMedia, registerPauseAudio } = useApp();
+  const { t, stopAllMedia, registerPauseAudio } = useApp();
   const soundRef = useRef(null);
   const [currentIndex, setCurrentIndex] = useState(startIndex);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -19,6 +36,8 @@ export default function AudioPlayerScreen({ route, navigation }) {
   const [repeatMode, setRepeatMode] = useState(0);
   const [volume, setVolume] = useState(0.8);
   const spinAnim = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.9)).current;
 
   const tracks = passedTracks || [];
   const currentTrack = tracks[currentIndex];
@@ -26,9 +45,15 @@ export default function AudioPlayerScreen({ route, navigation }) {
   useEffect(() => {
     stopAllMedia();
     registerPauseAudio(pauseAudio);
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+      Animated.spring(scaleAnim, { toValue: 1, friction: 8, tension: 40, useNativeDriver: true }),
+    ]).start();
     return () => {
       registerPauseAudio(null);
-      if (soundRef.current) soundRef.current.unloadAsync();
+      if (soundRef.current) {
+        try { soundRef.current.unloadAsync(); } catch(e) {}
+      }
     };
   }, []);
 
@@ -53,6 +78,7 @@ export default function AudioPlayerScreen({ route, navigation }) {
   async function loadTrack() {
     if (!currentTrack) return;
     if (soundRef.current) await soundRef.current.unloadAsync();
+    if (!Audio) return;
     try {
       const audioUrl = currentTrack.audio_url || currentTrack.audioUrl || '';
       if (!audioUrl) return;
@@ -114,42 +140,47 @@ export default function AudioPlayerScreen({ route, navigation }) {
   const progress = duration > 0 ? (position / duration) * 100 : 0;
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]}>
-      <View style={[styles.topBar, { borderBottomColor: COLORS.border }]}>
+    <ImageBackground source={require('../../assets/bg-videos.jpg')} style={styles.bgImage} resizeMode="cover">
+      <View style={styles.overlay} />
+      <SafeAreaView style={styles.container}>
+      <Animated.View style={[styles.topBar, { opacity: fadeAnim }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.topBtn}>
-          <Ionicons name="chevron-down" size={28} color={COLORS.text} />
+          <Ionicons name="chevron-down" size={28} color={C.text} />
         </TouchableOpacity>
         <View style={styles.topCenter}>
-          <Text style={[styles.topTitle, { color: COLORS.secondary }]}>
+          <Text style={styles.topTitle}>
             {t('Urwego rw\'Inyigisho', 'Now Playing', 'يتم التشغيل')}
           </Text>
-          <Text style={[styles.topSub, { color: COLORS.textMuted }]}>
+          <Text style={styles.topSub}>
             {category || t('Inyigisho', 'Lessons', 'الدروس')}
           </Text>
         </View>
         <TouchableOpacity style={styles.topBtn}>
-          <Ionicons name="ellipsis-horizontal" size={22} color={COLORS.textMuted} />
+          <Ionicons name="ellipsis-horizontal" size={22} color={C.textTer} />
         </TouchableOpacity>
-      </View>
+      </Animated.View>
 
-      <View style={styles.artSection}>
-        <View style={[styles.artOuterRing, { borderColor: 'rgba(212,175,55,0.1)' }]} />
-        <Animated.View style={[styles.artDisc, { backgroundColor: COLORS.surface, borderColor: COLORS.secondary, transform: [{ rotate: spin }] }]}>
-          <View style={[styles.artDiscInner, { backgroundColor: 'rgba(212,175,55,0.06)' }]}>
-            <Ionicons name="headset" size={48} color={COLORS.secondary} />
+      <Animated.View style={[styles.artSection, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
+        <View style={styles.artGlow} />
+        <View style={styles.artOuterRing} />
+        <Animated.View style={[styles.artDisc, { transform: [{ rotate: spin }] }]}>
+          <View style={styles.artDiscInner}>
+            <Ionicons name="headset" size={48} color={C.secondary} />
           </View>
         </Animated.View>
-        <View style={[styles.artCenterDot, { backgroundColor: COLORS.secondary }]} />
-      </View>
+        <View style={styles.artCenterDot} />
+      </Animated.View>
 
-      <View style={styles.trackInfoSection}>
-        <Text style={[styles.trackTitle, { color: COLORS.text }]} numberOfLines={2}>
-          {currentTrack?.title || t('Hitamo inyigisho', 'Select a lesson', 'اختر درساً')}
-        </Text>
-        <Text style={[styles.trackArtist, { color: COLORS.secondary }]}>
-          {currentTrack ? (currentTrack.artist_name || currentTrack.artist || category) : ''}
-        </Text>
-      </View>
+      <Animated.View style={[styles.trackInfoSection, { opacity: fadeAnim }]}>
+        <View style={styles.trackInfoCard}>
+          <Text style={styles.trackTitle} numberOfLines={2}>
+            {currentTrack?.title || t('Hitamo inyigisho', 'Select a lesson', 'اختر درساً')}
+          </Text>
+          <Text style={styles.trackArtist}>
+            {currentTrack ? (currentTrack.artist_name || currentTrack.artist || category) : ''}
+          </Text>
+        </View>
+      </Animated.View>
 
       <View style={styles.progressSection}>
         <TouchableOpacity
@@ -162,16 +193,16 @@ export default function AudioPlayerScreen({ route, navigation }) {
             }
           }}
         >
-          <View style={[styles.progressBar, { backgroundColor: 'rgba(212,175,55,0.12)' }]}>
-            <View style={[styles.progressFill, { width: `${progress}%`, backgroundColor: COLORS.secondary }]} />
+          <View style={styles.progressBar}>
+            <View style={[styles.progressFill, { width: `${progress}%` }]} />
             {duration > 0 && (
-              <View style={[styles.progressThumb, { left: `${progress}%`, backgroundColor: COLORS.secondary }]} />
+              <View style={[styles.progressThumb, { left: `${progress}%` }]} />
             )}
           </View>
         </TouchableOpacity>
         <View style={styles.timeRow}>
-          <Text style={[styles.timeText, { color: COLORS.textMuted }]}>{formatTime(position)}</Text>
-          <Text style={[styles.timeText, { color: COLORS.textMuted }]}>
+          <Text style={styles.timeText}>{formatTime(position)}</Text>
+          <Text style={styles.timeText}>
             {duration > 0 ? formatTime(duration) : '0:00'}
           </Text>
         </View>
@@ -179,27 +210,27 @@ export default function AudioPlayerScreen({ route, navigation }) {
 
       <View style={styles.controlsSection}>
         <TouchableOpacity onPress={() => setShuffle(!shuffle)} style={styles.ctrlBtn}>
-          <Ionicons name="shuffle" size={20} color={shuffle ? COLORS.secondary : COLORS.textMuted} />
+          <Ionicons name="shuffle" size={20} color={shuffle ? '#5EEAD4' : 'rgba(255,255,255,0.5)'} />
         </TouchableOpacity>
         <TouchableOpacity onPress={previousTrack} style={styles.ctrlBtn}>
-          <Ionicons name="play-skip-back" size={28} color={COLORS.text} />
+          <Ionicons name="play-skip-back" size={28} color="#FFFFFF" />
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.playBtn, { backgroundColor: COLORS.secondary }]} onPress={togglePlayPause}>
-          <Ionicons name={isPlaying ? 'pause' : 'play'} size={32} color={COLORS.primaryDark} style={!isPlaying ? { marginLeft: 3 } : {}} />
+        <TouchableOpacity style={styles.playBtn} onPress={togglePlayPause}>
+          <Ionicons name={isPlaying ? 'pause' : 'play'} size={32} color="#FFFFFF" style={!isPlaying ? { marginLeft: 3 } : {}} />
         </TouchableOpacity>
         <TouchableOpacity onPress={nextTrack} style={styles.ctrlBtn}>
-          <Ionicons name="play-skip-forward" size={28} color={COLORS.text} />
+          <Ionicons name="play-skip-forward" size={28} color="#FFFFFF" />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => setRepeatMode((repeatMode + 1) % 3)} style={styles.ctrlBtn}>
-          <Ionicons name="repeat" size={20} color={repeatMode > 0 ? COLORS.secondary : COLORS.textMuted} />
-          {repeatMode === 2 && <Text style={[styles.repeatBadge, { color: COLORS.secondary }]}>1</Text>}
+          <Ionicons name="repeat" size={20} color={repeatMode > 0 ? '#5EEAD4' : 'rgba(255,255,255,0.5)'} />
+          {repeatMode === 2 && <Text style={styles.repeatBadge}>1</Text>}
         </TouchableOpacity>
       </View>
 
       <View style={styles.volumeSection}>
-        <Ionicons name="volume-low" size={14} color={COLORS.textMuted} />
+        <Ionicons name="volume-low" size={14} color="rgba(255,255,255,0.5)" />
         <TouchableOpacity
-          style={[styles.volumeBar, { backgroundColor: 'rgba(212,175,55,0.12)' }]}
+          style={styles.volumeBar}
           onPress={(e) => {
             const barWidth = SCREEN_WIDTH - 120;
             const pct = Math.max(0, Math.min(1, e.nativeEvent.locationX / barWidth));
@@ -207,17 +238,17 @@ export default function AudioPlayerScreen({ route, navigation }) {
             if (soundRef.current) soundRef.current.setVolumeAsync(pct);
           }}
         >
-          <View style={[styles.volumeFill, { width: `${volume * 100}%`, backgroundColor: COLORS.secondary }]} />
+          <View style={[styles.volumeFill, { width: `${volume * 100}%` }]} />
         </TouchableOpacity>
-        <Ionicons name="volume-high" size={14} color={COLORS.textMuted} />
+        <Ionicons name="volume-high" size={14} color="rgba(255,255,255,0.5)" />
       </View>
 
-      <View style={[styles.playlistSection, { borderTopColor: COLORS.border }]}>
+      <View style={styles.playlistSection}>
         <View style={styles.playlistHeader}>
-          <Text style={[styles.playlistTitle, { color: COLORS.secondary }]}>
+          <Text style={styles.playlistTitle}>
             {t('Urutonde', 'Playlist', 'قائمة التشغيل')}
           </Text>
-          <Text style={[styles.playlistCount, { color: COLORS.textMuted }]}>
+          <Text style={styles.playlistCount}>
             {tracks.length} {t('inyigisho', 'tracks', 'مقطع')}
           </Text>
         </View>
@@ -227,82 +258,95 @@ export default function AudioPlayerScreen({ route, navigation }) {
               key={track.id || index}
               style={[
                 styles.playlistItem,
-                { backgroundColor: index === currentIndex ? 'rgba(212,175,55,0.1)' : 'transparent', borderColor: index === currentIndex ? 'rgba(212,175,55,0.3)' : 'transparent' }
+                index === currentIndex && styles.playlistItemActive
               ]}
               onPress={() => setCurrentIndex(index)}
             >
               <View style={[styles.plNumWrap, {
-                backgroundColor: index === currentIndex ? COLORS.secondary : 'rgba(212,175,55,0.08)',
+                backgroundColor: index === currentIndex ? C.secondary : 'rgba(20,184,166,0.15)',
               }]}>
                 {index === currentIndex && isPlaying ? (
-                  <Ionicons name="volume-high" size={12} color={COLORS.primaryDark} />
+                  <Ionicons name="volume-high" size={12} color="#FFFFFF" />
                 ) : (
-                  <Text style={[styles.plNum, { color: index === currentIndex ? COLORS.primaryDark : COLORS.secondary }]}>{index + 1}</Text>
+                  <Text style={[styles.plNum, { color: index === currentIndex ? '#FFFFFF' : '#5EEAD4' }]}>{index + 1}</Text>
                 )}
               </View>
               <View style={styles.plInfo}>
-                <Text style={[styles.plTitle, { color: index === currentIndex ? COLORS.secondary : COLORS.text }]} numberOfLines={1}>
+                <Text style={[styles.plTitle, { color: index === currentIndex ? C.primary : C.text }]} numberOfLines={1}>
                   {track.title}
                 </Text>
-                <Text style={[styles.plArtist, { color: COLORS.textMuted }]} numberOfLines={1}>
+                <Text style={styles.plArtist} numberOfLines={1}>
                   {track.artist_name || track.artist || ''}
                 </Text>
               </View>
               {index === currentIndex && (
                 <View style={styles.plNowPlaying}>
-                  <View style={[styles.npBar, { backgroundColor: COLORS.secondary }]} />
-                  <View style={[styles.npBar2, { backgroundColor: COLORS.secondary, height: 10 }]} />
-                  <View style={[styles.npBar, { backgroundColor: COLORS.secondary }]} />
+                  <View style={[styles.npBar, { backgroundColor: '#5EEAD4' }]} />
+                  <View style={[styles.npBar2, { backgroundColor: '#5EEAD4' }]} />
+                  <View style={[styles.npBar, { backgroundColor: '#5EEAD4' }]} />
                 </View>
               )}
             </TouchableOpacity>
           ))}
         </ScrollView>
       </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  topBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 4, borderBottomWidth: 1 },
+  bgImage: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(6, 48, 44, 0.55)',
+  },
+  container: { flex: 1, backgroundColor: 'transparent' },
+  topBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 4, backgroundColor: 'rgba(0,0,0,0.3)', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)' },
   topBtn: { padding: 12 },
   topCenter: { flex: 1, alignItems: 'center' },
-  topTitle: { fontSize: 13, fontWeight: '700' },
-  topSub: { fontSize: 11, marginTop: 2 },
+  topTitle: { fontSize: 13, fontWeight: '700', color: '#FFFFFF' },
+  topSub: { fontSize: 11, marginTop: 2, color: 'rgba(255,255,255,0.6)' },
   artSection: { alignItems: 'center', marginVertical: 20, position: 'relative' },
-  artOuterRing: { position: 'absolute', width: 200, height: 200, borderRadius: 100, borderWidth: 1 },
-  artDisc: { width: 180, height: 180, borderRadius: 90, borderWidth: 3, alignItems: 'center', justifyContent: 'center' },
-  artDiscInner: { width: 140, height: 140, borderRadius: 70, alignItems: 'center', justifyContent: 'center' },
-  artCenterDot: { position: 'absolute', width: 12, height: 12, borderRadius: 6 },
-  trackInfoSection: { paddingHorizontal: 30, alignItems: 'center', marginBottom: 20 },
-  trackTitle: { fontSize: 20, fontWeight: '700', textAlign: 'center', lineHeight: 28 },
-  trackArtist: { fontSize: 14, marginTop: 6, fontWeight: '500' },
-  progressSection: { paddingHorizontal: 30, marginBottom: 14 },
+  artGlow: { position: 'absolute', width: 240, height: 240, borderRadius: 120, backgroundColor: 'rgba(20,184,166,0.15)', opacity: 0.4 },
+  artOuterRing: { position: 'absolute', width: 220, height: 220, borderRadius: 110, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.15)' },
+  artDisc: { width: 200, height: 200, borderRadius: 100, borderWidth: 3, borderColor: C.secondary, backgroundColor: 'rgba(0,0,0,0.3)', alignItems: 'center', justifyContent: 'center', shadowColor: C.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 16, elevation: 6, overflow: 'hidden' },
+  artDiscInner: { width: 160, height: 160, borderRadius: 80, backgroundColor: 'rgba(0,0,0,0.2)', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  artCenterDot: { position: 'absolute', width: 12, height: 12, borderRadius: 6, backgroundColor: '#5EEAD4' },
+  trackInfoSection: { paddingHorizontal: 20, alignItems: 'center', marginBottom: 16 },
+  trackInfoCard: { backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 16, paddingVertical: 14, paddingHorizontal: 20, width: '100%', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1 },
+  trackTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF', textAlign: 'center', lineHeight: 26 },
+  trackArtist: { fontSize: 13, marginTop: 6, fontWeight: '500', color: '#5EEAD4' },
+  progressSection: { paddingHorizontal: 30, marginBottom: 10 },
   progressBarTouch: { paddingVertical: 8 },
-  progressBar: { height: 5, borderRadius: 2.5, overflow: 'visible', position: 'relative' },
-  progressFill: { height: '100%', borderRadius: 2.5 },
-  progressThumb: { width: 14, height: 14, borderRadius: 7, position: 'absolute', top: -4.5, marginLeft: -7, borderWidth: 2, borderColor: '#fff' },
+  progressBar: { height: 5, borderRadius: 2.5, backgroundColor: 'rgba(255,255,255,0.15)', overflow: 'visible', position: 'relative' },
+  progressFill: { height: '100%', borderRadius: 2.5, backgroundColor: C.secondary },
+  progressThumb: { width: 14, height: 14, borderRadius: 7, position: 'absolute', top: -4.5, marginLeft: -7, borderWidth: 2, borderColor: 'rgba(255,255,255,0.8)', backgroundColor: C.secondary, shadowColor: C.primary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 4 },
   timeRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 },
-  timeText: { fontSize: 11, fontVariant: ['tabular-nums'] },
-  controlsSection: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 20, marginBottom: 12 },
+  timeText: { fontSize: 11, fontVariant: ['tabular-nums'], color: 'rgba(255,255,255,0.6)' },
+  controlsSection: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 20, marginBottom: 10 },
   ctrlBtn: { padding: 8, position: 'relative' },
-  repeatBadge: { position: 'absolute', top: 2, right: 0, fontSize: 9, fontWeight: '800' },
-  playBtn: { width: 66, height: 66, borderRadius: 33, alignItems: 'center', justifyContent: 'center', elevation: 10, shadowColor: '#d4af37', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 14 },
-  volumeSection: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 30, marginBottom: 8 },
-  volumeBar: { flex: 1, height: 4, borderRadius: 2, overflow: 'hidden' },
-  volumeFill: { height: '100%', borderRadius: 2 },
-  playlistSection: { flex: 1, borderTopWidth: 1, paddingTop: 12 },
+  repeatBadge: { position: 'absolute', top: 2, right: 0, fontSize: 9, fontWeight: '800', color: '#5EEAD4' },
+  playBtn: { width: 66, height: 66, borderRadius: 33, alignItems: 'center', justifyContent: 'center', backgroundColor: C.secondary, elevation: 10, shadowColor: C.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 14 },
+  volumeSection: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 30, marginBottom: 6 },
+  volumeBar: { flex: 1, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.15)', overflow: 'hidden' },
+  volumeFill: { height: '100%', borderRadius: 2, backgroundColor: C.secondary },
+  playlistSection: { flex: 1, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)', paddingTop: 10, backgroundColor: 'rgba(0,0,0,0.2)' },
   playlistHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginBottom: 8 },
-  playlistTitle: { fontSize: 15, fontWeight: '700' },
-  playlistCount: { fontSize: 12 },
-  playlistItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 10, gap: 12, borderWidth: 1, borderRadius: 12, marginHorizontal: 12, marginBottom: 4 },
-  plNumWrap: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  playlistTitle: { fontSize: 15, fontWeight: '700', color: '#5EEAD4' },
+  playlistCount: { fontSize: 12, color: 'rgba(255,255,255,0.5)' },
+  playlistItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, gap: 12, borderWidth: 1, borderRadius: 12, marginHorizontal: 12, marginBottom: 4, borderColor: 'rgba(255,255,255,0.08)' },
+  playlistItemActive: { backgroundColor: 'rgba(0,0,0,0.25)', borderColor: 'rgba(20,184,166,0.4)' },
+  plNumWrap: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(20,184,166,0.15)' },
   plNum: { fontSize: 11, fontWeight: '700' },
   plInfo: { flex: 1 },
-  plTitle: { fontSize: 14, fontWeight: '500' },
-  plArtist: { fontSize: 11, marginTop: 2 },
+  plTitle: { fontSize: 14, fontWeight: '500', color: '#FFFFFF' },
+  plArtist: { fontSize: 11, marginTop: 2, color: 'rgba(255,255,255,0.5)' },
   plNowPlaying: { flexDirection: 'row', alignItems: 'flex-end', gap: 2, height: 16 },
   npBar: { width: 3, height: 16, borderRadius: 1.5 },
-  npBar2: { width: 3, borderRadius: 1.5 },
+  npBar2: { width: 3, height: 10, borderRadius: 1.5 },
 });

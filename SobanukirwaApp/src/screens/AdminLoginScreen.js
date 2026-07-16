@@ -66,7 +66,7 @@ export default function AdminLoginScreen({ navigation }) {
 
           {/* Shield Icon */}
           <View style={[styles.iconWrap, { borderColor: COLORS.secondary }]}>
-            <View style={[styles.iconInner, { backgroundColor: 'rgba(212,175,55,0.12)' }]}>
+            <View style={[styles.iconInner, { backgroundColor: 'rgba(15,118,110,0.12)' }]}>
               <Ionicons name="shield-checkmark" size={48} color={COLORS.secondary} />
             </View>
           </View>
@@ -77,7 +77,7 @@ export default function AdminLoginScreen({ navigation }) {
           </Text>
 
           {/* Password Input */}
-          <Animated.View style={[styles.inputWrap, { borderColor: error ? '#e74c3c' : COLORS.border, transform: [{ translateX: shakeAnim }] }]}>
+          <Animated.View style={[styles.inputWrap, { borderColor: error ? '#EF4444' : COLORS.border, transform: [{ translateX: shakeAnim }] }]}>
             <Ionicons name="lock-closed" size={20} color={COLORS.textMuted} style={styles.inputIcon} />
             <TextInput
               style={[styles.input, { color: COLORS.text }]}
@@ -97,7 +97,7 @@ export default function AdminLoginScreen({ navigation }) {
 
           {error ? (
             <View style={styles.errorRow}>
-              <Ionicons name="alert-circle" size={16} color="#e74c3c" />
+              <Ionicons name="alert-circle" size={16} color="#EF4444" />
               <Text style={styles.errorText}>{error}</Text>
             </View>
           ) : null}
@@ -120,7 +120,7 @@ export default function AdminLoginScreen({ navigation }) {
           </TouchableOpacity>
 
           {/* Info */}
-          <View style={[styles.infoCard, { backgroundColor: 'rgba(212,175,55,0.06)', borderColor: 'rgba(212,175,55,0.2)' }]}>
+          <View style={[styles.infoCard, { backgroundColor: 'rgba(15,118,110,0.06)', borderColor: 'rgba(15,118,110,0.2)' }]}>
             <Ionicons name="information-circle" size={16} color={COLORS.secondary} />
             <Text style={[styles.infoText, { color: COLORS.textMuted }]}>
               Admin access allows you to manage tracks, videos, books, categories, adhkar, and more.
@@ -140,29 +140,29 @@ const styles = StyleSheet.create({
     position: 'absolute', top: 16, left: 24,
     width: 40, height: 40, borderRadius: 20, borderWidth: 1.5,
     alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(30,60,92,0.3)',
+    backgroundColor: 'rgba(229,231,235,0.5)',
   },
   iconWrap: {
     width: 100, height: 100, borderRadius: 50, borderWidth: 3,
     alignSelf: 'center', alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#d4af37', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.4, shadowRadius: 20, elevation: 10,
+    shadowColor: '#0F766E', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.4, shadowRadius: 20, elevation: 10,
   },
   iconInner: { width: 84, height: 84, borderRadius: 42, alignItems: 'center', justifyContent: 'center' },
   title: { fontSize: 26, fontWeight: '700', textAlign: 'center', fontFamily: 'serif' },
   subtitle: { fontSize: 14, textAlign: 'center', marginBottom: 8 },
   inputWrap: {
     flexDirection: 'row', alignItems: 'center', borderWidth: 2, borderRadius: 16,
-    paddingHorizontal: 16, backgroundColor: 'rgba(30,60,92,0.3)', height: 56,
+    paddingHorizontal: 16, backgroundColor: 'rgba(229,231,235,0.5)', height: 56,
   },
   inputIcon: { marginRight: 12 },
   input: { flex: 1, fontSize: 16, paddingVertical: 12 },
   eyeBtn: { padding: 4 },
   errorRow: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 4 },
-  errorText: { fontSize: 13, color: '#e74c3c', fontWeight: '500' },
+  errorText: { fontSize: 13, color: '#EF4444', fontWeight: '500' },
   loginBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
     paddingVertical: 16, borderRadius: 16, marginTop: 8,
-    shadowColor: '#d4af37', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 6,
+    shadowColor: '#0F766E', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 6,
   },
   loginBtnText: { fontSize: 16, fontWeight: '700' },
   infoCard: {

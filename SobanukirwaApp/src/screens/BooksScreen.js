@@ -1,14 +1,30 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, TextInput, Modal, StatusBar, RefreshControl, Linking } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, ImageBackground, TextInput, Modal, RefreshControl, Linking, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { BookOpen, Search, BookMarked, RotateCcw, ChevronLeft, Hand, Hash } from 'lucide-react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useApp } from '../context/AppContext';
 import { getMediaUrl } from '../services/api';
-import ScreenBackground from '../components/ScreenBackground';
+
+const { width } = Dimensions.get('window');
+
+const COLORS = {
+  primary: '#0F766E',
+  secondary: '#14B8A6',
+  accent: '#F59E0B',
+  background: '#F8FAFC',
+  surface: '#FFFFFF',
+  card: '#FFFFFF',
+  text: '#111827',
+  textSecondary: '#6B7280',
+  textTertiary: '#9CA3AF',
+  border: '#E5E7EB',
+  success: '#10B981',
+  error: '#EF4444',
+};
 
 export default function BooksScreen() {
-  const { books, t, COLORS, refreshing, refreshData } = useApp();
+  const { books, t, refreshing, refreshData } = useApp();
   const [search, setSearch] = useState('');
   const [selectedBook, setSelectedBook] = useState(null);
   const [readerVisible, setReaderVisible] = useState(false);
@@ -38,44 +54,56 @@ export default function BooksScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]}>
-      <ScreenBackground imageKey="bg-quran">
+    <ImageBackground source={require('../../assets/ok5.jpeg')} style={styles.bgImage} resizeMode="cover">
+      <View style={styles.overlay} />
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: COLORS.secondary }]}>
-          {t('Ibitabo', 'Books', 'الكتب')}
-        </Text>
-        <Text style={[styles.headerSub, { color: COLORS.textMuted }]}>
-          {books.length} {t('itabo', 'books', 'كتاب')}
-        </Text>
+        <View style={styles.headerTop}>
+          <View style={styles.headerTitleWrap}>
+            <View style={styles.headerIconCircle}>
+              <BookOpen size={24} color={COLORS.primary} />
+            </View>
+            <Text style={styles.headerTitle}>
+              {t('Ibitabo', 'Books', 'الكتب')}
+            </Text>
+          </View>
+          <View style={styles.headerBadge}>
+            <Text style={styles.headerCount}>{books.length}</Text>
+          </View>
+        </View>
       </View>
 
       <View style={styles.searchWrap}>
-        <Ionicons name="search" size={16} color={COLORS.textMuted} style={styles.searchIcon} />
-        <TextInput
-          style={[styles.searchInput, { color: COLORS.text, borderColor: COLORS.border, backgroundColor: COLORS.surface }]}
-          placeholder={t('Shakisha itabo...', 'Search books...', 'ابحث عن الكتب...')}
-          placeholderTextColor={COLORS.textMuted}
-          value={search}
-          onChangeText={setSearch}
-        />
+        <View style={styles.searchBar}>
+          <Search size={18} color={COLORS.textTertiary} />
+          <TextInput
+            style={styles.search}
+            placeholder={t('Shakisha itabo...', 'Search books...', 'ابحث عن الكتب...')}
+            placeholderTextColor={COLORS.textTertiary}
+            value={search}
+            onChangeText={setSearch}
+          />
+          {search ? (
+            <TouchableOpacity onPress={() => setSearch('')}>
+              <Text style={styles.clearBtn}>×</Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
       </View>
 
       <ScrollView
-        contentContainerStyle={styles.list}
+        contentContainerStyle={styles.grid}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={refreshData}
-            tintColor={COLORS.secondary}
-            colors={[COLORS.secondary]}
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={refreshData} tintColor={COLORS.secondary} colors={[COLORS.secondary]} />
         }
       >
         {filtered.length === 0 ? (
           <View style={styles.emptyState}>
-            <Ionicons name="book" size={56} color={COLORS.secondary} />
-            <Text style={[styles.emptyText, { color: COLORS.textMuted }]}>
-              {t('Nta tabo tabonetse', 'No books found', 'لم يتم العثور على كتب')}
+            <View style={styles.emptyIconWrap}>
+              <BookOpen size={48} color={COLORS.secondary} />
+            </View>
+            <Text style={styles.emptyText}>
+              {t('Nta bitabo bibonetse', 'No books found', 'لم يتم العثور على كتب')}
             </Text>
           </View>
         ) : filtered.map((item) => {
@@ -86,7 +114,7 @@ export default function BooksScreen() {
           return (
             <TouchableOpacity
               key={item.id}
-              style={[styles.card, { backgroundColor: COLORS.surface, borderColor: COLORS.border }]}
+              style={styles.card}
               onPress={() => openBook(item)}
               activeOpacity={0.85}
             >
@@ -94,80 +122,73 @@ export default function BooksScreen() {
                 {imgUrl ? (
                   <Image source={{ uri: imgUrl }} style={styles.cover} resizeMode="cover" />
                 ) : (
-                  <View style={[styles.coverPlaceholder, { backgroundColor: 'rgba(212,175,55,0.1)' }]}>
-                    <Ionicons name="book" size={40} color={COLORS.secondary} />
+                  <View style={styles.coverPlaceholder}>
+                    <BookOpen size={36} color={COLORS.primary} />
                   </View>
                 )}
                 <View style={styles.coverOverlay} />
                 <View style={[styles.typeBadge, isPdf ? styles.badgePdf : styles.badgeText]}>
                   <Text style={styles.typeBadgeText}>{isPdf ? 'PDF' : 'TEXT'}</Text>
                 </View>
-                {item.category ? (
-                  <View style={styles.categoryBadge}>
-                    <Text style={styles.categoryBadgeText}>{item.category}</Text>
-                  </View>
-                ) : null}
               </View>
               <View style={styles.info}>
-                <Text style={[styles.title, { color: COLORS.text }]} numberOfLines={2}>{itemTitle}</Text>
+                <Text style={styles.title} numberOfLines={2}>{itemTitle}</Text>
                 <View style={styles.authorRow}>
-                  <Ionicons name="person" size={12} color={COLORS.secondary} />
-                  <Text style={[styles.author, { color: COLORS.secondary }]} numberOfLines={1}>{itemAuthor}</Text>
+                  <Hash size={12} color={COLORS.secondary} />
+                  <Text style={styles.author} numberOfLines={1}>{itemAuthor}</Text>
                 </View>
-                <View style={[styles.readBtn, { backgroundColor: COLORS.secondary }]}>
-                  <Ionicons name="book-open" size={14} color={COLORS.primaryDark} />
-                  <Text style={[styles.readBtnText, { color: COLORS.primaryDark }]}>
+                {item.category ? (
+                  <View style={styles.categoryPill}>
+                    <Text style={styles.categoryText}>{item.category}</Text>
+                  </View>
+                ) : null}
+                <TouchableOpacity style={styles.readBtn} onPress={() => openBook(item)}>
+                  <BookOpen size={14} color="#FFFFFF" />
+                  <Text style={styles.readBtnText}>
                     {t('Soma', 'Read', 'اقرأ')}
                   </Text>
-                </View>
+                </TouchableOpacity>
               </View>
             </TouchableOpacity>
           );
         })}
+        <View style={{ height: 20 }} />
       </ScrollView>
-      </ScreenBackground>
 
       <Modal visible={readerVisible} animationType="slide" onRequestClose={closeBookReader}>
-        <SafeAreaView style={[styles.readerContainer, { backgroundColor: COLORS.background }]}>
-          <View style={[styles.readerHeader, { backgroundColor: COLORS.primaryDark, borderBottomColor: COLORS.border }]}>
-            <Text style={[styles.readerTitle, { color: COLORS.secondary }]} numberOfLines={1}>
+        <SafeAreaView style={styles.readerContainer}>
+          <View style={styles.readerHeader}>
+            <Text style={styles.readerTitle} numberOfLines={1}>
               {selectedBook ? (selectedBook.titleEn || selectedBook.title || '') : ''}
             </Text>
-            <TouchableOpacity onPress={closeBookReader} style={[styles.readerCloseBtn, { borderColor: COLORS.border }]}>
-              <Ionicons name="close" size={20} color={COLORS.textMuted} />
+            <TouchableOpacity onPress={closeBookReader} style={styles.readerCloseBtn}>
+              <Text style={styles.readerCloseBtnText}>×</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.readerBody}>
             {selectedBook && selectedBook.fileType === 'pdf' && selectedBook.fileUrl ? (
               <View style={styles.loadingOverlay}>
-                <Ionicons name="document-text" size={64} color={COLORS.secondary} />
-                <Text style={[styles.loadingText, { color: COLORS.text, fontSize: 16, fontWeight: '600' }]}>{selectedBook.titleEn || selectedBook.title}</Text>
-                <Text style={[styles.loadingText, { color: COLORS.textMuted }]}>{selectedBook.authorEn || selectedBook.author || ''}</Text>
+                <BookMarked size={64} color={COLORS.secondary} />
+                <Text style={styles.loadingTitle}>{selectedBook.titleEn || selectedBook.title}</Text>
+                <Text style={styles.loadingSubtitle}>{selectedBook.authorEn || selectedBook.author || ''}</Text>
                 <TouchableOpacity
-                  style={[styles.readBtn, { backgroundColor: COLORS.secondary, paddingHorizontal: 24, paddingVertical: 14, borderRadius: 12, marginTop: 16 }]}
+                  style={styles.pdfOpenBtn}
                   onPress={() => Linking.openURL(getMediaUrl(selectedBook.fileUrl))}
                 >
-                  <Ionicons name="open-outline" size={18} color={COLORS.primaryDark} />
-                  <Text style={[styles.readBtnText, { color: COLORS.primaryDark, fontSize: 15 }]}>
+                  <BookOpen size={18} color="#FFFFFF" />
+                  <Text style={styles.pdfOpenBtnText}>
                     {t('Fungura PDF', 'Open PDF', 'فتح PDF')}
                   </Text>
                 </TouchableOpacity>
               </View>
             ) : selectedBook ? (
               <ScrollView contentContainerStyle={styles.textReaderContent}>
-                <Text style={[styles.textReaderTitle, { color: COLORS.secondary }]}>{selectedBook.titleEn || selectedBook.title || ''}</Text>
+                <Text style={styles.textReaderTitle}>{selectedBook.titleEn || selectedBook.title || ''}</Text>
                 <View style={styles.textReaderMeta}>
-                  <Ionicons name="person" size={14} color={COLORS.secondary} />
-                  <Text style={[styles.textReaderAuthor, { color: COLORS.textMuted }]}>{selectedBook.authorEn || selectedBook.author || ''}</Text>
-                  {selectedBook.category ? (
-                    <>
-                      <Text style={[styles.textReaderDot, { color: COLORS.textMuted }]}>-</Text>
-                      <Ionicons name="pricetag" size={14} color={COLORS.secondary} />
-                      <Text style={[styles.textReaderAuthor, { color: COLORS.textMuted }]}>{selectedBook.category}</Text>
-                    </>
-                  ) : null}
+                  <Hash size={14} color={COLORS.secondary} />
+                  <Text style={styles.textReaderAuthor}>{selectedBook.authorEn || selectedBook.author || ''}</Text>
                 </View>
-                <Text style={[styles.textReaderBody, { color: COLORS.text }]}>
+                <Text style={styles.textReaderBody}>
                   {selectedBook.description || 'This book contains beneficial Islamic knowledge.\n\nMay Allah increase us in knowledge and benefit us with what we learn.'}
                 </Text>
               </ScrollView>
@@ -176,49 +197,108 @@ export default function BooksScreen() {
         </SafeAreaView>
       </Modal>
     </SafeAreaView>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: { padding: 20, paddingBottom: 12 },
-  headerTitle: { fontSize: 26, fontWeight: '700' },
-  headerSub: { fontSize: 13, marginTop: 4 },
-  searchWrap: { paddingHorizontal: 20, marginBottom: 8, position: 'relative' },
-  searchIcon: { position: 'absolute', left: 32, top: 12, zIndex: 1 },
-  searchInput: { width: '100%', paddingHorizontal: 36, paddingVertical: 10, borderRadius: 20, borderWidth: 1, fontSize: 14 },
-  list: { padding: 20, paddingTop: 8, gap: 14, paddingBottom: 40 },
-  card: { borderRadius: 16, borderWidth: 1.5, overflow: 'hidden', flexDirection: 'row' },
-  coverWrap: { width: 110, minHeight: 150, position: 'relative' },
-  cover: { width: '100%', height: '100%' },
-  coverPlaceholder: { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' },
-  coverOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.15)' },
-  typeBadge: { position: 'absolute', top: 6, left: 6, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
-  badgePdf: { backgroundColor: 'rgba(231,76,60,0.9)' },
-  badgeText: { backgroundColor: 'rgba(52,152,219,0.9)' },
-  typeBadgeText: { color: '#fff', fontSize: 9, fontWeight: '700', letterSpacing: 0.5 },
-  categoryBadge: { position: 'absolute', top: 6, right: 6, backgroundColor: 'rgba(212,175,55,0.9)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
-  categoryBadgeText: { color: '#0f2a3f', fontSize: 8, fontWeight: '700', textTransform: 'uppercase' },
-  info: { flex: 1, padding: 12, justifyContent: 'space-between' },
-  title: { fontSize: 14, fontWeight: '600', lineHeight: 19 },
-  authorRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
-  author: { fontSize: 12, flex: 1 },
-  readBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 8, borderRadius: 8, marginTop: 6 },
-  readBtnText: { fontSize: 12, fontWeight: '700' },
-  emptyState: { alignItems: 'center', marginTop: 80, gap: 16 },
-  emptyText: { textAlign: 'center', fontSize: 15 },
+  bgImage: { flex: 1 },
+  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(6, 48, 44, 0.6)' },
+  container: { flex: 1, backgroundColor: 'transparent' },
 
-  readerContainer: { flex: 1 },
-  readerHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1 },
-  readerTitle: { flex: 1, fontSize: 16, fontWeight: '600' },
-  readerCloseBtn: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, alignItems: 'center', justifyContent: 'center', marginLeft: 10 },
+  header: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 12, backgroundColor: 'rgba(0,0,0,0.25)' },
+  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  headerTitleWrap: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  headerIconCircle: {
+    width: 44, height: 44, borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center',
+  },
+  headerTitle: { fontSize: 28, fontWeight: '700', color: '#FFFFFF' },
+  headerBadge: {
+    paddingHorizontal: 14, paddingVertical: 6, borderRadius: 18,
+    backgroundColor: 'rgba(15,118,110,0.2)',
+  },
+  headerCount: { fontSize: 14, fontWeight: '700', color: '#5EEAD4' },
+
+  searchWrap: { paddingHorizontal: 20, marginBottom: 8, paddingTop: 8 },
+  searchBar: {
+    flexDirection: 'row', alignItems: 'center', borderRadius: 14,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: 'rgba(0,0,0,0.2)', paddingHorizontal: 14, gap: 8,
+  },
+  search: { flex: 1, fontSize: 14, paddingVertical: 12, color: '#FFFFFF' },
+  clearBtn: { fontSize: 20, color: 'rgba(255,255,255,0.5)', paddingHorizontal: 4 },
+
+  grid: { paddingHorizontal: 20, paddingTop: 8, gap: 14 },
+
+  card: {
+    borderRadius: 18, borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: 'rgba(0,0,0,0.2)', overflow: 'hidden',
+  },
+  coverWrap: { width: '100%', height: 150, position: 'relative' },
+  cover: { width: '100%', height: '100%' },
+  coverPlaceholder: {
+    width: '100%', height: '100%',
+    backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center',
+  },
+  coverOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.05)' },
+  typeBadge: { position: 'absolute', top: 8, left: 8, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  badgePdf: { backgroundColor: COLORS.error },
+  badgeText: { backgroundColor: COLORS.secondary },
+  typeBadgeText: { color: '#fff', fontSize: 9, fontWeight: '700', letterSpacing: 0.5 },
+
+  info: { flex: 1, padding: 12, gap: 6 },
+  title: { fontSize: 14, fontWeight: '600', lineHeight: 19, color: '#FFFFFF' },
+  authorRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
+  author: { fontSize: 12, flex: 1, fontWeight: '500', color: 'rgba(255,255,255,0.7)' },
+  categoryPill: {
+    paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12,
+    alignSelf: 'flex-start', marginTop: 4, backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  categoryText: { fontSize: 10, fontWeight: '600', color: '#5EEAD4' },
+  readBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    paddingVertical: 10, borderRadius: 12, marginTop: 'auto',
+    backgroundColor: COLORS.primary,
+  },
+  readBtnText: { fontSize: 12, fontWeight: '700', color: '#FFFFFF' },
+
+  emptyState: { alignItems: 'center', marginTop: 60, gap: 16 },
+  emptyIconWrap: {
+    width: 90, height: 90, borderRadius: 45,
+    backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center',
+  },
+  emptyText: { fontSize: 14, fontWeight: '500', color: 'rgba(255,255,255,0.6)' },
+
+  readerContainer: { flex: 1, backgroundColor: 'rgba(10,48,44,0.97)' },
+  readerHeader: {
+    flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12,
+    backgroundColor: 'rgba(0,0,0,0.3)', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)',
+  },
+  readerTitle: { flex: 1, fontSize: 16, fontWeight: '600', color: '#FFFFFF' },
+  readerCloseBtn: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center', marginLeft: 10,
+  },
+  readerCloseBtnText: { fontSize: 20, color: 'rgba(255,255,255,0.7)', fontWeight: '500' },
+
   readerBody: { flex: 1 },
   loadingOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', gap: 12 },
-  loadingText: { fontSize: 14 },
+  loadingTitle: { fontSize: 16, fontWeight: '600', color: '#FFFFFF' },
+  loadingSubtitle: { fontSize: 14, color: 'rgba(255,255,255,0.7)' },
+
+  pdfOpenBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: COLORS.primary, paddingHorizontal: 24, paddingVertical: 14, borderRadius: 12, marginTop: 16,
+  },
+  pdfOpenBtnText: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
+
   textReaderContent: { padding: 24, paddingBottom: 60 },
-  textReaderTitle: { fontSize: 22, fontWeight: '700', textAlign: 'center', marginBottom: 16, fontFamily: 'serif' },
-  textReaderMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 20, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(212,175,55,0.2)' },
-  textReaderAuthor: { fontSize: 13 },
-  textReaderDot: { fontSize: 13 },
-  textReaderBody: { fontSize: 16, lineHeight: 28, fontFamily: 'serif' },
+  textReaderTitle: { fontSize: 22, textAlign: 'center', marginBottom: 16, fontWeight: '700', color: '#5EEAD4' },
+  textReaderMeta: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    marginBottom: 20, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)',
+  },
+  textReaderAuthor: { fontSize: 13, fontWeight: '500', color: 'rgba(255,255,255,0.7)' },
+  textReaderBody: { fontSize: 16, lineHeight: 28, color: '#FFFFFF' },
 });

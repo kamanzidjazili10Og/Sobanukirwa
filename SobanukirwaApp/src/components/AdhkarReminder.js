@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, Animated } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, Animated, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Audio } from 'expo-av';
+
+let Audio = null;
+if (Platform.OS !== 'web') {
+  try { Audio = require('expo-av').Audio; } catch (e) {}
+}
 
 const DEFAULT_ADHKAR = [
   { id: 1, arabic: 'سُبْحَانَ اللَّهِ', transliteration: 'Subhanallah', translation_en: 'Glory be to Allah', translation_rw: 'Imana ni yose', count_target: 33 },
@@ -53,6 +57,7 @@ export function AdhkarReminderModal({ visible, adhkar, language, silentMode, onS
   }, [visible]);
 
   async function playReminderAudio() {
+    if (!Audio) return;
     try {
       if (sound) await sound.unloadAsync();
       const uri = adhkar?.audio_url || 'https://sobanukirwa.onrender.com/Sounds/Subhanallah.m4a';
