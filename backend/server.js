@@ -14,8 +14,11 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-app.use(express.static(path.join(__dirname, '..')));
-app.use('/admin', express.static(path.join(__dirname, '..', 'admin')));
+app.use('/', express.static(path.join(__dirname, '..')));
+
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'index.html'));
+});
 
 app.use('/api/artists', require('./routes/artists'));
 app.use('/api/tracks', require('./routes/tracks'));
