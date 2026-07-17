@@ -4,7 +4,11 @@ let currentPage = 'dashboard';
 function getMediaUrl(path) {
     if (!path) return '';
     if (path.startsWith('http')) return path;
-    return window.location.origin + (path.startsWith('/') ? path : '/' + path);
+    var origin = window.location.origin;
+    if (path.startsWith('/')) return origin + path;
+    if (/^audio\//i.test(path)) return origin + '/uploads/' + path;
+    if (/^Videos\//i.test(path)) return origin + '/uploads/videos/' + path.replace(/^Videos\//i, '');
+    return origin + '/' + path;
 }
 let currentLang = localStorage.getItem('admin_lang') || 'en';
 let adminToken = sessionStorage.getItem('admin_token');

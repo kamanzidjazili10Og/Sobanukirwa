@@ -263,6 +263,7 @@ export function getMediaUrl(path) {
   if (path.startsWith('http')) return path;
   const base = BASE.replace('/api', '');
   if (path.startsWith('/')) return `${base}${path}`;
+  if (/^audio\//i.test(path)) return `${base}/uploads/${path}`;
   if (/^Videos\//i.test(path)) return `${base}/uploads/videos/${path.replace(/^Videos\//i, '')}`;
   if (/^Images\//i.test(path)) return `${base}/${path}`;
   return `${base}/${path}`;
