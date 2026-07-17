@@ -69,6 +69,16 @@ export default function VideoPlayerScreen({ route, navigation }) {
   const videoViews = video?.viewsCount || 0;
 
   const renderVideo = () => {
+    if (Platform.OS === 'web') {
+      return (
+        <iframe
+          src={videoUrl}
+          style={{ width: '100%', height: '100%', border: 'none', backgroundColor: '#000' }}
+          allow="autoplay; fullscreen"
+          allowFullScreen
+        />
+      );
+    }
     if (Video) {
       return (
         <Video

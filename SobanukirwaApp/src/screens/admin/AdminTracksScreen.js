@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import { useApp } from '../../context/AppContext';
 import { useToastContext } from '../../components/Toast';
-import { fetchTracks, createTrack, updateTrack, deleteTrack, fetchArtists, fetchCategories } from '../../services/api';
+import { fetchTracks, createTrack, updateTrack, deleteTrack, fetchArtists, fetchCategories, prepareFileForUpload } from '../../services/api';
 import AdminLayout, { AdminFAB, AdminEmptyState } from '../../components/admin/AdminLayout';
 
 export default function AdminTracksScreen({ navigation }) {
@@ -106,7 +106,8 @@ export default function AdminTracksScreen({ navigation }) {
       if (formDuration) formData.append('duration_str', formDuration);
       if (formAudio) {
         const ext = formAudio.name?.split('.').pop() || 'mp3';
-        formData.append('audio', { uri: formAudio.uri, name: `track.${ext}`, type: `audio/${ext}` });
+        const audioFile = await prepareFileForUpload(formAudio, `track.${ext}`, `audio/${ext}`);
+        if (audioFile) formData.append('audio', audioFile);
       }
       if (editing) {
         await updateTrack(editing.id, formData);

@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useApp } from '../../context/AppContext';
 import { useToastContext } from '../../components/Toast';
-import { fetchArtists, createArtist, updateArtist, deleteArtist, getMediaUrl } from '../../services/api';
+import { fetchArtists, createArtist, updateArtist, deleteArtist, getMediaUrl, prepareFileForUpload } from '../../services/api';
 import AdminLayout, { AdminFAB, AdminEmptyState } from '../../components/admin/AdminLayout';
 
 export default function AdminArtistsScreen({ navigation }) {
@@ -73,7 +73,8 @@ export default function AdminArtistsScreen({ navigation }) {
       if (formNameAr) formData.append('name_ar', formNameAr.trim());
       if (formBio) formData.append('bio', formBio.trim());
       if (formImage && formImage.uri) {
-        formData.append('image', { uri: formImage.uri, name: 'artist.jpg', type: 'image/jpeg' });
+        const imageFile = await prepareFileForUpload(formImage, 'artist.jpg', 'image/jpeg');
+        if (imageFile) formData.append('image', imageFile);
       }
       if (editing) {
         await updateArtist(editing.id, formData);

@@ -385,3 +385,18 @@ export async function fetchDashboard() {
 export async function fetchHealth() {
   try { const res = await fetch(`${BASE.replace('/api', '')}/api/health`); return await res.json(); } catch { return null; }
 }
+
+export async function prepareFileForUpload(file, fallbackName, fallbackType) {
+  if (!file || !file.uri) return null;
+  if (Platform.OS === 'web') {
+    if (file.uri.startsWith('blob:') || file.uri.startsWith('data:')) {
+      const resp = await fetch(file.uri);
+      const blob = await resp.blob();
+      const name = file.name || fallbackName;
+      const type = file.type || file.mimeType || fallbackType;
+      return new File([blob], name, { type });
+    }
+    return file;
+  }
+  return { uri: file.uri, name: file.name || fallbackName, type: file.type || fallbackType };
+}

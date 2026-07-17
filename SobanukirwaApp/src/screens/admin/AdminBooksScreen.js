@@ -9,7 +9,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { useApp } from '../../context/AppContext';
 import { useToastContext } from '../../components/Toast';
-import { fetchBooks, createBook, updateBook, deleteBook, getMediaUrl } from '../../services/api';
+import { fetchBooks, createBook, updateBook, deleteBook, getMediaUrl, prepareFileForUpload } from '../../services/api';
 import AdminLayout, { AdminFAB, AdminEmptyState } from '../../components/admin/AdminLayout';
 
 const FILE_TYPES = ['pdf', 'text', 'docx'];
@@ -103,9 +103,13 @@ export default function AdminBooksScreen({ navigation }) {
       if (formFile) {
         const ext = formFile.name?.split('.').pop() || 'pdf';
         const mimeTypes = { pdf: 'application/pdf', text: 'text/plain', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' };
-        formData.append('file', { uri: formFile.uri, name: `book.${ext}`, type: mimeTypes[ext] || 'application/octet-stream' });
+        const bookFile = await prepareFileForUpload(formFile, `book.${ext}`, mimeTypes[ext] || 'application/octet-stream');
+        if (bookFile) formData.append('file', bookFile);
       }
-      if (formCover) formData.append('cover', { uri: formCover.uri, name: 'cover.jpg', type: 'image/jpeg' });
+      if (formCover) {
+        const coverFile = await prepareFileForUpload(formCover, 'cover.jpg', 'image/jpeg');
+        if (coverFile) formData.append('cover', coverFile);
+      }
       if (editing) { await updateBook(editing.id, formData); toast.show('Book updated', 'success'); }
       else { await createBook(formData); toast.show('Book created', 'success'); }
       setModalVisible(false);

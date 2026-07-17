@@ -9,7 +9,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { useApp } from '../../context/AppContext';
 import { useToastContext } from '../../components/Toast';
-import { fetchVideos, createVideo, updateVideo, deleteVideo, getMediaUrl } from '../../services/api';
+import { fetchVideos, createVideo, updateVideo, deleteVideo, getMediaUrl, prepareFileForUpload } from '../../services/api';
 import AdminLayout, { AdminFAB, AdminEmptyState } from '../../components/admin/AdminLayout';
 
 export default function AdminVideosScreen({ navigation }) {
@@ -86,10 +86,12 @@ export default function AdminVideosScreen({ navigation }) {
       if (formDesc) formData.append('description', formDesc.trim());
       if (formVideo) {
         const ext = formVideo.name?.split('.').pop() || 'mp4';
-        formData.append('video', { uri: formVideo.uri, name: `video.${ext}`, type: `video/${ext}` });
+        const videoFile = await prepareFileForUpload(formVideo, `video.${ext}`, `video/${ext}`);
+        if (videoFile) formData.append('video', videoFile);
       }
       if (formThumb) {
-        formData.append('thumbnail', { uri: formThumb.uri, name: 'thumb.jpg', type: 'image/jpeg' });
+        const thumbFile = await prepareFileForUpload(formThumb, 'thumb.jpg', 'image/jpeg');
+        if (thumbFile) formData.append('thumbnail', thumbFile);
       }
       if (editing) {
         await updateVideo(editing.id, formData);
