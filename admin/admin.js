@@ -1,5 +1,11 @@
 const API_BASE = window.location.origin + '/api';
 let currentPage = 'dashboard';
+
+function getMediaUrl(path) {
+    if (!path) return '';
+    if (path.startsWith('http')) return path;
+    return window.location.origin + (path.startsWith('/') ? path : '/' + path);
+}
 let currentLang = localStorage.getItem('admin_lang') || 'en';
 let adminToken = sessionStorage.getItem('admin_token');
 
@@ -304,7 +310,7 @@ async function loadArtists() {
         } else {
             for (var i = 0; i < artists.length; i++) {
                 var a = artists[i];
-                var img = a.image_url || '../Images/logo2.png';
+                var img = getMediaUrl(a.image_url) || '../Images/logo2.png';
                 html += '<tr data-name="' + esc((a.name + ' ' + (a.name_en || '') + ' ' + (a.name_ar || '')).toLowerCase()) + '"><td><img src="' + img + '" class="img-preview" onerror="this.src=\'../Images/logo2.png\'"></td>' +
                     '<td><strong>' + esc(a.name) + '</strong>' + (a.name_en ? '<br><span class="td-muted">' + esc(a.name_en) + '</span>' : '') + '</td>' +
                     '<td class="td-muted" style="font-size:1.1rem">' + (a.name_ar || '-') + '</td>' +
@@ -501,7 +507,7 @@ async function loadVideos() {
                 var viewBtn = v.video_url ? '<button class="action-btn view" onclick="window.open(\'' + v.video_url + '\')" title="' + t('view') + '"><i class="fas fa-eye"></i></button>' : '';
                 var videoFrame = v.video_url
                     ? '<div class="video-preview" onclick="window.open(\'' + v.video_url + '\')"><video preload="metadata" muted playsinline src="' + v.video_url + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"></video><div class="play-overlay"><i class="fas fa-play"></i></div><img src="../Images/logo2.png" class="img-preview" style="display:none" alt=""></div>'
-                    : '<div class="video-preview"><img src="../Images/logo2.png" class="img-preview" alt=""></div>';
+                    : '<div class="video-preview"><img src="' + getMediaUrl(v.thumbnail_url || '../Images/logo2.png') + '" class="img-preview" alt=""></div>';
                 html += '<tr data-search="' + esc((v.title + ' ' + (v.author || '')).toLowerCase()) + '"><td>' + videoFrame + '</td>' +
                     '<td><strong>' + esc(v.title) + '</strong>' + desc + '</td>' +
                     '<td>' + (v.author || '<span class="td-muted">--</span>') + '</td>' +
@@ -726,7 +732,7 @@ async function loadBooks() {
         } else {
             for (var i = 0; i < books.length; i++) {
                 var b = books[i];
-                var cover = b.image_url || '../Images/logo2.png';
+                var cover = getMediaUrl(b.image_url) || '../Images/logo2.png';
                 var viewBtn = b.file_url ? '<button class="action-btn view" onclick="window.open(\'' + b.file_url + '\')" title="' + t('view') + '"><i class="fas fa-eye"></i></button>' : '';
                 html += '<tr data-search="' + esc((b.title + ' ' + (b.author || '') + ' ' + (b.category || '')).toLowerCase()) + '"><td><img src="' + cover + '" class="img-preview" onerror="this.src=\'../Images/logo2.png\'"></td>' +
                     '<td><strong>' + esc(b.title) + '</strong></td>' +

@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const express = require('express');
@@ -8,12 +9,22 @@ const initDb = require('./config/initDb');
 const app = express();
 const PORT = process.env.PORT || 5000;
 const ROOT_DIR = path.join(__dirname, '..');
+const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, 'uploads');
 
-app.use(cors());
+['audio', 'videos', 'documents', 'images', 'other'].forEach(sub => {
+  fs.mkdirSync(path.join(UPLOAD_DIR, sub), { recursive: true });
+});
+
+app.use(cors({
+  origin: true,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(UPLOAD_DIR));
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Kamanzi@123';
 
@@ -55,6 +66,7 @@ app.use('/', express.static(ROOT_DIR));
 
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`Sobanukirwa API server running on port ${PORT}`);
+  console.log(`Upload directory: ${UPLOAD_DIR}`);
 });
 
 server.on('error', (err) => {
