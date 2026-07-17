@@ -15,7 +15,7 @@ import AdminLayout, { AdminFAB, AdminEmptyState } from '../../components/admin/A
 const FILE_TYPES = ['pdf', 'text', 'docx'];
 
 export default function AdminBooksScreen({ navigation }) {
-  const { COLORS, t } = useApp();
+  const { COLORS, t, refreshData } = useApp();
   const toast = useToastContext();
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -110,6 +110,7 @@ export default function AdminBooksScreen({ navigation }) {
       else { await createBook(formData); toast.show('Book created', 'success'); }
       setModalVisible(false);
       loadBooks();
+      refreshData().catch(() => {});
     } catch (e) { toast.show(e.message || 'Save failed', 'error'); }
     setSaving(false);
   };
@@ -118,7 +119,7 @@ export default function AdminBooksScreen({ navigation }) {
     Alert.alert('Delete Book', `Delete "${book.title}"?`, [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: async () => {
-        try { await deleteBook(book.id); toast.show('Book deleted', 'success'); loadBooks(); }
+        try { await deleteBook(book.id); toast.show('Book deleted', 'success'); loadBooks(); refreshData().catch(() => {}); }
         catch { toast.show('Delete failed', 'error'); }
       }},
     ]);

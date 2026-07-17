@@ -1,5 +1,17 @@
 const API_BASE = window.location.origin + '/api';
 
+function normalizeDuration(dur) {
+    if (!dur) return '00:00';
+    const s = String(dur).trim();
+    const parts = s.split(':').map(Number);
+    if (parts.some(isNaN) || parts.length < 1 || parts.length > 3) return '00:00';
+    let h = 0, m = 0, sec = 0;
+    if (parts.length === 3) { h = parts[0]; m = parts[1]; sec = parts[2]; }
+    else if (parts.length === 2) { m = parts[0]; sec = parts[1]; }
+    else { sec = parts[0]; }
+    return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(sec).padStart(2, '0');
+}
+
 async function fetchFromAPI(endpoint, options = {}) {
     try {
         const res = await fetch(`${API_BASE}${endpoint}`, {
@@ -41,7 +53,7 @@ async function loadDataFromAPI() {
                 artistEn: t.artist_name_en || t.artist_name || '',
                 artistAr: t.artist_name_ar || t.artist_name || '',
                 image: t.image_url || 'Images/logo2.png',
-                duration: t.duration_str || t.duration || '00:00'
+                duration: normalizeDuration(t.duration_str || t.duration)
             });
         });
     }

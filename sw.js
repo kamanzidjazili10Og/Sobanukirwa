@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sobanukirwa-v4';
+const CACHE_NAME = 'sobanukirwa-v6';
 const API_CACHE = 'sobanukirwa-api-v1';
 const MEDIA_CACHE = 'sobanukirwa-media-v1';
 
@@ -10,16 +10,10 @@ const STATIC_ASSETS = [
   './Javascript/data.js',
   './Javascript/api.js',
   './Javascript/script.js',
-  './font-awasome/css/all.min.css',
-  './font-awasome/webfonts/fa-solid-900.woff2',
-  './font-awasome/webfonts/fa-solid-900.ttf',
-  './font-awasome/webfonts/fa-regular-400.woff2',
-  './font-awasome/webfonts/fa-regular-400.ttf',
-  './font-awasome/webfonts/fa-brands-400.woff2',
-  './font-awasome/webfonts/fa-brands-400.ttf',
   './Sounds/Adhan1.mpeg',
   './Sounds/Adhan2.mpeg',
   './Sounds/Mansour_Adhan.mpeg',
+  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css',
   'https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap'
 ];
 
@@ -47,13 +41,18 @@ self.addEventListener('fetch', event => {
     event.respondWith(
       fetch(event.request)
         .then(response => {
-          if (response.ok) {
+          if (response.ok && event.request.method === 'GET') {
             const clone = response.clone();
             caches.open(API_CACHE).then(cache => cache.put(event.request, clone));
           }
           return response;
         })
-        .catch(() => caches.match(event.request))
+        .catch(() => {
+          if (event.request.method === 'GET') {
+            return caches.match(event.request);
+          }
+          return new Response(JSON.stringify({ message: 'Offline' }), { status: 503, headers: { 'Content-Type': 'application/json' } });
+        })
     );
     return;
   }

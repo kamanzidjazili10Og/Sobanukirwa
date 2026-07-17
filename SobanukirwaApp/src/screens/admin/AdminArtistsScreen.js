@@ -12,7 +12,7 @@ import { fetchArtists, createArtist, updateArtist, deleteArtist, getMediaUrl } f
 import AdminLayout, { AdminFAB, AdminEmptyState } from '../../components/admin/AdminLayout';
 
 export default function AdminArtistsScreen({ navigation }) {
-  const { COLORS, t } = useApp();
+  const { COLORS, t, refreshData } = useApp();
   const toast = useToastContext();
   const [artists, setArtists] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -84,6 +84,7 @@ export default function AdminArtistsScreen({ navigation }) {
       }
       setModalVisible(false);
       loadArtists();
+      refreshData().catch(() => {});
     } catch (e) { toast.show(e.message || 'Save failed', 'error'); }
     setSaving(false);
   };
@@ -93,7 +94,7 @@ export default function AdminArtistsScreen({ navigation }) {
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete', style: 'destructive', onPress: async () => {
-          try { await deleteArtist(artist.id); toast.show('Artist deleted', 'success'); loadArtists(); }
+          try { await deleteArtist(artist.id); toast.show('Artist deleted', 'success'); loadArtists(); refreshData().catch(() => {}); }
           catch { toast.show('Delete failed', 'error'); }
         }
       },

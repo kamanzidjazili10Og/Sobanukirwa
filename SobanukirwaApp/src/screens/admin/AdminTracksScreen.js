@@ -13,7 +13,7 @@ import { fetchTracks, createTrack, updateTrack, deleteTrack, fetchArtists, fetch
 import AdminLayout, { AdminFAB, AdminEmptyState } from '../../components/admin/AdminLayout';
 
 export default function AdminTracksScreen({ navigation }) {
-  const { COLORS, t } = useApp();
+  const { COLORS, t, refreshData } = useApp();
   const toast = useToastContext();
   const [tracks, setTracks] = useState([]);
   const [artists, setArtists] = useState([]);
@@ -82,9 +82,10 @@ export default function AdminTracksScreen({ navigation }) {
         const { sound } = await Audio.Sound.createAsync({ uri: file.uri });
         const status = await sound.getStatusAsync();
         const dur = Math.floor((status.durationMillis || 0) / 1000);
-        const mins = Math.floor(dur / 60);
+        const hrs = Math.floor(dur / 3600);
+        const mins = Math.floor((dur % 3600) / 60);
         const secs = dur % 60;
-        setFormDuration(`${mins}:${String(secs).padStart(2, '0')}`);
+        setFormDuration(`${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`);
         await sound.unloadAsync();
       } catch {}
     } catch {}
@@ -99,7 +100,8 @@ export default function AdminTracksScreen({ navigation }) {
       if (formTitleEn) formData.append('title_en', formTitleEn.trim());
       if (formTitleAr) formData.append('title_ar', formTitleAr.trim());
       if (formDesc) formData.append('description', formDesc.trim());
-      if (formArtistId) formData.append('artist_id', String(formArtistId));
+      const resolvedArtistId = formArtistId || (artists.length > 0 ? artists[0].id : null);
+      if (resolvedArtistId) formData.append('artist_id', String(resolvedArtistId));
       if (formCategoryId) formData.append('category_id', String(formCategoryId));
       if (formDuration) formData.append('duration_str', formDuration);
       if (formAudio) {
@@ -115,6 +117,7 @@ export default function AdminTracksScreen({ navigation }) {
       }
       setModalVisible(false);
       loadData();
+      refreshData().catch(() => {});
     } catch (e) { toast.show(e.message || 'Save failed', 'error'); }
     setSaving(false);
   };
@@ -124,7 +127,7 @@ export default function AdminTracksScreen({ navigation }) {
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete', style: 'destructive', onPress: async () => {
-          try { await deleteTrack(track.id); toast.show('Track deleted', 'success'); loadData(); }
+          try { await deleteTrack(track.id); toast.show('Track deleted', 'success'); loadData(); refreshData().catch(() => {}); }
           catch { toast.show('Delete failed', 'error'); }
         }
       },

@@ -11,7 +11,14 @@ export async function fetchTracks(params = {}) {
   try {
     const query = new URLSearchParams(params).toString();
     const res = await fetch(`${BASE}/tracks${query ? '?' + query : ''}`);
-    return await res.json();
+    const data = await res.json();
+    if (Array.isArray(data)) {
+      return data.map(t => ({
+        ...t,
+        duration_str: normalizeDuration(t.duration_str || t.duration),
+      }));
+    }
+    return [];
   } catch { return []; }
 }
 
@@ -179,7 +186,7 @@ export async function fetchVideos() {
         authorAr: v.author_ar || null,
         description: v.description || '',
         duration: v.duration || 0,
-        durationStr: v.duration_str || null,
+        durationStr: normalizeDuration(v.duration_str || v.duration),
         viewsCount: v.views_count || 0,
         createdAt: v.created_at || null,
       }));
@@ -267,6 +274,18 @@ export function getMediaUrl(path) {
   if (/^Videos\//i.test(path)) return `${base}/uploads/videos/${path.replace(/^Videos\//i, '')}`;
   if (/^Images\//i.test(path)) return `${base}/${path}`;
   return `${base}/${path}`;
+}
+
+export function normalizeDuration(dur) {
+  if (!dur) return '00:00';
+  const s = String(dur).trim();
+  const parts = s.split(':').map(Number);
+  if (parts.some(isNaN) || parts.length < 1 || parts.length > 3) return '00:00';
+  let h = 0, m = 0, sec = 0;
+  if (parts.length === 3) { h = parts[0]; m = parts[1]; sec = parts[2]; }
+  else if (parts.length === 2) { m = parts[0]; sec = parts[1]; }
+  else { sec = parts[0]; }
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
 }
 
 async function adminFetch(url, options = {}) {

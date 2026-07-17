@@ -11,7 +11,7 @@ import { fetchCategories, createCategory, updateCategory, deleteCategory } from 
 import AdminLayout, { AdminFAB, AdminEmptyState } from '../../components/admin/AdminLayout';
 
 export default function AdminCategoriesScreen({ navigation }) {
-  const { COLORS, t } = useApp();
+  const { COLORS, t, refreshData } = useApp();
   const toast = useToastContext();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -77,6 +77,7 @@ export default function AdminCategoriesScreen({ navigation }) {
       else { await createCategory(payload); toast.show('Category created', 'success'); }
       setModalVisible(false);
       loadCategories();
+      refreshData().catch(() => {});
     } catch (e) { toast.show(e.message || 'Save failed', 'error'); }
     setSaving(false);
   };
@@ -85,7 +86,7 @@ export default function AdminCategoriesScreen({ navigation }) {
     Alert.alert('Delete Category', `Delete "${cat.name}"? This may affect tracks using this category.`, [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: async () => {
-        try { await deleteCategory(cat.id); toast.show('Category deleted', 'success'); loadCategories(); }
+        try { await deleteCategory(cat.id); toast.show('Category deleted', 'success'); loadCategories(); refreshData().catch(() => {}); }
         catch { toast.show('Delete failed', 'error'); }
       }},
     ]);

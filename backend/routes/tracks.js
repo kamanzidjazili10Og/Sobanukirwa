@@ -127,12 +127,20 @@ router.post('/', upload.single('audio'), async (req, res) => {
     const { artist_id, category_id, title, title_ar, title_en, description, duration_str } = req.body;
     const audioUrl = req.file ? `/uploads/audio/${req.file.filename}` : req.body.audio_url;
 
+    let resolvedArtistId = artist_id || null;
+    if (!resolvedArtistId) {
+      const [firstArtist] = await pool.query('SELECT id FROM artists ORDER BY id ASC LIMIT 1');
+      if (firstArtist.length > 0) resolvedArtistId = firstArtist[0].id;
+    }
+
     const [result] = await pool.query(
       'INSERT INTO tracks (artist_id, category_id, title, title_ar, title_en, description, duration_str, audio_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [artist_id || null, category_id || null, title, title_ar || null, title_en || null, description || null, duration_str || '00:00', audioUrl]
+      [resolvedArtistId, category_id || null, title, title_ar || null, title_en || null, description || null, duration_str || '00:00', audioUrl]
     );
 
-    await pool.query('UPDATE artists SET total_lessons = total_lessons + 1 WHERE id = ?', [artist_id]);
+    if (resolvedArtistId) {
+      await pool.query('UPDATE artists SET total_lessons = total_lessons + 1 WHERE id = ?', [resolvedArtistId]);
+    }
 
     res.status(201).json({ id: result.insertId, message: 'Track created' });
   } catch (err) {

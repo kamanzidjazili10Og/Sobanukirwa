@@ -13,7 +13,7 @@ import { fetchVideos, createVideo, updateVideo, deleteVideo, getMediaUrl } from 
 import AdminLayout, { AdminFAB, AdminEmptyState } from '../../components/admin/AdminLayout';
 
 export default function AdminVideosScreen({ navigation }) {
-  const { COLORS, t } = useApp();
+  const { COLORS, t, refreshData } = useApp();
   const toast = useToastContext();
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -100,6 +100,7 @@ export default function AdminVideosScreen({ navigation }) {
       }
       setModalVisible(false);
       loadVideos();
+      refreshData().catch(() => {});
     } catch (e) { toast.show(e.message || 'Save failed', 'error'); }
     setSaving(false);
   };
@@ -108,7 +109,7 @@ export default function AdminVideosScreen({ navigation }) {
     Alert.alert('Delete Video', `Delete "${video.title}"?`, [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: async () => {
-        try { await deleteVideo(video.id); toast.show('Video deleted', 'success'); loadVideos(); }
+        try { await deleteVideo(video.id); toast.show('Video deleted', 'success'); loadVideos(); refreshData().catch(() => {}); }
         catch { toast.show('Delete failed', 'error'); }
       }},
     ]);
