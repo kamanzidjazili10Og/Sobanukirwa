@@ -135,7 +135,7 @@ export default function AdminVideosScreen({ navigation }) {
         <View style={styles.cardInfo}>
           <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
           {item.author ? <Text style={styles.cardSub}>{item.author}</Text> : null}
-          {item.duration ? <Text style={styles.cardSub}>{item.duration}</Text> : null}
+          {item.durationStr ? <Text style={[styles.cardSub, { color: '#F59E0B' }]}>{item.durationStr}</Text> : null}
         </View>
         <TouchableOpacity onPress={() => handleDelete(item)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <Ionicons name="trash-outline" size={18} color="#EF4444" />

@@ -1,13 +1,19 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions, StatusBar, Linking, Platform, ActivityIndicator, ImageBackground } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions, StatusBar, Linking, Platform, ActivityIndicator, ImageBackground, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
 import { getMediaUrl } from '../services/api';
 
 let Video = null;
 let ResizeMode = null;
+let ScreenOrientation = null;
 if (Platform.OS !== 'web') {
-  try { const av = require('expo-av'); Video = av.Video; ResizeMode = av.ResizeMode; } catch (e) {}
+  try {
+    const av = require('expo-av');
+    Video = av.Video;
+    ResizeMode = av.ResizeMode;
+  } catch (e) {}
+  try { ScreenOrientation = require('expo-screen-orientation'); } catch (e) {}
 }
 
 export default function VideoPlayerScreen({ route, navigation }) {
@@ -18,13 +24,14 @@ export default function VideoPlayerScreen({ route, navigation }) {
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [retryCount, setRetryCount] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const videoUrl = video.videoUrl?.startsWith('http')
     ? video.videoUrl
     : getMediaUrl(video.videoUrl);
 
-  const { width } = Dimensions.get('window');
-  const playerHeight = width * 9 / 16;
+  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+  const playerHeight = isFullscreen ? screenHeight - 40 : screenWidth * 9 / 16;
 
   useEffect(() => {
     stopAllMedia();
@@ -38,6 +45,7 @@ export default function VideoPlayerScreen({ route, navigation }) {
       }
       if (Platform.OS !== 'web') {
         try { StatusBar.setHidden(false); } catch(e) {}
+        try { ScreenOrientation && ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT); } catch(e) {}
       }
     };
   }, []);
@@ -56,33 +64,80 @@ export default function VideoPlayerScreen({ route, navigation }) {
     if (videoRef.current) {
       try { await videoRef.current.stopAsync(); } catch(e) {}
     }
+    if (Platform.OS !== 'web') {
+      try { ScreenOrientation && ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT); } catch(e) {}
+    }
     navigation.goBack();
   };
+
+  const toggleFullscreen = async () => {
+    if (Platform.OS !== 'web') {
+      try {
+        if (!isFullscreen) {
+          await ScreenOrientation && ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
+        } else {
+          await ScreenOrientation && ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT);
+        }
+      } catch(e) {}
+    }
+    setIsFullscreen(!isFullscreen);
+  };
+
+  const videoTitle = video.title || 'Video';
+  const videoAuthor = video.author || video.authorAr || '';
+  const videoDescription = video.description || '';
+  const videoDuration = video.durationStr || (video.duration ? `${Math.floor(video.duration / 60)}:${String(video.duration % 60).padStart(2, '0')}` : '');
+  const videoViews = video.viewsCount || 0;
 
   if (Platform.OS === 'web') {
     return (
       <ImageBackground source={require('../../assets/home.jpg')} style={styles.bgImage} resizeMode="cover">
         <View style={styles.overlay} />
         <View style={styles.container}>
-          <View style={[styles.videoContainer, { height: playerHeight, position: 'relative' }]}>
+          <View style={styles.topBar}>
+            <TouchableOpacity style={styles.backBtn} onPress={handleGoBack}>
+              <Ionicons name="arrow-back" size={22} color="#FFFFFF" />
+            </TouchableOpacity>
+            <Text style={styles.topBarTitle} numberOfLines={1}>{videoTitle}</Text>
+            <View style={{ width: 40 }} />
+          </View>
+          <View style={[styles.videoContainer, { height: playerHeight }]}>
             <video
               src={videoUrl}
               controls
               autoPlay
               style={{ width: '100%', height: '100%', backgroundColor: '#000' }}
             />
-            <TouchableOpacity style={styles.closeBtn} onPress={handleGoBack}>
-              <View style={styles.closeBtnInner}>
-                <Ionicons name="chevron-down" size={24} color="white" />
+          </View>
+          <ScrollView style={[styles.infoPanel, { backgroundColor: COLORS.background }]}>
+            <Text style={[styles.title, { color: COLORS.text }]}>{videoTitle}</Text>
+            <View style={styles.metaRow}>
+              {videoAuthor ? (
+                <View style={styles.metaItem}>
+                  <Ionicons name="person-outline" size={14} color={COLORS.textMuted || '#999'} />
+                  <Text style={[styles.metaText, { color: COLORS.textMuted || '#999' }]}>{videoAuthor}</Text>
+                </View>
+              ) : null}
+              {videoDuration ? (
+                <View style={styles.metaItem}>
+                  <Ionicons name="time-outline" size={14} color={COLORS.textMuted || '#999'} />
+                  <Text style={[styles.metaText, { color: COLORS.textMuted || '#999' }]}>{videoDuration}</Text>
+                </View>
+              ) : null}
+              {videoViews > 0 ? (
+                <View style={styles.metaItem}>
+                  <Ionicons name="eye-outline" size={14} color={COLORS.textMuted || '#999'} />
+                  <Text style={[styles.metaText, { color: COLORS.textMuted || '#999' }]}>{videoViews}</Text>
+                </View>
+              ) : null}
+            </View>
+            {videoDescription ? (
+              <View style={styles.descSection}>
+                <Text style={[styles.descLabel, { color: COLORS.textMuted || '#999' }]}>Description</Text>
+                <Text style={[styles.descText, { color: COLORS.text }]}>{videoDescription}</Text>
               </View>
-            </TouchableOpacity>
-          </View>
-          <View style={[styles.info, { backgroundColor: COLORS.background }]}>
-            <Text style={[styles.title, { color: COLORS.text }]}>{video.title}</Text>
-            {video.author ? (
-              <Text style={[styles.author, { color: COLORS.textMuted }]}>{video.author}</Text>
             ) : null}
-          </View>
+          </ScrollView>
         </View>
       </ImageBackground>
     );
@@ -92,12 +147,22 @@ export default function VideoPlayerScreen({ route, navigation }) {
     <ImageBackground source={require('../../assets/home.jpg')} style={styles.bgImage} resizeMode="cover">
       <View style={styles.overlay} />
       <View style={styles.container}>
+        <View style={styles.topBar}>
+          <TouchableOpacity style={styles.backBtn} onPress={handleGoBack}>
+            <Ionicons name="arrow-back" size={22} color="#FFFFFF" />
+          </TouchableOpacity>
+          <Text style={styles.topBarTitle} numberOfLines={1}>{videoTitle}</Text>
+          <TouchableOpacity style={styles.backBtn} onPress={toggleFullscreen}>
+            <Ionicons name={isFullscreen ? 'contract-outline' : 'expand-outline'} size={22} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
+
         <View style={[styles.videoContainer, { height: playerHeight }]}>
           {!error ? (
             <>
               {loading && (
                 <View style={styles.loadingWrap}>
-                  <ActivityIndicator size="large" color="#0F766E" />
+                  <ActivityIndicator size="large" color="#F59E0B" />
                   <Text style={styles.loadingText}>{t('Gutegura video...', 'Loading video...', 'جاري تحميل الفيديو...')}</Text>
                 </View>
               )}
@@ -123,12 +188,12 @@ export default function VideoPlayerScreen({ route, navigation }) {
           ) : (
             <View style={styles.errorContainer}>
               <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
-              <Text style={[styles.errorTitle, { color: COLORS.text }]}>{video.title}</Text>
+              <Text style={[styles.errorTitle, { color: '#FFFFFF' }]}>{videoTitle}</Text>
               <Text style={styles.errorText}>{t('Video ntirashoboye gukina', 'Unable to play video', 'تعذر تشغيل الفيديو')}</Text>
               <Text style={styles.errorUrl} numberOfLines={2}>{videoUrl}</Text>
               <View style={styles.errorBtns}>
                 <TouchableOpacity style={styles.retryBtn} onPress={handleRetry}>
-                  <Ionicons name="refresh" size={18} color="#0F766E" />
+                  <Ionicons name="refresh" size={18} color="#F59E0B" />
                   <Text style={styles.retryText}>{t('Ongera ugerageze', 'Retry', 'إعادة المحاولة')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.browserBtn} onPress={openInBrowser}>
@@ -138,45 +203,64 @@ export default function VideoPlayerScreen({ route, navigation }) {
               </View>
             </View>
           )}
-          <TouchableOpacity style={styles.closeBtn} onPress={handleGoBack}>
-            <View style={styles.closeBtnInner}>
-              <Ionicons name="chevron-down" size={24} color="white" />
-            </View>
-          </TouchableOpacity>
         </View>
 
-        <View style={[styles.info, { backgroundColor: 'rgba(0,0,0,0.7)' }]}>
-          <Text style={[styles.title, { color: '#FFFFFF' }]}>{video.title}</Text>
-          {video.author ? (
-            <Text style={[styles.author, { color: 'rgba(255,255,255,0.7)' }]}>{video.author}</Text>
+        <ScrollView style={styles.infoPanel}>
+          <Text style={styles.title}>{videoTitle}</Text>
+          <View style={styles.metaRow}>
+            {videoAuthor ? (
+              <View style={styles.metaItem}>
+                <Ionicons name="person-outline" size={14} color="rgba(255,255,255,0.6)" />
+                <Text style={styles.metaText}>{videoAuthor}</Text>
+              </View>
+            ) : null}
+            {videoDuration ? (
+              <View style={styles.metaItem}>
+                <Ionicons name="time-outline" size={14} color="rgba(255,255,255,0.6)" />
+                <Text style={styles.metaText}>{videoDuration}</Text>
+              </View>
+            ) : null}
+            {videoViews > 0 ? (
+              <View style={styles.metaItem}>
+                <Ionicons name="eye-outline" size={14} color="rgba(255,255,255,0.6)" />
+                <Text style={styles.metaText}>{videoViews} {t('ireba', 'views', 'مشاهدة')}</Text>
+              </View>
+            ) : null}
+          </View>
+          {videoDescription ? (
+            <View style={styles.descSection}>
+              <Text style={styles.descLabel}>{t('Sobanuro', 'Description', 'الوصف')}</Text>
+              <Text style={styles.descText}>{videoDescription}</Text>
+            </View>
           ) : null}
-        </View>
+        </ScrollView>
       </View>
     </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  bgImage: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.85)',
-  },
+  bgImage: { flex: 1, width: '100%', height: '100%' },
+  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0, 0, 0, 0.9)' },
   container: { flex: 1, backgroundColor: 'transparent' },
-  videoContainer: { width: '100%', position: 'relative', backgroundColor: '#000' },
-  closeBtn: { position: 'absolute', top: 8, left: 8, padding: 4, zIndex: 10 },
-  closeBtnInner: {
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    alignItems: 'center', justifyContent: 'center',
+  topBar: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 12, paddingTop: Platform.OS === 'ios' ? 50 : 36, paddingBottom: 10,
   },
-  info: { paddingVertical: 16, paddingHorizontal: 20 },
-  title: { fontSize: 18, fontWeight: '700' },
-  author: { fontSize: 14, marginTop: 4 },
+  backBtn: {
+    width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  topBarTitle: { flex: 1, fontSize: 16, fontWeight: '600', color: '#FFFFFF', textAlign: 'center', marginHorizontal: 8 },
+  videoContainer: { width: '100%', position: 'relative', backgroundColor: '#000' },
+  infoPanel: { flex: 1, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40 },
+  title: { fontSize: 20, fontWeight: '700', color: '#FFFFFF', lineHeight: 28 },
+  metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, marginTop: 10 },
+  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  metaText: { fontSize: 13, color: 'rgba(255,255,255,0.6)' },
+  descSection: { marginTop: 16, padding: 14, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.05)' },
+  descLabel: { fontSize: 13, fontWeight: '700', color: '#F59E0B', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 },
+  descText: { fontSize: 14, lineHeight: 22, color: 'rgba(255,255,255,0.8)' },
   loadingWrap: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', zIndex: 5 },
   loadingText: { color: '#999', fontSize: 13, marginTop: 10 },
   errorContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 20 },
@@ -184,8 +268,8 @@ const styles = StyleSheet.create({
   errorText: { color: '#ccc', fontSize: 15, textAlign: 'center' },
   errorUrl: { color: '#666', fontSize: 11, textAlign: 'center', fontStyle: 'italic' },
   errorBtns: { flexDirection: 'row', gap: 12, marginTop: 8 },
-  retryBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(15,118,110,0.2)', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(15,118,110,0.4)' },
-  retryText: { color: '#0F766E', fontSize: 14, fontWeight: '600' },
+  retryBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(245,158,11,0.2)', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(245,158,11,0.4)' },
+  retryText: { color: '#F59E0B', fontSize: 14, fontWeight: '600' },
   browserBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(52,152,219,0.2)', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(52,152,219,0.4)' },
   browserText: { color: '#3498db', fontSize: 14, fontWeight: '600' },
 });

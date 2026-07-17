@@ -174,8 +174,13 @@ export default function VideoScreen({ navigation }) {
                     <Text style={styles.listTitle} numberOfLines={2}>{item.title}</Text>
                     {item.author ? (
                       <View style={styles.listAuthorRow}>
-                        <User size={11} color={COLORS.textTertiary} />
+                        <User size={11} color="rgba(255,255,255,0.5)" />
                         <Text style={styles.listAuthor} numberOfLines={1}>{item.author}</Text>
+                      </View>
+                    ) : null}
+                    {item.durationStr ? (
+                      <View style={styles.listAuthorRow}>
+                        <Text style={styles.listDuration}>{item.durationStr}</Text>
                       </View>
                     ) : null}
                   </View>
@@ -269,8 +274,13 @@ export default function VideoScreen({ navigation }) {
                   <Text style={styles.title} numberOfLines={2}>{video.title}</Text>
                   {video.author ? (
                     <View style={styles.authorRow}>
-                      <User size={10} color={COLORS.textTertiary} />
+                      <User size={10} color="rgba(255,255,255,0.5)" />
                       <Text style={styles.authorText} numberOfLines={1}>{video.author}</Text>
+                    </View>
+                  ) : null}
+                  {video.durationStr ? (
+                    <View style={styles.authorRow}>
+                      <Text style={styles.authorText}>{video.durationStr}</Text>
                     </View>
                   ) : null}
                 </View>
@@ -362,4 +372,5 @@ const styles = StyleSheet.create({
   listTitle: { fontSize: 14, fontWeight: '600', lineHeight: 20, color: '#FFFFFF' },
   listAuthorRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
   listAuthor: { fontSize: 11, color: 'rgba(255,255,255,0.5)' },
+  listDuration: { fontSize: 11, color: 'rgba(245,158,11,0.7)', fontWeight: '500' },
 });

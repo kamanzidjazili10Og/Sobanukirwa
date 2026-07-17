@@ -149,26 +149,18 @@ export async function fetchSurahs() {
 }
 
 const fallbackVideos = [
-  { id: 1, title: "Amateka y'intumwa y'imana Muhamad (S.A.W)", videoUrl: "Videos/1.mp4", thumbnail: "Images/logo2.png" },
-  { id: 2, title: "Inyigisho - Part 2", videoUrl: "Videos/2.mp4", thumbnail: "Images/logo2.png" },
-  { id: 3, title: "Inyigisho - Part 3", videoUrl: "Videos/3.mp4", thumbnail: "Images/logo2.png" },
-  { id: 4, title: "Inyigisho - Part 4", videoUrl: "Videos/4.mp4", thumbnail: "Images/logo2.png" },
-  { id: 5, title: "Inyigisho - Part 5", videoUrl: "Videos/5.mp4", thumbnail: "Images/logo2.png" },
-  { id: 6, title: "Inyigisho - Part 6", videoUrl: "Videos/6.mp4", thumbnail: "Images/logo2.png" },
-  { id: 7, title: "Inyigisho - Part 7", videoUrl: "Videos/7.mp4", thumbnail: "Images/logo2.png" },
-  { id: 8, title: "Inyigisho - Part 8", videoUrl: "Videos/8.mp4", thumbnail: "Images/logo2.png" },
-  { id: 9, title: "Inyigisho - Part 9", videoUrl: "Videos/9.mp4", thumbnail: "Images/logo2.png" },
-  { id: 10, title: "Inyigisho - Part 10", videoUrl: "Videos/10.mp4", thumbnail: "Images/logo2.png" },
-  { id: 11, title: "Inyigisho - Part 11", videoUrl: "Videos/11.mp4", thumbnail: "Images/logo2.png" },
-  { id: 12, title: "Inyigisho - Part 12", videoUrl: "Videos/12.mp4", thumbnail: "Images/logo2.png" },
-  { id: 13, title: "Inyigisho - Part 13", videoUrl: "Videos/13.mp4", thumbnail: "Images/logo2.png" },
-  { id: 14, title: "Inyigisho - Part 14", videoUrl: "Videos/14.mp4", thumbnail: "Images/logo2.png" },
-  { id: 15, title: "Inyigisho - Part 15", videoUrl: "Videos/15.mp4", thumbnail: "Images/logo2.png" },
-  { id: 16, title: "Inyigisho - Part 16", videoUrl: "Videos/16.mp4", thumbnail: "Images/logo2.png" },
-  { id: 17, title: "Inyigisho - Part 17", videoUrl: "Videos/17.mp4", thumbnail: "Images/logo2.png" },
-  { id: 18, title: "Inyigisho - Part 18", videoUrl: "Videos/18.mp4", thumbnail: "Images/logo2.png" },
-  { id: 19, title: "Inyigisho - Part 19", videoUrl: "Videos/19.mp4", thumbnail: "Images/logo2.png" },
-  { id: 20, title: "Inyigisho - Part 20", videoUrl: "Videos/20.mp4", thumbnail: "Images/logo2.png" },
+  { id: 1, title: "Amateka y'intumwa y'imana Muhamad (S.A.W)", videoUrl: "/uploads/videos/sample-1.mp4", thumbnail: "Images/logo2.png", author: 'Sheikh Uqash', durationStr: '45:00', description: 'Amateka y\'Intumwa Muhamad (SAW).' },
+  { id: 2, title: "Inyigisho ku Kwihangana", videoUrl: "/uploads/videos/sample-2.mp4", thumbnail: "Images/logo2.png", author: 'Sheikh Mutabaruka', durationStr: '32:00', description: 'Inyigisho zerekerana no kwihangana.' },
+  { id: 3, title: "Gusobanukirwa Icyo Kwemera Ari cyo", videoUrl: "/uploads/videos/sample-3.mp4", thumbnail: "Images/logo2.png", author: 'Sheikh Gahutu', durationStr: '28:00', description: 'Ubusobanuro bwa Imani.' },
+  { id: 4, title: "Uburyo bwo Gusenga", videoUrl: "/uploads/videos/sample-4.mp4", thumbnail: "Images/logo2.png", author: 'Sheikh Djamidu', durationStr: '38:00', description: 'Inama zerekerana no gusenga.' },
+  { id: 5, title: "Urukundo mu Buvandimwe", videoUrl: "/uploads/videos/sample-5.mp4", thumbnail: "Images/logo2.png", author: 'Sheikh Uwamungu', durationStr: '25:00', description: 'Urukundo n\'ubuvandimwe mu Isilamu.' },
+  { id: 6, title: "Kubaha Ababyeyi", videoUrl: "/uploads/videos/sample-6.mp4", thumbnail: "Images/logo2.png", author: 'Sheikh Mugabo', durationStr: '30:00', description: 'Ubuheburyo bw\'ubuhizi.' },
+  { id: 7, title: "Ingaruka z'Ubuyobe", videoUrl: "/uploads/videos/sample-7.mp4", thumbnail: "Images/logo2.png", author: 'Sheikh Habyarimana', durationStr: '27:00', description: 'Ingaruka z\'ubusambanyi.' },
+  { id: 8, title: "Uburenganzira bw'Umugore mu Isilamu", videoUrl: "/uploads/videos/sample-8.mp4", thumbnail: "Images/logo2.png", author: 'Sheikh Uwimana', durationStr: '35:00', description: 'Uburenganzira bwa so.' },
+  { id: 9, title: "Akamaro k'Ishuri", videoUrl: "/uploads/videos/sample-9.mp4", thumbnail: "Images/logo2.png", author: 'Sheikh Niyonzima', durationStr: '22:00', description: 'Akamaro k\'ubumenyi.' },
+  { id: 10, title: "Kugirana Imyifatire Myiza", videoUrl: "/uploads/videos/sample-10.mp4", thumbnail: "Images/logo2.png", author: 'Sheikh Tuyisenge', durationStr: '29:00', description: 'Imyifatire myiza mu buzima.' },
+  { id: 11, title: "Urupfu n'Ubuzima nyuma y'Urupfu", videoUrl: "/uploads/videos/sample-11.mp4", thumbnail: "Images/logo2.png", author: 'Sheikh Munyaneza', durationStr: '40:00', description: 'Ijambo rerekerana urupfu.' },
+  { id: 12, title: "Ubumwe n'Urukundo mu Bamisilamu", videoUrl: "/uploads/videos/sample-12.mp4", thumbnail: "Images/logo2.png", author: 'Sheikh Nsabimana', durationStr: '33:00', description: 'Ubumwe n\'urukundo.' },
 ];
 
 export async function fetchVideos() {
@@ -179,10 +171,17 @@ export async function fetchVideos() {
       return data.map(v => ({
         id: v.id,
         title: v.title,
+        titleAr: v.title_ar || null,
+        titleEn: v.title_en || null,
         videoUrl: v.video_url || v.videoUrl,
         thumbnail: v.thumbnail_url || v.thumbnail || 'Images/logo2.png',
         author: v.author || v.author_en || '',
+        authorAr: v.author_ar || null,
+        description: v.description || '',
         duration: v.duration || 0,
+        durationStr: v.duration_str || null,
+        viewsCount: v.views_count || 0,
+        createdAt: v.created_at || null,
       }));
     }
     return fallbackVideos;
@@ -264,6 +263,8 @@ export function getMediaUrl(path) {
   if (path.startsWith('http')) return path;
   const base = BASE.replace('/api', '');
   if (path.startsWith('/')) return `${base}${path}`;
+  if (/^Videos\//i.test(path)) return `${base}/uploads/videos/${path.replace(/^Videos\//i, '')}`;
+  if (/^Images\//i.test(path)) return `${base}/${path}`;
   return `${base}/${path}`;
 }
 

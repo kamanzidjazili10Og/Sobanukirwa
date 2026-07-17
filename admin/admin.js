@@ -504,9 +504,10 @@ async function loadVideos() {
             for (var i = 0; i < videos.length; i++) {
                 var v = videos[i];
                 var desc = v.description ? '<br><span class="td-muted">' + esc(v.description.substring(0, 50)) + (v.description.length > 50 ? '...' : '') + '</span>' : '';
-                var viewBtn = v.video_url ? '<button class="action-btn view" onclick="window.open(\'' + v.video_url + '\')" title="' + t('view') + '"><i class="fas fa-eye"></i></button>' : '';
+                var viewUrl = getMediaUrl(v.video_url);
+                var viewBtn = v.video_url ? '<button class="action-btn view" onclick="window.open(\'' + viewUrl + '\')" title="' + t('view') + '"><i class="fas fa-eye"></i></button>' : '';
                 var videoFrame = v.video_url
-                    ? '<div class="video-preview" onclick="window.open(\'' + v.video_url + '\')"><video preload="metadata" muted playsinline src="' + v.video_url + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"></video><div class="play-overlay"><i class="fas fa-play"></i></div><img src="../Images/logo2.png" class="img-preview" style="display:none" alt=""></div>'
+                    ? '<div class="video-preview" onclick="window.open(\'' + viewUrl + '\')"><video preload="metadata" muted playsinline src="' + viewUrl + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"></video><div class="play-overlay"><i class="fas fa-play"></i></div><img src="../Images/logo2.png" class="img-preview" style="display:none" alt=""></div>'
                     : '<div class="video-preview"><img src="' + getMediaUrl(v.thumbnail_url || '../Images/logo2.png') + '" class="img-preview" alt=""></div>';
                 html += '<tr data-search="' + esc((v.title + ' ' + (v.author || '')).toLowerCase()) + '"><td>' + videoFrame + '</td>' +
                     '<td><strong>' + esc(v.title) + '</strong>' + desc + '</td>' +
@@ -680,7 +681,8 @@ async function loadQuran() {
         } else {
             for (var i = 0; i < surahs.length; i++) {
                 var s = surahs[i];
-                var hasAudio = s.audio_url ? '<button class="action-btn view" onclick="window.open(\'' + esc(s.audio_url) + '\')" title="' + t('play') + '"><i class="fas fa-play"></i></button>' : '';
+                var audioUrl = s.audio_url ? getMediaUrl(s.audio_url) : '';
+                var hasAudio = audioUrl ? '<button class="action-btn view" onclick="window.open(\'' + audioUrl + '\')" title="' + t('play') + '"><i class="fas fa-play"></i></button>' : '';
                 html += '<tr data-search="' + esc((s.name + ' ' + (s.name_arabic || '') + ' ' + s.surah_number).toLowerCase()) + '">' +
                     '<td class="td-muted">' + s.surah_number + '</td>' +
                     '<td><strong>' + esc(s.name) + '</strong></td>' +
@@ -733,7 +735,7 @@ async function loadBooks() {
             for (var i = 0; i < books.length; i++) {
                 var b = books[i];
                 var cover = getMediaUrl(b.image_url) || '../Images/logo2.png';
-                var viewBtn = b.file_url ? '<button class="action-btn view" onclick="window.open(\'' + b.file_url + '\')" title="' + t('view') + '"><i class="fas fa-eye"></i></button>' : '';
+                var viewBtn = b.file_url ? '<button class="action-btn view" onclick="window.open(\'' + getMediaUrl(b.file_url) + '\')" title="' + t('view') + '"><i class="fas fa-eye"></i></button>' : '';
                 html += '<tr data-search="' + esc((b.title + ' ' + (b.author || '') + ' ' + (b.category || '')).toLowerCase()) + '"><td><img src="' + cover + '" class="img-preview" onerror="this.src=\'../Images/logo2.png\'"></td>' +
                     '<td><strong>' + esc(b.title) + '</strong></td>' +
                     '<td>' + (b.author || '<span class="td-muted">--</span>') + '</td>' +
