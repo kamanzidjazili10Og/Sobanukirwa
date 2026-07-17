@@ -1,10 +1,7 @@
-import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 let Audio = null;
-if (Platform.OS !== 'web') {
-  try { Audio = require('expo-av').Audio; } catch (e) {}
-}
+try { Audio = require('expo-av').Audio; } catch (e) {}
 
 let checkInterval = null;
 let currentSound = null;

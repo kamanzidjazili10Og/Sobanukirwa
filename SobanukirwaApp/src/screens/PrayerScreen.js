@@ -9,9 +9,7 @@ import { fetchPrayerTimes, fetchHijriDate } from '../services/api';
 import { calculatePrayerTimes } from '../utils/prayerCalc';
 
 let Location = null;
-if (Platform.OS !== 'web') {
-  try { Location = require('expo-location'); } catch (e) {}
-}
+try { Location = require('expo-location'); } catch (e) {}
 
 const PRAYER_NAMES = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
 const PRAYER_ICONS = ['moon', 'sunny', 'sunny', 'sunny', 'moon', 'moon'];

@@ -6,7 +6,6 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
-import { Audio } from 'expo-av';
 import { useApp } from '../../context/AppContext';
 import { useToastContext } from '../../components/Toast';
 import { fetchTracks, createTrack, updateTrack, deleteTrack, fetchArtists, fetchCategories } from '../../services/api';
@@ -79,6 +78,7 @@ export default function AdminTracksScreen({ navigation }) {
       const file = result.assets[0];
       setFormAudio(file);
       try {
+        const { Audio } = require('expo-av');
         const { sound } = await Audio.Sound.createAsync({ uri: file.uri });
         const status = await sound.getStatusAsync();
         const dur = Math.floor((status.durationMillis || 0) / 1000);

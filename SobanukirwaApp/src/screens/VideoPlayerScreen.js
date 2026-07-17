@@ -6,15 +6,11 @@ import { getMediaUrl } from '../services/api';
 
 let Video = null;
 let ResizeMode = null;
-let ScreenOrientation = null;
-if (Platform.OS !== 'web') {
-  try {
-    const av = require('expo-av');
-    Video = av.Video;
-    ResizeMode = av.ResizeMode;
-  } catch (e) {}
-  try { ScreenOrientation = require('expo-screen-orientation'); } catch (e) {}
-}
+try {
+  const av = require('expo-av');
+  Video = av.Video;
+  ResizeMode = av.ResizeMode;
+} catch (e) {}
 
 export default function VideoPlayerScreen({ route, navigation }) {
   const { video } = route.params;
@@ -26,9 +22,9 @@ export default function VideoPlayerScreen({ route, navigation }) {
   const [retryCount, setRetryCount] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  const videoUrl = video.videoUrl?.startsWith('http')
+  const videoUrl = video?.videoUrl?.startsWith('http')
     ? video.videoUrl
-    : getMediaUrl(video.videoUrl);
+    : getMediaUrl(video?.videoUrl);
 
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
   const playerHeight = isFullscreen ? screenHeight - 40 : screenWidth * 9 / 16;
@@ -45,7 +41,6 @@ export default function VideoPlayerScreen({ route, navigation }) {
       }
       if (Platform.OS !== 'web') {
         try { StatusBar.setHidden(false); } catch(e) {}
-        try { ScreenOrientation && ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT); } catch(e) {}
       }
     };
   }, []);
@@ -64,84 +59,47 @@ export default function VideoPlayerScreen({ route, navigation }) {
     if (videoRef.current) {
       try { await videoRef.current.stopAsync(); } catch(e) {}
     }
-    if (Platform.OS !== 'web') {
-      try { ScreenOrientation && ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT); } catch(e) {}
-    }
     navigation.goBack();
   };
 
-  const toggleFullscreen = async () => {
-    if (Platform.OS !== 'web') {
-      try {
-        if (!isFullscreen) {
-          await ScreenOrientation && ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
-        } else {
-          await ScreenOrientation && ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT);
-        }
-      } catch(e) {}
+  const videoTitle = video?.title || 'Video';
+  const videoAuthor = video?.author || video?.authorAr || '';
+  const videoDescription = video?.description || '';
+  const videoDuration = video?.durationStr || (video?.duration ? `${Math.floor(video.duration / 60)}:${String(video.duration % 60).padStart(2, '0')}` : '');
+  const videoViews = video?.viewsCount || 0;
+
+  const renderVideo = () => {
+    if (Video) {
+      return (
+        <Video
+          ref={videoRef}
+          source={{ uri: videoUrl }}
+          style={{ flex: 1 }}
+          resizeMode={ResizeMode?.CONTAIN || 'contain'}
+          useNativeControls
+          shouldPlay
+          onPlaybackStatusUpdate={(s) => {
+            setStatus(s);
+            if (s.isLoaded) setLoading(false);
+          }}
+          onError={() => {
+            setError(true);
+            setLoading(false);
+          }}
+          onLoadStart={() => setLoading(true)}
+          key={retryCount}
+        />
+      );
     }
-    setIsFullscreen(!isFullscreen);
-  };
-
-  const videoTitle = video.title || 'Video';
-  const videoAuthor = video.author || video.authorAr || '';
-  const videoDescription = video.description || '';
-  const videoDuration = video.durationStr || (video.duration ? `${Math.floor(video.duration / 60)}:${String(video.duration % 60).padStart(2, '0')}` : '');
-  const videoViews = video.viewsCount || 0;
-
-  if (Platform.OS === 'web') {
     return (
-      <ImageBackground source={require('../../assets/home.jpg')} style={styles.bgImage} resizeMode="cover">
-        <View style={styles.overlay} />
-        <View style={styles.container}>
-          <View style={styles.topBar}>
-            <TouchableOpacity style={styles.backBtn} onPress={handleGoBack}>
-              <Ionicons name="arrow-back" size={22} color="#FFFFFF" />
-            </TouchableOpacity>
-            <Text style={styles.topBarTitle} numberOfLines={1}>{videoTitle}</Text>
-            <View style={{ width: 40 }} />
-          </View>
-          <View style={[styles.videoContainer, { height: playerHeight }]}>
-            <video
-              src={videoUrl}
-              controls
-              autoPlay
-              style={{ width: '100%', height: '100%', backgroundColor: '#000' }}
-            />
-          </View>
-          <ScrollView style={[styles.infoPanel, { backgroundColor: COLORS.background }]}>
-            <Text style={[styles.title, { color: COLORS.text }]}>{videoTitle}</Text>
-            <View style={styles.metaRow}>
-              {videoAuthor ? (
-                <View style={styles.metaItem}>
-                  <Ionicons name="person-outline" size={14} color={COLORS.textMuted || '#999'} />
-                  <Text style={[styles.metaText, { color: COLORS.textMuted || '#999' }]}>{videoAuthor}</Text>
-                </View>
-              ) : null}
-              {videoDuration ? (
-                <View style={styles.metaItem}>
-                  <Ionicons name="time-outline" size={14} color={COLORS.textMuted || '#999'} />
-                  <Text style={[styles.metaText, { color: COLORS.textMuted || '#999' }]}>{videoDuration}</Text>
-                </View>
-              ) : null}
-              {videoViews > 0 ? (
-                <View style={styles.metaItem}>
-                  <Ionicons name="eye-outline" size={14} color={COLORS.textMuted || '#999'} />
-                  <Text style={[styles.metaText, { color: COLORS.textMuted || '#999' }]}>{videoViews}</Text>
-                </View>
-              ) : null}
-            </View>
-            {videoDescription ? (
-              <View style={styles.descSection}>
-                <Text style={[styles.descLabel, { color: COLORS.textMuted || '#999' }]}>Description</Text>
-                <Text style={[styles.descText, { color: COLORS.text }]}>{videoDescription}</Text>
-              </View>
-            ) : null}
-          </ScrollView>
-        </View>
-      </ImageBackground>
+      <iframe
+        src={videoUrl}
+        style={{ width: '100%', height: '100%', border: 'none', backgroundColor: '#000' }}
+        allow="autoplay; fullscreen"
+        allowFullScreen
+      />
     );
-  }
+  };
 
   return (
     <ImageBackground source={require('../../assets/home.jpg')} style={styles.bgImage} resizeMode="cover">
@@ -152,9 +110,11 @@ export default function VideoPlayerScreen({ route, navigation }) {
             <Ionicons name="arrow-back" size={22} color="#FFFFFF" />
           </TouchableOpacity>
           <Text style={styles.topBarTitle} numberOfLines={1}>{videoTitle}</Text>
-          <TouchableOpacity style={styles.backBtn} onPress={toggleFullscreen}>
-            <Ionicons name={isFullscreen ? 'contract-outline' : 'expand-outline'} size={22} color="#FFFFFF" />
-          </TouchableOpacity>
+          {Platform.OS !== 'web' ? (
+            <TouchableOpacity style={styles.backBtn} onPress={() => setIsFullscreen(!isFullscreen)}>
+              <Ionicons name={isFullscreen ? 'contract-outline' : 'expand-outline'} size={22} color="#FFFFFF" />
+            </TouchableOpacity>
+          ) : <View style={{ width: 40 }} />}
         </View>
 
         <View style={[styles.videoContainer, { height: playerHeight }]}>
@@ -166,24 +126,7 @@ export default function VideoPlayerScreen({ route, navigation }) {
                   <Text style={styles.loadingText}>{t('Gutegura video...', 'Loading video...', 'جاري تحميل الفيديو...')}</Text>
                 </View>
               )}
-              <Video
-                ref={videoRef}
-                source={{ uri: videoUrl }}
-                style={{ flex: 1 }}
-                resizeMode={ResizeMode.CONTAIN}
-                useNativeControls
-                shouldPlay
-                onPlaybackStatusUpdate={(s) => {
-                  setStatus(s);
-                  if (s.isLoaded) setLoading(false);
-                }}
-                onError={() => {
-                  setError(true);
-                  setLoading(false);
-                }}
-                onLoadStart={() => setLoading(true)}
-                key={retryCount}
-              />
+              {renderVideo()}
             </>
           ) : (
             <View style={styles.errorContainer}>

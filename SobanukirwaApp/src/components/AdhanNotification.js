@@ -3,9 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Animated, Dimensions, Platfor
 import { Ionicons } from '@expo/vector-icons';
 
 let Audio = null;
-if (Platform.OS !== 'web') {
-  try { Audio = require('expo-av').Audio; } catch (e) {}
-}
+try { Audio = require('expo-av').Audio; } catch (e) {}
 
 const { width } = Dimensions.get('window');
 

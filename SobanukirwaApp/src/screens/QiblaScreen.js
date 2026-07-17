@@ -8,10 +8,8 @@ import { calculateQiblaDirection, calculateKaabaDistance } from '../utils/prayer
 let Magnetometer = null;
 let Location = null;
 
-if (Platform.OS !== 'web') {
-  try { Magnetometer = require('expo-sensors').Magnetometer; } catch (e) {}
-  try { Location = require('expo-location'); } catch (e) {}
-}
+try { Magnetometer = require('expo-sensors').Magnetometer; } catch (e) {}
+try { Location = require('expo-location'); } catch (e) {}
 
 const { width } = Dimensions.get('window');
 const COMPASS_SIZE = width * 0.7;

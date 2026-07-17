@@ -5,9 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
 
 let Audio = null;
-if (Platform.OS !== 'web') {
-  try { Audio = require('expo-av').Audio; } catch (e) {}
-}
+try { Audio = require('expo-av').Audio; } catch (e) {}
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 

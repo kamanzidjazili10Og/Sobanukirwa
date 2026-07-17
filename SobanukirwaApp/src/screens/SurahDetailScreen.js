@@ -6,9 +6,7 @@ import { useApp } from '../context/AppContext';
 import { getMediaUrl } from '../services/api';
 
 let Audio = null;
-if (Platform.OS !== 'web') {
-  try { Audio = require('expo-av').Audio; } catch (e) {}
-}
+try { Audio = require('expo-av').Audio; } catch (e) {}
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
