@@ -291,10 +291,15 @@ export function normalizeDuration(dur) {
 async function adminFetch(url, options = {}) {
   try {
     const headers = { Accept: 'application/json', ...options.headers };
-    if (options.body && !(options.body instanceof FormData)) {
+    const isFormData = options.body instanceof FormData;
+    if (options.body && !isFormData) {
       headers['Content-Type'] = 'application/json';
     }
-    const res = await fetch(url, { ...options, headers });
+    const timeout = isFormData ? 300000 : 30000;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeout);
+    const res = await fetch(url, { ...options, headers, signal: controller.signal });
+    clearTimeout(timer);
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || 'Request failed');
     return data;
