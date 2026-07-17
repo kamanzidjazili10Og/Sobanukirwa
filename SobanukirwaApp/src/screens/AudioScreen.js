@@ -158,9 +158,9 @@ export default function AudioScreen({ navigation }) {
                       <View style={styles.trackCatBadge}>
                         <Text style={styles.trackCatText}>{catName}</Text>
                       </View>
-                      {track.duration ? (
+                      {(track.duration_str || track.duration) ? (
                         <View style={styles.trackDurBadge}>
-                          <Text style={styles.trackDurText}>{track.duration}</Text>
+                          <Text style={styles.trackDurText}>{track.duration_str || track.duration}</Text>
                         </View>
                       ) : null}
                     </View>

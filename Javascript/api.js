@@ -1,4 +1,5 @@
 const API_BASE = window.location.origin + '/api';
+const API_ORIGIN = window.location.origin;
 
 function normalizeDuration(dur) {
     if (!dur) return '00:00';
@@ -27,11 +28,12 @@ async function fetchFromAPI(endpoint, options = {}) {
 }
 
 async function loadDataFromAPI() {
-    const [apiTracks, apiSurahs, apiAdhkar, apiVideos] = await Promise.all([
+    const [apiTracks, apiSurahs, apiAdhkar, apiVideos, apiBooks] = await Promise.all([
         fetchFromAPI('/tracks'),
         fetchFromAPI('/quran/surahs'),
         fetchFromAPI('/adhkar'),
-        fetchFromAPI('/videos')
+        fetchFromAPI('/videos'),
+        fetchFromAPI('/books')
     ]);
 
     let hasAPIData = false;
@@ -93,11 +95,48 @@ async function loadDataFromAPI() {
         hasAPIData = true;
         videosData.length = 0;
         apiVideos.forEach(v => {
+            const rawThumb = v.thumbnail_url || 'Images/logo2.png';
+            const thumbUrl = rawThumb.startsWith('http') ? rawThumb : (rawThumb.startsWith('/') ? `${API_ORIGIN}${rawThumb}` : `${API_ORIGIN}/${rawThumb}`);
+            const rawVideo = v.video_url || '';
+            const vidUrl = rawVideo.startsWith('http') ? rawVideo : (rawVideo.startsWith('/') ? `${API_ORIGIN}${rawVideo}` : `${API_ORIGIN}/${rawVideo}`);
             videosData.push({
                 id: v.id,
                 title: v.title,
-                videoUrl: v.video_url,
-                thumbnail: v.thumbnail_url || 'Images/logo2.png'
+                titleEn: v.title_en || v.title,
+                titleAr: v.title_ar || v.title,
+                author: v.author || '',
+                authorEn: v.author_en || v.author || '',
+                authorAr: v.author_ar || v.author || '',
+                description: v.description || '',
+                videoUrl: vidUrl,
+                thumbnail: thumbUrl,
+                duration: v.duration_str || ''
+            });
+        });
+    }
+
+    if (apiBooks && apiBooks.length > 0) {
+        hasAPIData = true;
+        booksData.length = 0;
+        apiBooks.forEach(b => {
+            const rawImage = b.image_url || 'Images/logo2.png';
+            const imageUrl = rawImage.startsWith('http') ? rawImage : (rawImage.startsWith('/') ? `${API_ORIGIN}${rawImage}` : `${API_ORIGIN}/${rawImage}`);
+            const rawFile = b.file_url || '';
+            const fileUrl = rawFile.startsWith('http') ? rawFile : (rawFile.startsWith('/') ? `${API_ORIGIN}${rawFile}` : `${API_ORIGIN}/${rawFile}`);
+            booksData.push({
+                id: b.id,
+                title: b.title || '',
+                titleEn: b.title_en || b.title || '',
+                titleAr: b.title_ar || b.title || '',
+                author: b.author || '',
+                authorEn: b.author_en || b.author || '',
+                authorAr: b.author_ar || b.author || '',
+                image: imageUrl,
+                pdfUrl: b.file_type === 'pdf' ? fileUrl : '',
+                content: b.file_type === 'text' ? (b.description || '') : '',
+                category: b.category || '',
+                type: b.file_type || 'pdf',
+                description: b.description || ''
             });
         });
     }
@@ -112,5 +151,6 @@ async function loadDataFromAPI() {
     if (typeof renderCategoryTabs === 'function') renderCategoryTabs();
     if (typeof renderQuran === 'function') renderQuran();
     if (typeof renderVideos === 'function') renderVideos();
+    if (typeof renderBooks === 'function') renderBooks();
     if (typeof renderFeaturedAudio === 'function') renderFeaturedAudio();
 }

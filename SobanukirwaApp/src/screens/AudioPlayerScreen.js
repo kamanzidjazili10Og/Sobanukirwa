@@ -3,6 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Animated, Dimensi
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
+import { getMediaUrl } from '../services/api';
 
 let Audio = null;
 try { Audio = require('expo-av').Audio; } catch (e) {}
@@ -78,7 +79,8 @@ export default function AudioPlayerScreen({ route, navigation }) {
     if (soundRef.current) await soundRef.current.unloadAsync();
     if (!Audio) return;
     try {
-      const audioUrl = currentTrack.audio_url || currentTrack.audioUrl || '';
+      const rawUrl = currentTrack.audio_url || currentTrack.audioUrl || '';
+      const audioUrl = getMediaUrl(rawUrl) || rawUrl;
       if (!audioUrl) return;
       const { sound } = await Audio.Sound.createAsync(
         { uri: audioUrl },
