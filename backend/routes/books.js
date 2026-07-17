@@ -56,11 +56,13 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.post('/', upload.fields([{ name: 'file', maxCount: 1 }, { name: 'image', maxCount: 1 }]), async (req, res) => {
+router.post('/', upload.fields([{ name: 'file', maxCount: 1 }, { name: 'image', maxCount: 1 }, { name: 'cover', maxCount: 1 }]), async (req, res) => {
   try {
     const { title, title_ar, title_en, author, author_ar, author_en, description, category, file_type } = req.body;
     const fileUrl = req.files.file ? `/uploads/documents/${req.files.file[0].filename}` : (req.body.file_url || '');
-    const imageUrl = req.files.image ? `/uploads/images/${req.files.image[0].filename}` : (req.body.image_url || null);
+    const imageUrl = (req.files.image && req.files.image[0]) ? `/uploads/images/${req.files.image[0].filename}`
+      : (req.files.cover && req.files.cover[0]) ? `/uploads/images/${req.files.cover[0].filename}`
+      : (req.body.image_url || null);
     if (!fileUrl) return res.status(400).json({ message: 'A file upload or URL is required' });
 
     const [result] = await pool.query(
@@ -73,14 +75,15 @@ router.post('/', upload.fields([{ name: 'file', maxCount: 1 }, { name: 'image', 
   }
 });
 
-router.put('/:id', upload.fields([{ name: 'file', maxCount: 1 }, { name: 'image', maxCount: 1 }]), async (req, res) => {
+router.put('/:id', upload.fields([{ name: 'file', maxCount: 1 }, { name: 'image', maxCount: 1 }, { name: 'cover', maxCount: 1 }]), async (req, res) => {
   try {
     const { title, title_ar, title_en, author, author_ar, author_en, description, category, file_type } = req.body;
     let sql = 'UPDATE books SET title=?, title_ar=?, title_en=?, author=?, author_ar=?, author_en=?, description=?, category=?, file_type=?';
-    const params = [title, title_ar, title_en, author, author_ar, author_en, description, category, file_type];
+    const params = [title, title_ar || null, title_en || null, author || null, author_ar || null, author_en || null, description || null, category || null, file_type || 'pdf'];
 
     if (req.files.file) { sql += ', file_url=?'; params.push(`/uploads/documents/${req.files.file[0].filename}`); }
-    if (req.files.image) { sql += ', image_url=?'; params.push(`/uploads/images/${req.files.image[0].filename}`); }
+    const coverFile = (req.files.image && req.files.image[0]) || (req.files.cover && req.files.cover[0]);
+    if (coverFile) { sql += ', image_url=?'; params.push(`/uploads/images/${coverFile.filename}`); }
 
     sql += ' WHERE id=?';
     params.push(req.params.id);

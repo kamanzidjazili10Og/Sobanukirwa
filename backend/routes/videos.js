@@ -3,6 +3,16 @@ const pool = require('../config/db');
 const upload = require('../middleware/upload');
 const router = express.Router();
 
+async function ensureColumns() {
+  try {
+    const [cols] = await pool.query("SHOW COLUMNS FROM videos LIKE 'duration_str'");
+    if (cols.length === 0) {
+      await pool.query("ALTER TABLE videos ADD COLUMN duration_str VARCHAR(10) DEFAULT NULL");
+    }
+  } catch (e) { /* ignore */ }
+}
+ensureColumns();
+
 const SAMPLE_VIDEOS = [
   { title: 'Amateka y\'intumwa y\'imana Muhamad (S.A.W)', author: 'Sheikh Uqash', video_url: '/uploads/videos/sample-1.mp4', duration_str: '45:00', title_en: 'The Story of Prophet Muhammad (PBUH)', description: 'Amateka y\'Intumwa Muhamad (SAW) y\'umuvandimwe wacu.' },
   { title: 'Inyigisho ku Kwihangana', author: 'Sheikh Mutabaruka', video_url: '/uploads/videos/sample-2.mp4', duration_str: '32:00', title_en: 'Lesson on Patience', description: 'Inyigisho zibanzirizwa ku kwihangana mu buzima bw\'imisi yose.' },

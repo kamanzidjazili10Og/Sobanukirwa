@@ -46,7 +46,7 @@ export default function AdminBooksScreen({ navigation }) {
 
   const filtered = books.filter(b =>
     (b.title || '').toLowerCase().includes(search.toLowerCase()) ||
-    (b.author || '').toLowerCase().includes(search.toLowerCase())
+    (b.author || b.authorEn || '').toLowerCase().includes(search.toLowerCase())
   );
 
   const openAdd = () => {
@@ -60,14 +60,14 @@ export default function AdminBooksScreen({ navigation }) {
   const openEdit = (book) => {
     setEditing(book);
     setFormTitle(book.title || '');
-    setFormTitleEn(book.title_en || '');
-    setFormTitleAr(book.title_ar || '');
+    setFormTitleEn(book.titleEn || book.title_en || '');
+    setFormTitleAr(book.titleAr || book.title_ar || '');
     setFormAuthor(book.author || '');
     setFormDesc(book.description || '');
     setFormCategory(book.category || '');
-    setFormFileType(book.file_type || 'pdf');
+    setFormFileType(book.fileType || book.file_type || 'pdf');
     setFormFile(null);
-    setFormCover(book.image_url ? { uri: getMediaUrl(book.image_url) } : null);
+    setFormCover(book.imageUrl || book.image_url ? { uri: getMediaUrl(book.imageUrl || book.image_url) } : null);
     setModalVisible(true);
   };
 
@@ -139,8 +139,8 @@ export default function AdminBooksScreen({ navigation }) {
   const renderItem = ({ item, index }) => (
     <AnimatedListItem item={item} index={index}>
       <TouchableOpacity style={styles.card} onPress={() => openEdit(item)} onLongPress={() => handleDelete(item)}>
-        {item.image_url ? (
-          <Image source={{ uri: getMediaUrl(item.image_url) }} style={styles.cover} />
+        {(item.imageUrl || item.image_url) ? (
+          <Image source={{ uri: getMediaUrl(item.imageUrl || item.image_url) }} style={styles.cover} />
         ) : (
           <View style={styles.coverPlaceholder}>
             <Ionicons name="book" size={26} color="#F59E0B" />
@@ -150,8 +150,8 @@ export default function AdminBooksScreen({ navigation }) {
           <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
           {item.author ? <Text style={styles.cardSub} numberOfLines={1}>{item.author}</Text> : null}
           <View style={styles.cardFooter}>
-            <View style={[styles.typeBadge, { backgroundColor: getFileTypeColor(item.file_type) + '20' }]}>
-              <Text style={{ color: getFileTypeColor(item.file_type), fontSize: 11, fontWeight: '700', textTransform: 'uppercase' }}>{item.file_type || 'pdf'}</Text>
+            <View style={[styles.typeBadge, { backgroundColor: getFileTypeColor(item.fileType || item.file_type) + '20' }]}>
+              <Text style={{ color: getFileTypeColor(item.fileType || item.file_type), fontSize: 11, fontWeight: '700', textTransform: 'uppercase' }}>{item.fileType || item.file_type || 'pdf'}</Text>
             </View>
           </View>
         </View>

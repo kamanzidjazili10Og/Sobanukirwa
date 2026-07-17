@@ -40,9 +40,9 @@ export default function AdminVideosScreen({ navigation }) {
 
   useEffect(() => { loadVideos(); }, []);
 
-  const filtered = videos.filter(v =>
+    const filtered = videos.filter(v =>
     (v.title || '').toLowerCase().includes(search.toLowerCase()) ||
-    (v.author || '').toLowerCase().includes(search.toLowerCase())
+    (v.author || v.authorEn || '').toLowerCase().includes(search.toLowerCase())
   );
 
   const openAdd = () => {
@@ -55,12 +55,12 @@ export default function AdminVideosScreen({ navigation }) {
   const openEdit = (video) => {
     setEditing(video);
     setFormTitle(video.title || '');
-    setFormTitleEn(video.title_en || '');
-    setFormTitleAr(video.title_ar || '');
+    setFormTitleEn(video.titleEn || video.title_en || '');
+    setFormTitleAr(video.titleAr || video.title_ar || '');
     setFormAuthor(video.author || '');
     setFormDesc(video.description || '');
     setFormVideo(null);
-    setFormThumb(video.thumbnail ? { uri: getMediaUrl(video.thumbnail) } : null);
+    setFormThumb(video.thumbnail || video.thumbnail_url ? { uri: getMediaUrl(video.thumbnail || video.thumbnail_url) } : null);
     setModalVisible(true);
   };
 
@@ -125,8 +125,8 @@ export default function AdminVideosScreen({ navigation }) {
   const renderItem = ({ item, index }) => (
     <AnimatedListItem item={item} index={index}>
       <TouchableOpacity style={styles.card} onPress={() => openEdit(item)} onLongPress={() => handleDelete(item)}>
-        {item.thumbnail ? (
-          <Image source={{ uri: getMediaUrl(item.thumbnail) }} style={styles.thumb} />
+        {(item.thumbnail || item.thumbnail_url) ? (
+          <Image source={{ uri: getMediaUrl(item.thumbnail || item.thumbnail_url) }} style={styles.thumb} />
         ) : (
           <View style={styles.thumbPlaceholder}>
             <Ionicons name="videocam" size={22} color="#F59E0B" />
@@ -135,7 +135,7 @@ export default function AdminVideosScreen({ navigation }) {
         <View style={styles.cardInfo}>
           <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
           {item.author ? <Text style={styles.cardSub}>{item.author}</Text> : null}
-          {item.durationStr ? <Text style={[styles.cardSub, { color: '#F59E0B' }]}>{item.durationStr}</Text> : null}
+          {(item.durationStr || item.duration_str) ? <Text style={[styles.cardSub, { color: '#F59E0B' }]}>{item.durationStr || item.duration_str}</Text> : null}
         </View>
         <TouchableOpacity onPress={() => handleDelete(item)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <Ionicons name="trash-outline" size={18} color="#EF4444" />

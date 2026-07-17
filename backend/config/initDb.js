@@ -70,6 +70,28 @@ async function initDb() {
   }
 
   await connection.end();
+
+  // Post-schema migrations: ensure columns that may be missing from older schema
+  const pool = require('./db');
+  try {
+    const [vcols] = await pool.query("SHOW COLUMNS FROM videos LIKE 'duration_str'");
+    if (vcols.length === 0) {
+      await pool.query("ALTER TABLE videos ADD COLUMN duration_str VARCHAR(10) DEFAULT NULL");
+      console.log('Added duration_str column to videos table');
+    }
+  } catch (e) { /* ignore */ }
+  try {
+    const [tcols] = await pool.query("SHOW COLUMNS FROM tracks LIKE 'duration_str'");
+    if (tcols.length === 0) {
+      await pool.query("ALTER TABLE tracks ADD COLUMN duration_str VARCHAR(10) DEFAULT '00:00'");
+      console.log('Added duration_str column to tracks table');
+    }
+    const [tdesc] = await pool.query("SHOW COLUMNS FROM tracks LIKE 'description'");
+    if (tdesc.length === 0) {
+      await pool.query("ALTER TABLE tracks ADD COLUMN description TEXT DEFAULT NULL");
+      console.log('Added description column to tracks table');
+    }
+  } catch (e) { /* ignore */ }
 }
 
 module.exports = initDb;
