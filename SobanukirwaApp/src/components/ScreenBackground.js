@@ -3,7 +3,7 @@ import { ImageBackground, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const BACKGROUNDS = {
-  'bg-home': require('../../assets/ok5.jpeg'),
+  'bg-home': require('../../assets/bg-home.jpg'),
   'bg-prayer': require('../../assets/bg-prayer.jpg'),
   'bg-quran': require('../../assets/seven.jpg'),
   'bg-audio': require('../../assets/bg-audio.jpg'),

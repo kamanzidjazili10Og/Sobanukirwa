@@ -1,14 +1,16 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView,
-  ActivityIndicator, TextInput, Alert, Modal, ScrollView, Image,
+  View, Text, StyleSheet, FlatList, TouchableOpacity,
+  ActivityIndicator, TextInput, Alert, Modal, ScrollView, Image, Animated,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { useApp } from '../../context/AppContext';
 import { useToastContext } from '../../components/Toast';
 import { fetchVideos, createVideo, updateVideo, deleteVideo, getMediaUrl } from '../../services/api';
+import AdminLayout, { AdminFAB, AdminEmptyState } from '../../components/admin/AdminLayout';
 
 export default function AdminVideosScreen({ navigation }) {
   const { COLORS, t } = useApp();
@@ -105,134 +107,134 @@ export default function AdminVideosScreen({ navigation }) {
   const handleDelete = (video) => {
     Alert.alert('Delete Video', `Delete "${video.title}"?`, [
       { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete', style: 'destructive', onPress: async () => {
-          try { await deleteVideo(video.id); toast.show('Video deleted', 'success'); loadVideos(); }
-          catch { toast.show('Delete failed', 'error'); }
-        }
-      },
+      { text: 'Delete', style: 'destructive', onPress: async () => {
+        try { await deleteVideo(video.id); toast.show('Video deleted', 'success'); loadVideos(); }
+        catch { toast.show('Delete failed', 'error'); }
+      }},
     ]);
   };
 
-  const renderItem = ({ item }) => (
-    <TouchableOpacity style={[styles.card, { backgroundColor: 'rgba(20,35,55,0.7)', borderColor: 'rgba(201,168,76,0.2)' }]} onPress={() => openEdit(item)} onLongPress={() => handleDelete(item)}>
-      {item.thumbnail ? (
-        <Image source={{ uri: getMediaUrl(item.thumbnail) }} style={styles.thumb} />
-      ) : (
-        <View style={[styles.thumb, styles.thumbPlaceholder, { backgroundColor: 'rgba(201,168,76,0.1)' }]}>
-          <Ionicons name="videocam" size={24} color={COLORS.secondary} />
+  const AnimatedListItem = React.memo(({ item, index, children }) => {
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+    useEffect(() => {
+      Animated.timing(fadeAnim, { toValue: 1, duration: 300, delay: index * 40, useNativeDriver: true }).start();
+    }, []);
+    return <Animated.View style={{ opacity: fadeAnim }}>{children}</Animated.View>;
+  });
+
+  const renderItem = ({ item, index }) => (
+    <AnimatedListItem item={item} index={index}>
+      <TouchableOpacity style={styles.card} onPress={() => openEdit(item)} onLongPress={() => handleDelete(item)}>
+        {item.thumbnail ? (
+          <Image source={{ uri: getMediaUrl(item.thumbnail) }} style={styles.thumb} />
+        ) : (
+          <View style={styles.thumbPlaceholder}>
+            <Ionicons name="videocam" size={22} color="#F59E0B" />
+          </View>
+        )}
+        <View style={styles.cardInfo}>
+          <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
+          {item.author ? <Text style={styles.cardSub}>{item.author}</Text> : null}
+          {item.duration ? <Text style={styles.cardSub}>{item.duration}</Text> : null}
         </View>
-      )}
-      <View style={styles.cardInfo}>
-        <Text style={[styles.cardTitle, { color: COLORS.text }]} numberOfLines={2}>{item.title}</Text>
-        {item.author ? <Text style={[styles.cardSub, { color: COLORS.textMuted }]}>{item.author}</Text> : null}
-        {item.duration ? <Text style={[styles.cardSub, { color: COLORS.textMuted }]}>{item.duration}</Text> : null}
-      </View>
-      <TouchableOpacity onPress={() => handleDelete(item)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-        <Ionicons name="trash-outline" size={18} color={COLORS.error || '#e74c3c'} />
+        <TouchableOpacity onPress={() => handleDelete(item)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <Ionicons name="trash-outline" size={18} color="#EF4444" />
+        </TouchableOpacity>
       </TouchableOpacity>
-    </TouchableOpacity>
+    </AnimatedListItem>
   );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]}>
-      <View style={styles.headerRow}>
-        <TouchableOpacity onPress={() => navigation.navigate('AdminDashboard')} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={22} color={COLORS.textGold} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: COLORS.textGold }]}>Videos</Text>
-        <View style={{ width: 36 }} />
-      </View>
+    <AdminLayout navigation={navigation} title="Videos" subtitle={`${filtered.length} videos`}>
       <View style={styles.searchRow}>
-        <View style={[styles.searchBar, { backgroundColor: 'rgba(20,35,55,0.7)', borderColor: 'rgba(201,168,76,0.2)' }]}>
-          <Ionicons name="search" size={18} color={COLORS.textMuted} />
-          <TextInput style={[styles.searchInput, { color: COLORS.text }]} placeholder="Search videos..." placeholderTextColor={COLORS.textMuted} value={search} onChangeText={setSearch} />
-          {search ? <TouchableOpacity onPress={() => setSearch('')}><Ionicons name="close-circle" size={18} color={COLORS.textMuted} /></TouchableOpacity> : null}
+        <View style={styles.searchBar}>
+          <Ionicons name="search" size={18} color="rgba(255,255,255,0.3)" />
+          <TextInput style={styles.searchInput} placeholder="Search videos..." placeholderTextColor="rgba(255,255,255,0.3)" value={search} onChangeText={setSearch} />
+          {search ? <TouchableOpacity onPress={() => setSearch('')}><Ionicons name="close-circle" size={18} color="rgba(255,255,255,0.3)" /></TouchableOpacity> : null}
         </View>
       </View>
 
       {loading ? (
-        <ActivityIndicator size="large" color={COLORS.secondary} style={{ flex: 1 }} />
+        <ActivityIndicator size="large" color="#F59E0B" style={{ flex: 1 }} />
       ) : (
-        <FlatList data={filtered} keyExtractor={item => String(item.id)} renderItem={renderItem} contentContainerStyle={styles.list} ListEmptyComponent={<Text style={[styles.empty, { color: COLORS.textMuted }]}>No videos found</Text>} />
+        <FlatList data={filtered} keyExtractor={item => String(item.id)} renderItem={renderItem} contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}
+          ListEmptyComponent={<AdminEmptyState icon="videocam" message="No videos found" />}
+        />
       )}
 
-      <TouchableOpacity style={[styles.fab, { backgroundColor: COLORS.secondary }]} onPress={openAdd}>
-        <Ionicons name="add" size={28} color="#0a1220" />
-      </TouchableOpacity>
+      <AdminFAB onPress={openAdd} />
 
       <Modal visible={modalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: '#0a1220', borderColor: 'rgba(201,168,76,0.2)' }]}>
+          <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: COLORS.textGold }]}>{editing ? 'Edit Video' : 'Add Video'}</Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)}><Ionicons name="close" size={24} color={COLORS.textMuted} /></TouchableOpacity>
+              <View style={styles.modalHeaderLeft}>
+                <View style={styles.modalIconWrap}>
+                  <Ionicons name="videocam" size={18} color="#F59E0B" />
+                </View>
+                <Text style={styles.modalTitle}>{editing ? 'Edit Video' : 'Add Video'}</Text>
+              </View>
+              <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.modalCloseBtn}>
+                <Ionicons name="close" size={20} color="rgba(255,255,255,0.5)" />
+              </TouchableOpacity>
             </View>
-            <ScrollView>
-              <Text style={[styles.label, { color: COLORS.textMuted }]}>Title *</Text>
-              <TextInput style={[styles.input, { color: COLORS.text, borderColor: 'rgba(201,168,76,0.2)', backgroundColor: 'rgba(20,35,55,0.7)' }]} value={formTitle} onChangeText={setFormTitle} placeholder="Video title" placeholderTextColor={COLORS.textMuted} />
-
-              <Text style={[styles.label, { color: COLORS.textMuted }]}>Title (English)</Text>
-              <TextInput style={[styles.input, { color: COLORS.text, borderColor: 'rgba(201,168,76,0.2)', backgroundColor: 'rgba(20,35,55,0.7)' }]} value={formTitleEn} onChangeText={setFormTitleEn} placeholder="English title" placeholderTextColor={COLORS.textMuted} />
-
-              <Text style={[styles.label, { color: COLORS.textMuted }]}>Title (Arabic)</Text>
-              <TextInput style={[styles.input, { color: COLORS.text, borderColor: 'rgba(201,168,76,0.2)', backgroundColor: 'rgba(20,35,55,0.7)', textAlign: 'right' }]} value={formTitleAr} onChangeText={setFormTitleAr} placeholder="Arabic title" placeholderTextColor={COLORS.textMuted} />
-
-              <Text style={[styles.label, { color: COLORS.textMuted }]}>Author</Text>
-              <TextInput style={[styles.input, { color: COLORS.text, borderColor: 'rgba(201,168,76,0.2)', backgroundColor: 'rgba(20,35,55,0.7)' }]} value={formAuthor} onChangeText={setFormAuthor} placeholder="Author name" placeholderTextColor={COLORS.textMuted} />
-
-              <Text style={[styles.label, { color: COLORS.textMuted }]}>Description</Text>
-              <TextInput style={[styles.input, styles.textArea, { color: COLORS.text, borderColor: 'rgba(201,168,76,0.2)', backgroundColor: 'rgba(20,35,55,0.7)' }]} value={formDesc} onChangeText={setFormDesc} placeholder="Description" placeholderTextColor={COLORS.textMuted} multiline numberOfLines={3} />
-
-              <TouchableOpacity style={[styles.filePicker, { borderColor: 'rgba(201,168,76,0.2)' }]} onPress={pickVideo}>
-                <Ionicons name={formVideo ? 'checkmark-circle' : 'videocam'} size={24} color={formVideo ? '#27ae60' : COLORS.secondary} />
-                <Text style={{ color: formVideo ? '#27ae60' : COLORS.text, marginLeft: 8 }}>{formVideo ? formVideo.name || 'Video selected' : 'Pick Video File'}</Text>
+            <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
+              <Text style={styles.label}>Title *</Text>
+              <TextInput style={styles.input} value={formTitle} onChangeText={setFormTitle} placeholder="Video title" placeholderTextColor="rgba(255,255,255,0.3)" />
+              <Text style={styles.label}>Title (English)</Text>
+              <TextInput style={styles.input} value={formTitleEn} onChangeText={setFormTitleEn} placeholder="English title" placeholderTextColor="rgba(255,255,255,0.3)" />
+              <Text style={styles.label}>Title (Arabic)</Text>
+              <TextInput style={[styles.input, { textAlign: 'right' }]} value={formTitleAr} onChangeText={setFormTitleAr} placeholder="Arabic title" placeholderTextColor="rgba(255,255,255,0.3)" />
+              <Text style={styles.label}>Author</Text>
+              <TextInput style={styles.input} value={formAuthor} onChangeText={setFormAuthor} placeholder="Author name" placeholderTextColor="rgba(255,255,255,0.3)" />
+              <Text style={styles.label}>Description</Text>
+              <TextInput style={[styles.input, styles.textArea]} value={formDesc} onChangeText={setFormDesc} placeholder="Description" placeholderTextColor="rgba(255,255,255,0.3)" multiline numberOfLines={3} />
+              <TouchableOpacity style={styles.filePicker} onPress={pickVideo}>
+                <Ionicons name={formVideo ? 'checkmark-circle' : 'videocam'} size={24} color={formVideo ? '#27ae60' : '#F59E0B'} />
+                <Text style={{ color: formVideo ? '#27ae60' : 'rgba(255,255,255,0.6)', marginLeft: 8 }}>{formVideo ? formVideo.name || 'Video selected' : 'Pick Video File'}</Text>
               </TouchableOpacity>
-
-              <TouchableOpacity style={[styles.filePicker, { borderColor: 'rgba(201,168,76,0.2)' }]} onPress={pickThumb}>
-                <Ionicons name={formThumb ? 'checkmark-circle' : 'image'} size={24} color={formThumb ? '#27ae60' : COLORS.secondary} />
-                <Text style={{ color: formThumb ? '#27ae60' : COLORS.text, marginLeft: 8 }}>{formThumb ? 'Thumbnail selected' : 'Pick Thumbnail'}</Text>
+              <TouchableOpacity style={styles.filePicker} onPress={pickThumb}>
+                <Ionicons name={formThumb ? 'checkmark-circle' : 'image'} size={24} color={formThumb ? '#27ae60' : '#F59E0B'} />
+                <Text style={{ color: formThumb ? '#27ae60' : 'rgba(255,255,255,0.6)', marginLeft: 8 }}>{formThumb ? 'Thumbnail selected' : 'Pick Thumbnail'}</Text>
               </TouchableOpacity>
-
               {formThumb && <Image source={{ uri: formThumb.uri }} style={styles.thumbPreview} />}
-
-              <TouchableOpacity style={[styles.saveBtn, { backgroundColor: COLORS.secondary }]} onPress={handleSave} disabled={saving}>
-                {saving ? <ActivityIndicator color="#0a1220" /> : <Text style={styles.saveBtnText}>{editing ? 'Update' : 'Create'}</Text>}
+              <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={saving}>
+                <LinearGradient colors={['#F59E0B', '#D97706']} style={styles.saveBtnGradient}>
+                  {saving ? <ActivityIndicator color="#0a1220" /> : <Text style={styles.saveBtnText}>{editing ? 'Update' : 'Create'}</Text>}
+                </LinearGradient>
               </TouchableOpacity>
             </ScrollView>
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </AdminLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
-  backBtn: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: 'rgba(201,168,76,0.3)', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(201,168,76,0.08)' },
-  headerTitle: { fontSize: 18, fontWeight: '700' },
-  searchRow: { padding: 12 },
-  searchBar: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, borderWidth: 1, paddingHorizontal: 12, height: 44, gap: 8 },
-  searchInput: { flex: 1, fontSize: 14 },
-  list: { padding: 12, paddingBottom: 80 },
-  card: { flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 12, borderWidth: 1, marginBottom: 10, gap: 12 },
-  thumb: { width: 80, height: 50, borderRadius: 8 },
-  thumbPlaceholder: { alignItems: 'center', justifyContent: 'center' },
+  searchRow: { paddingHorizontal: 12, paddingBottom: 4 },
+  searchBar: { flexDirection: 'row', alignItems: 'center', borderRadius: 14, borderWidth: 1, paddingHorizontal: 14, height: 46, gap: 10, backgroundColor: 'rgba(20,35,55,0.6)', borderColor: 'rgba(201,168,76,0.15)' },
+  searchInput: { flex: 1, fontSize: 14, color: '#FFFFFF' },
+  list: { padding: 12, paddingBottom: 100 },
+  card: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(201,168,76,0.12)', backgroundColor: 'rgba(20,35,55,0.5)', marginBottom: 10, gap: 12 },
+  thumb: { width: 80, height: 52, borderRadius: 10 },
+  thumbPlaceholder: { width: 80, height: 52, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(245,158,11,0.08)', borderWidth: 1, borderColor: 'rgba(245,158,11,0.15)' },
   cardInfo: { flex: 1 },
-  cardTitle: { fontSize: 14, fontWeight: '600' },
-  cardSub: { fontSize: 12, marginTop: 2 },
-  empty: { textAlign: 'center', marginTop: 60, fontSize: 15 },
-  fab: { position: 'absolute', bottom: 24, right: 24, width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', elevation: 6 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
-  modalContent: { borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '90%', borderWidth: 1 },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  modalTitle: { fontSize: 18, fontWeight: '700' },
-  label: { fontSize: 13, fontWeight: '600', marginBottom: 6, marginTop: 12 },
-  input: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14 },
+  cardTitle: { fontSize: 14, fontWeight: '600', color: '#FFFFFF' },
+  cardSub: { fontSize: 12, marginTop: 2, color: 'rgba(255,255,255,0.4)' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
+  modalContent: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, maxHeight: '95%', backgroundColor: '#0a1220', borderWidth: 1, borderColor: 'rgba(201,168,76,0.15)' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  modalHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  modalIconWrap: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(245,158,11,0.12)' },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: '#F59E0B' },
+  modalCloseBtn: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)' },
+  label: { fontSize: 13, fontWeight: '600', marginBottom: 6, marginTop: 14, color: 'rgba(255,255,255,0.5)' },
+  input: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, color: '#FFFFFF', borderColor: 'rgba(201,168,76,0.15)', backgroundColor: 'rgba(20,35,55,0.6)', marginBottom: 4 },
   textArea: { height: 80, textAlignVertical: 'top' },
-  filePicker: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderStyle: 'dashed', borderRadius: 12, padding: 16, marginTop: 12, justifyContent: 'center' },
-  thumbPreview: { width: '100%', height: 120, borderRadius: 8, marginTop: 10, resizeMode: 'cover' },
-  saveBtn: { paddingVertical: 14, borderRadius: 12, alignItems: 'center', marginTop: 16, marginBottom: 20 },
+  filePicker: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderStyle: 'dashed', borderRadius: 14, padding: 18, marginTop: 14, justifyContent: 'center', borderColor: 'rgba(245,158,11,0.25)', backgroundColor: 'rgba(245,158,11,0.04)' },
+  thumbPreview: { width: '100%', height: 120, borderRadius: 10, marginTop: 10, resizeMode: 'cover' },
+  saveBtn: { borderRadius: 14, overflow: 'hidden', marginTop: 8, marginBottom: 20 },
+  saveBtnGradient: { paddingVertical: 15, borderRadius: 14, alignItems: 'center' },
   saveBtnText: { color: '#0a1220', fontSize: 16, fontWeight: '700' },
 });

@@ -16,8 +16,19 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/', express.static(path.join(__dirname, '..')));
 
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Kamanzi@123';
+
+app.post('/api/auth/login', (req, res) => {
+  const { password } = req.body;
+  if (password === ADMIN_PASSWORD) {
+    res.json({ success: true, token: 'admin-session-' + Date.now() });
+  } else {
+    res.status(401).json({ success: false, message: 'Invalid password' });
+  }
+});
+
 app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'index.html'));
+  res.sendFile(path.join(__dirname, '..', 'admin', 'index.html'));
 });
 
 app.use('/api/artists', require('./routes/artists'));

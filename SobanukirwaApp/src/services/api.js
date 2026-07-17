@@ -5,7 +5,7 @@ const LOCAL_WEB = 'http://localhost:5000/api';
 
 import { Platform } from 'react-native';
 
-const BASE = Platform.OS === 'web' ? LOCAL_WEB : PRODUCTION_API;
+const BASE = PRODUCTION_API;
 
 export async function fetchTracks(params = {}) {
   try {

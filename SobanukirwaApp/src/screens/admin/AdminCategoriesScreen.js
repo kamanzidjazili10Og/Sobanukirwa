@@ -1,12 +1,14 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView,
-  ActivityIndicator, TextInput, Alert, Modal, ScrollView,
+  View, Text, StyleSheet, FlatList, TouchableOpacity,
+  ActivityIndicator, TextInput, Alert, Modal, ScrollView, Animated,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../../context/AppContext';
 import { useToastContext } from '../../components/Toast';
 import { fetchCategories, createCategory, updateCategory, deleteCategory } from '../../services/api';
+import AdminLayout, { AdminFAB, AdminEmptyState } from '../../components/admin/AdminLayout';
 
 export default function AdminCategoriesScreen({ navigation }) {
   const { COLORS, t } = useApp();
@@ -67,21 +69,12 @@ export default function AdminCategoriesScreen({ navigation }) {
     setSaving(true);
     try {
       const payload = {
-        name: formName.trim(),
-        name_en: formNameEn.trim(),
-        name_ar: formNameAr.trim(),
-        slug: formSlug.trim() || generateSlug(formName.trim()),
-        icon: formIcon.trim(),
-        sort_order: parseInt(formSortOrder) || 0,
-        description: formDesc.trim(),
+        name: formName.trim(), name_en: formNameEn.trim(), name_ar: formNameAr.trim(),
+        slug: formSlug.trim() || generateSlug(formName.trim()), icon: formIcon.trim(),
+        sort_order: parseInt(formSortOrder) || 0, description: formDesc.trim(),
       };
-      if (editing) {
-        await updateCategory(editing.id, payload);
-        toast.show('Category updated', 'success');
-      } else {
-        await createCategory(payload);
-        toast.show('Category created', 'success');
-      }
+      if (editing) { await updateCategory(editing.id, payload); toast.show('Category updated', 'success'); }
+      else { await createCategory(payload); toast.show('Category created', 'success'); }
       setModalVisible(false);
       loadCategories();
     } catch (e) { toast.show(e.message || 'Save failed', 'error'); }
@@ -91,127 +84,126 @@ export default function AdminCategoriesScreen({ navigation }) {
   const handleDelete = (cat) => {
     Alert.alert('Delete Category', `Delete "${cat.name}"? This may affect tracks using this category.`, [
       { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete', style: 'destructive', onPress: async () => {
-          try { await deleteCategory(cat.id); toast.show('Category deleted', 'success'); loadCategories(); }
-          catch { toast.show('Delete failed', 'error'); }
-        }
-      },
+      { text: 'Delete', style: 'destructive', onPress: async () => {
+        try { await deleteCategory(cat.id); toast.show('Category deleted', 'success'); loadCategories(); }
+        catch { toast.show('Delete failed', 'error'); }
+      }},
     ]);
   };
 
-  const renderItem = ({ item }) => (
-    <TouchableOpacity style={[styles.card, { backgroundColor: 'rgba(20,35,55,0.7)', borderColor: 'rgba(201,168,76,0.2)' }]} onPress={() => openEdit(item)} onLongPress={() => handleDelete(item)}>
-      <View style={[styles.iconWrap, { backgroundColor: COLORS.secondary + '18' }]}>
-        <Ionicons name={item.icon || 'grid'} size={22} color={COLORS.secondary} />
-      </View>
-      <View style={styles.cardInfo}>
-        <Text style={[styles.cardTitle, { color: COLORS.text }]} numberOfLines={1}>{item.name}</Text>
-        <Text style={[styles.cardSub, { color: COLORS.textMuted }]} numberOfLines={1}>{item.slug || '—'}</Text>
-      </View>
-      <View style={styles.cardRight}>
-        <Text style={[styles.trackCount, { color: COLORS.secondary }]}>{item.tracks_count ?? item.track_count ?? 0}</Text>
-        <Text style={[styles.trackLabel, { color: COLORS.textMuted }]}>tracks</Text>
-      </View>
-      <TouchableOpacity onPress={() => handleDelete(item)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-        <Ionicons name="trash-outline" size={18} color={COLORS.error || '#e74c3c'} />
+  const AnimatedListItem = React.memo(({ item, index, children }) => {
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+    useEffect(() => {
+      Animated.timing(fadeAnim, { toValue: 1, duration: 300, delay: index * 40, useNativeDriver: true }).start();
+    }, []);
+    return <Animated.View style={{ opacity: fadeAnim }}>{children}</Animated.View>;
+  });
+
+  const renderItem = ({ item, index }) => (
+    <AnimatedListItem item={item} index={index}>
+      <TouchableOpacity style={styles.card} onPress={() => openEdit(item)} onLongPress={() => handleDelete(item)}>
+        <View style={styles.iconWrap}>
+          <Ionicons name={item.icon || 'grid'} size={22} color="#F59E0B" />
+        </View>
+        <View style={styles.cardInfo}>
+          <Text style={styles.cardTitle} numberOfLines={1}>{item.name}</Text>
+          <Text style={styles.cardSub} numberOfLines={1}>{item.slug || '—'}</Text>
+        </View>
+        <View style={styles.cardRight}>
+          <Text style={styles.trackCount}>{item.tracks_count ?? item.track_count ?? 0}</Text>
+          <Text style={styles.trackLabel}>tracks</Text>
+        </View>
+        <TouchableOpacity onPress={() => handleDelete(item)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <Ionicons name="trash-outline" size={18} color="#EF4444" />
+        </TouchableOpacity>
       </TouchableOpacity>
-    </TouchableOpacity>
+    </AnimatedListItem>
   );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]}>
-      <View style={styles.headerRow}>
-        <TouchableOpacity onPress={() => navigation.navigate('AdminDashboard')} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={22} color={COLORS.textGold} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: COLORS.textGold }]}>Categories</Text>
-        <View style={{ width: 36 }} />
-      </View>
+    <AdminLayout navigation={navigation} title="Categories" subtitle={`${filtered.length} categories`}>
       <View style={styles.searchRow}>
-        <View style={[styles.searchBar, { backgroundColor: 'rgba(20,35,55,0.7)', borderColor: 'rgba(201,168,76,0.2)' }]}>
-          <Ionicons name="search" size={18} color={COLORS.textMuted} />
-          <TextInput style={[styles.searchInput, { color: COLORS.text }]} placeholder="Search categories..." placeholderTextColor={COLORS.textMuted} value={search} onChangeText={setSearch} />
-          {search ? <TouchableOpacity onPress={() => setSearch('')}><Ionicons name="close-circle" size={18} color={COLORS.textMuted} /></TouchableOpacity> : null}
+        <View style={styles.searchBar}>
+          <Ionicons name="search" size={18} color="rgba(255,255,255,0.3)" />
+          <TextInput style={styles.searchInput} placeholder="Search categories..." placeholderTextColor="rgba(255,255,255,0.3)" value={search} onChangeText={setSearch} />
+          {search ? <TouchableOpacity onPress={() => setSearch('')}><Ionicons name="close-circle" size={18} color="rgba(255,255,255,0.3)" /></TouchableOpacity> : null}
         </View>
       </View>
 
       {loading ? (
-        <ActivityIndicator size="large" color={COLORS.secondary} style={{ flex: 1 }} />
+        <ActivityIndicator size="large" color="#F59E0B" style={{ flex: 1 }} />
       ) : (
-        <FlatList data={filtered} keyExtractor={item => String(item.id)} renderItem={renderItem} contentContainerStyle={styles.list} ListEmptyComponent={<Text style={[styles.empty, { color: COLORS.textMuted }]}>No categories found</Text>} />
+        <FlatList data={filtered} keyExtractor={item => String(item.id)} renderItem={renderItem} contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}
+          ListEmptyComponent={<AdminEmptyState icon="grid" message="No categories found" />}
+        />
       )}
 
-      <TouchableOpacity style={[styles.fab, { backgroundColor: COLORS.secondary }]} onPress={openAdd}>
-        <Ionicons name="add" size={28} color="#0a1220" />
-      </TouchableOpacity>
+      <AdminFAB onPress={openAdd} />
 
       <Modal visible={modalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: '#0a1220', borderColor: 'rgba(201,168,76,0.2)' }]}>
+          <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: COLORS.textGold }]}>{editing ? 'Edit Category' : 'Add Category'}</Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)}><Ionicons name="close" size={24} color={COLORS.textMuted} /></TouchableOpacity>
+              <View style={styles.modalHeaderLeft}>
+                <View style={styles.modalIconWrap}><Ionicons name="grid" size={18} color="#F59E0B" /></View>
+                <Text style={styles.modalTitle}>{editing ? 'Edit Category' : 'Add Category'}</Text>
+              </View>
+              <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.modalCloseBtn}>
+                <Ionicons name="close" size={20} color="rgba(255,255,255,0.5)" />
+              </TouchableOpacity>
             </View>
-            <ScrollView>
-              <Text style={[styles.label, { color: COLORS.textMuted }]}>Name *</Text>
-              <TextInput style={[styles.input, { color: COLORS.text, borderColor: 'rgba(201,168,76,0.2)', backgroundColor: 'rgba(20,35,55,0.7)' }]} value={formName} onChangeText={(text) => { setFormName(text); if (!editing) setFormSlug(generateSlug(text)); }} placeholder="Category name" placeholderTextColor={COLORS.textMuted} />
-
-              <Text style={[styles.label, { color: COLORS.textMuted }]}>Name (English)</Text>
-              <TextInput style={[styles.input, { color: COLORS.text, borderColor: 'rgba(201,168,76,0.2)', backgroundColor: 'rgba(20,35,55,0.7)' }]} value={formNameEn} onChangeText={setFormNameEn} placeholder="English name" placeholderTextColor={COLORS.textMuted} />
-
-              <Text style={[styles.label, { color: COLORS.textMuted }]}>Name (Arabic)</Text>
-              <TextInput style={[styles.input, { color: COLORS.text, borderColor: 'rgba(201,168,76,0.2)', backgroundColor: 'rgba(20,35,55,0.7)', textAlign: 'right' }]} value={formNameAr} onChangeText={setFormNameAr} placeholder="Arabic name" placeholderTextColor={COLORS.textMuted} />
-
-              <Text style={[styles.label, { color: COLORS.textMuted }]}>Slug</Text>
-              <TextInput style={[styles.input, { color: COLORS.text, borderColor: 'rgba(201,168,76,0.2)', backgroundColor: 'rgba(20,35,55,0.7)' }]} value={formSlug} onChangeText={setFormSlug} placeholder="category-slug" placeholderTextColor={COLORS.textMuted} />
-
-              <Text style={[styles.label, { color: COLORS.textMuted }]}>Icon (Ionicons name)</Text>
-              <TextInput style={[styles.input, { color: COLORS.text, borderColor: 'rgba(201,168,76,0.2)', backgroundColor: 'rgba(20,35,55,0.7)' }]} value={formIcon} onChangeText={setFormIcon} placeholder="e.g. musical-note" placeholderTextColor={COLORS.textMuted} />
-
-              <Text style={[styles.label, { color: COLORS.textMuted }]}>Sort Order</Text>
-              <TextInput style={[styles.input, { color: COLORS.text, borderColor: 'rgba(201,168,76,0.2)', backgroundColor: 'rgba(20,35,55,0.7)' }]} value={formSortOrder} onChangeText={setFormSortOrder} placeholder="0" keyboardType="numeric" placeholderTextColor={COLORS.textMuted} />
-
-              <Text style={[styles.label, { color: COLORS.textMuted }]}>Description</Text>
-              <TextInput style={[styles.input, styles.textArea, { color: COLORS.text, borderColor: 'rgba(201,168,76,0.2)', backgroundColor: 'rgba(20,35,55,0.7)' }]} value={formDesc} onChangeText={setFormDesc} placeholder="Description" placeholderTextColor={COLORS.textMuted} multiline numberOfLines={3} />
-
-              <TouchableOpacity style={[styles.saveBtn, { backgroundColor: COLORS.secondary }]} onPress={handleSave} disabled={saving}>
-                {saving ? <ActivityIndicator color="#0a1220" /> : <Text style={styles.saveBtnText}>{editing ? 'Update' : 'Create'}</Text>}
+            <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
+              <Text style={styles.label}>Name *</Text>
+              <TextInput style={styles.input} value={formName} onChangeText={(text) => { setFormName(text); if (!editing) setFormSlug(generateSlug(text)); }} placeholder="Category name" placeholderTextColor="rgba(255,255,255,0.3)" />
+              <Text style={styles.label}>Name (English)</Text>
+              <TextInput style={styles.input} value={formNameEn} onChangeText={setFormNameEn} placeholder="English name" placeholderTextColor="rgba(255,255,255,0.3)" />
+              <Text style={styles.label}>Name (Arabic)</Text>
+              <TextInput style={[styles.input, { textAlign: 'right' }]} value={formNameAr} onChangeText={setFormNameAr} placeholder="Arabic name" placeholderTextColor="rgba(255,255,255,0.3)" />
+              <Text style={styles.label}>Slug</Text>
+              <TextInput style={styles.input} value={formSlug} onChangeText={setFormSlug} placeholder="category-slug" placeholderTextColor="rgba(255,255,255,0.3)" />
+              <Text style={styles.label}>Icon (Ionicons name)</Text>
+              <TextInput style={styles.input} value={formIcon} onChangeText={setFormIcon} placeholder="e.g. musical-note" placeholderTextColor="rgba(255,255,255,0.3)" />
+              <Text style={styles.label}>Sort Order</Text>
+              <TextInput style={styles.input} value={formSortOrder} onChangeText={setFormSortOrder} placeholder="0" keyboardType="numeric" placeholderTextColor="rgba(255,255,255,0.3)" />
+              <Text style={styles.label}>Description</Text>
+              <TextInput style={[styles.input, styles.textArea]} value={formDesc} onChangeText={setFormDesc} placeholder="Description" placeholderTextColor="rgba(255,255,255,0.3)" multiline numberOfLines={3} />
+              <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={saving}>
+                <LinearGradient colors={['#F59E0B', '#D97706']} style={styles.saveBtnGradient}>
+                  {saving ? <ActivityIndicator color="#0a1220" /> : <Text style={styles.saveBtnText}>{editing ? 'Update' : 'Create'}</Text>}
+                </LinearGradient>
               </TouchableOpacity>
             </ScrollView>
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </AdminLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
-  backBtn: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: 'rgba(201,168,76,0.3)', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(201,168,76,0.08)' },
-  headerTitle: { fontSize: 18, fontWeight: '700' },
-  searchRow: { padding: 12 },
-  searchBar: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, borderWidth: 1, paddingHorizontal: 12, height: 44, gap: 8 },
-  searchInput: { flex: 1, fontSize: 14 },
-  list: { padding: 12, paddingBottom: 80 },
-  card: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 12, borderWidth: 1, marginBottom: 10, gap: 12 },
-  iconWrap: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  searchRow: { paddingHorizontal: 12, paddingBottom: 4 },
+  searchBar: { flexDirection: 'row', alignItems: 'center', borderRadius: 14, borderWidth: 1, paddingHorizontal: 14, height: 46, gap: 10, backgroundColor: 'rgba(20,35,55,0.6)', borderColor: 'rgba(201,168,76,0.15)' },
+  searchInput: { flex: 1, fontSize: 14, color: '#FFFFFF' },
+  list: { padding: 12, paddingBottom: 100 },
+  card: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(201,168,76,0.12)', backgroundColor: 'rgba(20,35,55,0.5)', marginBottom: 10, gap: 12 },
+  iconWrap: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(245,158,11,0.1)' },
   cardInfo: { flex: 1 },
-  cardTitle: { fontSize: 15, fontWeight: '600' },
-  cardSub: { fontSize: 12, marginTop: 2 },
+  cardTitle: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
+  cardSub: { fontSize: 12, marginTop: 2, color: 'rgba(255,255,255,0.4)' },
   cardRight: { alignItems: 'center', marginRight: 8 },
-  trackCount: { fontSize: 16, fontWeight: '700' },
-  trackLabel: { fontSize: 10 },
-  empty: { textAlign: 'center', marginTop: 60, fontSize: 15 },
-  fab: { position: 'absolute', bottom: 24, right: 24, width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', elevation: 6 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
-  modalContent: { borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '90%', borderWidth: 1 },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  modalTitle: { fontSize: 18, fontWeight: '700' },
-  label: { fontSize: 13, fontWeight: '600', marginBottom: 6, marginTop: 12 },
-  input: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14 },
+  trackCount: { fontSize: 18, fontWeight: '700', color: '#F59E0B' },
+  trackLabel: { fontSize: 10, color: 'rgba(255,255,255,0.4)' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
+  modalContent: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, maxHeight: '95%', backgroundColor: '#0a1220', borderWidth: 1, borderColor: 'rgba(201,168,76,0.15)' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  modalHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  modalIconWrap: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(245,158,11,0.12)' },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: '#F59E0B' },
+  modalCloseBtn: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)' },
+  label: { fontSize: 13, fontWeight: '600', marginBottom: 6, marginTop: 14, color: 'rgba(255,255,255,0.5)' },
+  input: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, color: '#FFFFFF', borderColor: 'rgba(201,168,76,0.15)', backgroundColor: 'rgba(20,35,55,0.6)', marginBottom: 4 },
   textArea: { height: 80, textAlignVertical: 'top' },
-  saveBtn: { paddingVertical: 14, borderRadius: 12, alignItems: 'center', marginTop: 16, marginBottom: 20 },
+  saveBtn: { borderRadius: 14, overflow: 'hidden', marginTop: 8, marginBottom: 20 },
+  saveBtnGradient: { paddingVertical: 15, borderRadius: 14, alignItems: 'center' },
   saveBtnText: { color: '#0a1220', fontSize: 16, fontWeight: '700' },
 });

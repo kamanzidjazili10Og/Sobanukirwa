@@ -1,12 +1,14 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView,
-  ActivityIndicator, Linking, Platform,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  ActivityIndicator, Linking, Platform, Animated,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../../context/AppContext';
 import { useToastContext } from '../../components/Toast';
 import { fetchHealth, fetchDashboard } from '../../services/api';
+import AdminLayout from '../../components/admin/AdminLayout';
 
 const API_BASE = Platform.OS === 'android' ? 'http://10.0.2.2:5000/api' : 'http://localhost:5000/api';
 
@@ -22,11 +24,8 @@ export default function AdminSettingsScreen({ navigation }) {
     try {
       const data = await fetchHealth();
       setHealth(data);
-      if (data?.status === 'ok' || data?.status === 'healthy') {
-        toast.show('API is healthy', 'success');
-      } else {
-        toast.show('API responded but status is unexpected', 'info');
-      }
+      if (data?.status === 'ok' || data?.status === 'healthy') toast.show('API is healthy', 'success');
+      else toast.show('API responded but status is unexpected', 'info');
     } catch {
       setHealth({ status: 'error', message: 'Connection failed' });
       toast.show('API is unreachable', 'error');
@@ -53,113 +52,124 @@ export default function AdminSettingsScreen({ navigation }) {
   );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]}>
-      <View style={styles.headerRow}>
-        <TouchableOpacity onPress={() => navigation.navigate('AdminDashboard')} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={22} color={COLORS.textGold} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: COLORS.textGold }]}>Settings</Text>
-        <View style={{ width: 36 }} />
-      </View>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={[styles.title, { color: COLORS.textGold }]}>Settings</Text>
+    <AdminLayout navigation={navigation} title="Settings" subtitle="System configuration">
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
-        <View style={[styles.section, { backgroundColor: 'rgba(20,35,55,0.7)', borderColor: 'rgba(201,168,76,0.2)' }]}>
-          <Text style={[styles.sectionTitle, { color: COLORS.textGold }]}>API Health</Text>
+        {/* API Health */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderRow}>
+            <View style={styles.sectionDot} />
+            <Text style={styles.sectionTitle}>API Health</Text>
+          </View>
           <View style={styles.row}>
             <StatusDot ok={health?.status === 'ok' || health?.status === 'healthy'} />
-            <Text style={[styles.rowLabel, { color: COLORS.text }]}>Status: {health?.status || 'Unknown'}</Text>
+            <Text style={styles.rowLabel}>Status: {health?.status || 'Unknown'}</Text>
           </View>
-          {health?.message ? (
-            <Text style={[styles.rowSub, { color: COLORS.textMuted }]}>{health.message}</Text>
-          ) : null}
-          {health?.timestamp ? (
-            <Text style={[styles.rowSub, { color: COLORS.textMuted }]}>Last check: {new Date(health.timestamp).toLocaleTimeString()}</Text>
-          ) : null}
-          <TouchableOpacity style={[styles.btn, { backgroundColor: COLORS.secondary }]} onPress={checkHealth} disabled={healthLoading}>
-            {healthLoading ? <ActivityIndicator color="#0a1220" size="small" /> : <Text style={styles.btnText}>Check Health</Text>}
+          {health?.message ? <Text style={styles.rowSub}>{health.message}</Text> : null}
+          {health?.timestamp ? <Text style={styles.rowSub}>Last check: {new Date(health.timestamp).toLocaleTimeString()}</Text> : null}
+          <TouchableOpacity style={styles.btn} onPress={checkHealth} disabled={healthLoading}>
+            <LinearGradient colors={['#F59E0B', '#D97706']} style={styles.btnGradient}>
+              {healthLoading ? <ActivityIndicator color="#0a1220" size="small" /> : <Text style={styles.btnText}>Check Health</Text>}
+            </LinearGradient>
           </TouchableOpacity>
         </View>
 
-        <View style={[styles.section, { backgroundColor: 'rgba(20,35,55,0.7)', borderColor: 'rgba(201,168,76,0.2)' }]}>
-          <Text style={[styles.sectionTitle, { color: COLORS.textGold }]}>API URL</Text>
-          <View style={[styles.urlBox, { backgroundColor: 'rgba(10,18,32,0.8)', borderColor: 'rgba(201,168,76,0.15)' }]}>
-            <Text style={[styles.urlText, { color: COLORS.textMuted }]} selectable>{API_BASE}</Text>
+        {/* API URL */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderRow}>
+            <View style={[styles.sectionDot, { backgroundColor: '#14B8A6' }]} />
+            <Text style={styles.sectionTitle}>API URL</Text>
+          </View>
+          <View style={styles.urlBox}>
+            <Text style={styles.urlText} selectable>{API_BASE}</Text>
           </View>
         </View>
 
-        <View style={[styles.section, { backgroundColor: 'rgba(20,35,55,0.7)', borderColor: 'rgba(201,168,76,0.2)' }]}>
-          <Text style={[styles.sectionTitle, { color: COLORS.textGold }]}>System Info</Text>
-          <View style={styles.row}>
-            <Ionicons name="phone-portrait" size={18} color={COLORS.secondary} />
-            <Text style={[styles.rowLabel, { color: COLORS.text }]}>Platform: {Platform.OS}</Text>
+        {/* System Info */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderRow}>
+            <View style={[styles.sectionDot, { backgroundColor: '#5EEAD4' }]} />
+            <Text style={styles.sectionTitle}>System Info</Text>
           </View>
           <View style={styles.row}>
-            <Ionicons name="information-circle" size={18} color={COLORS.secondary} />
-            <Text style={[styles.rowLabel, { color: COLORS.text }]}>App Version: 1.0.0</Text>
+            <Ionicons name="phone-portrait" size={18} color="#14B8A6" />
+            <Text style={styles.rowLabel}>Platform: {Platform.OS}</Text>
           </View>
           <View style={styles.row}>
-            <Ionicons name="code-working" size={18} color={COLORS.secondary} />
-            <Text style={[styles.rowLabel, { color: COLORS.text }]}>Build: Production</Text>
+            <Ionicons name="information-circle" size={18} color="#14B8A6" />
+            <Text style={styles.rowLabel}>App Version: 1.0.0</Text>
+          </View>
+          <View style={styles.row}>
+            <Ionicons name="code-working" size={18} color="#14B8A6" />
+            <Text style={styles.rowLabel}>Build: Production</Text>
           </View>
         </View>
 
+        {/* Quick Stats */}
         {stats && (
-          <View style={[styles.section, { backgroundColor: 'rgba(20,35,55,0.7)', borderColor: 'rgba(201,168,76,0.2)' }]}>
-            <Text style={[styles.sectionTitle, { color: COLORS.textGold }]}>Quick Stats</Text>
+          <View style={styles.section}>
+            <View style={styles.sectionHeaderRow}>
+              <View style={[styles.sectionDot, { backgroundColor: '#F59E0B' }]} />
+              <Text style={styles.sectionTitle}>Quick Stats</Text>
+            </View>
             <View style={styles.statsGrid}>
               {[
-                { label: 'Artists', value: stats.artists, icon: 'people' },
-                { label: 'Tracks', value: stats.tracks, icon: 'musical-notes' },
-                { label: 'Videos', value: stats.videos, icon: 'videocam' },
-                { label: 'Books', value: stats.books, icon: 'book' },
-                { label: 'Categories', value: stats.categories, icon: 'grid' },
-                { label: 'Plays', value: stats.plays, icon: 'play-circle' },
+                { label: 'Artists', value: stats.artists, icon: 'people', color: '#3498db' },
+                { label: 'Tracks', value: stats.tracks, icon: 'musical-notes', color: '#27ae60' },
+                { label: 'Videos', value: stats.videos, icon: 'videocam', color: '#e74c3c' },
+                { label: 'Books', value: stats.books, icon: 'book', color: '#f39c12' },
+                { label: 'Categories', value: stats.categories, icon: 'grid', color: '#9b59b6' },
+                { label: 'Plays', value: stats.plays, icon: 'play-circle', color: '#F59E0B' },
               ].map((item, i) => (
-                <View key={i} style={[styles.statItem, { borderColor: 'rgba(201,168,76,0.1)' }]}>
-                  <Ionicons name={item.icon} size={16} color={COLORS.secondary} />
-                  <Text style={[styles.statValue, { color: COLORS.text }]}>{item.value ?? 0}</Text>
-                  <Text style={[styles.statLabel, { color: COLORS.textMuted }]}>{item.label}</Text>
+                <View key={i} style={styles.statItem}>
+                  <View style={[styles.statIconWrap, { backgroundColor: item.color + '15' }]}>
+                    <Ionicons name={item.icon} size={16} color={item.color} />
+                  </View>
+                  <Text style={[styles.statValue, { color: item.color }]}>{item.value ?? 0}</Text>
+                  <Text style={styles.statLabel}>{item.label}</Text>
                 </View>
               ))}
             </View>
           </View>
         )}
 
-        <View style={[styles.section, { backgroundColor: 'rgba(20,35,55,0.7)', borderColor: 'rgba(201,168,76,0.2)' }]}>
-          <Text style={[styles.sectionTitle, { color: COLORS.textGold }]}>Actions</Text>
-          <TouchableOpacity style={[styles.actionBtn, { borderColor: 'rgba(201,168,76,0.2)' }]} onPress={openWebAdmin}>
-            <Ionicons name="globe-outline" size={20} color={COLORS.secondary} />
-            <Text style={[styles.actionText, { color: COLORS.text }]}>Open Web Admin</Text>
-            <Ionicons name="open-outline" size={16} color={COLORS.textMuted} />
+        {/* Actions */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderRow}>
+            <View style={[styles.sectionDot, { backgroundColor: '#14B8A6' }]} />
+            <Text style={styles.sectionTitle}>Actions</Text>
+          </View>
+          <TouchableOpacity style={styles.actionBtn} onPress={openWebAdmin}>
+            <Ionicons name="globe-outline" size={20} color="#F59E0B" />
+            <Text style={styles.actionText}>Open Web Admin</Text>
+            <Ionicons name="open-outline" size={16} color="rgba(255,255,255,0.3)" />
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </AdminLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
-  backBtn: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: 'rgba(201,168,76,0.3)', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(201,168,76,0.08)' },
-  headerTitle: { fontSize: 18, fontWeight: '700' },
-  scrollContent: { padding: 16, paddingBottom: 32 },
-  title: { fontSize: 24, fontWeight: '700', marginBottom: 16 },
-  section: { borderRadius: 14, borderWidth: 1, padding: 16, marginBottom: 14 },
-  sectionTitle: { fontSize: 16, fontWeight: '700', marginBottom: 12 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
-  rowLabel: { fontSize: 14 },
-  rowSub: { fontSize: 12, marginTop: 4 },
+  scrollContent: { padding: 12, paddingBottom: 32 },
+  section: { borderRadius: 16, borderWidth: 1, padding: 16, marginBottom: 14, borderColor: 'rgba(201,168,76,0.1)', backgroundColor: 'rgba(20,35,55,0.5)' },
+  sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
+  sectionDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#F59E0B' },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
+  rowLabel: { fontSize: 14, color: 'rgba(255,255,255,0.8)' },
+  rowSub: { fontSize: 12, marginTop: 4, color: 'rgba(255,255,255,0.4)' },
   statusDot: { width: 10, height: 10, borderRadius: 5 },
-  btn: { paddingVertical: 12, borderRadius: 10, alignItems: 'center', marginTop: 12 },
+  btn: { borderRadius: 12, overflow: 'hidden', marginTop: 10 },
+  btnGradient: { paddingVertical: 13, borderRadius: 12, alignItems: 'center' },
   btnText: { color: '#0a1220', fontSize: 14, fontWeight: '700' },
-  urlBox: { borderWidth: 1, borderRadius: 10, padding: 12 },
-  urlText: { fontSize: 13, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
+  urlBox: { borderWidth: 1, borderRadius: 12, padding: 14, borderColor: 'rgba(201,168,76,0.1)', backgroundColor: 'rgba(0,0,0,0.3)' },
+  urlText: { fontSize: 13, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', color: 'rgba(255,255,255,0.5)' },
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  statItem: { width: '30%', alignItems: 'center', paddingVertical: 10, borderWidth: 1, borderRadius: 10, gap: 4 },
-  statValue: { fontSize: 16, fontWeight: '700' },
-  statLabel: { fontSize: 11 },
-  actionBtn: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 12, padding: 14, gap: 12 },
-  actionText: { flex: 1, fontSize: 15, fontWeight: '600' },
+  statItem: { width: '30%', alignItems: 'center', paddingVertical: 12, borderWidth: 1, borderRadius: 12, gap: 5, borderColor: 'rgba(201,168,76,0.08)', backgroundColor: 'rgba(0,0,0,0.2)' },
+  statIconWrap: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  statValue: { fontSize: 18, fontWeight: '700' },
+  statLabel: { fontSize: 11, color: 'rgba(255,255,255,0.4)' },
+  actionBtn: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 14, padding: 16, gap: 12, borderColor: 'rgba(201,168,76,0.12)', backgroundColor: 'rgba(0,0,0,0.2)' },
+  actionText: { flex: 1, fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
 });
