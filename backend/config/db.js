@@ -2,7 +2,11 @@ const mysql = require('mysql2/promise');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
-const dbHost = process.env.DB_HOST;
+const dbHost = process.env.DB_HOST || process.env.MYSQLHOST;
+const dbUser = process.env.DB_USER || process.env.MYSQLUSER || 'root';
+const dbPass = process.env.DB_PASSWORD || process.env.MYSQLPASSWORD || '';
+const dbName = process.env.DB_NAME || process.env.MYSQLDATABASE || 'sobanukirwa';
+const dbPort = process.env.DB_PORT || process.env.MYSQLPORT || 3306;
 const isConfigured = dbHost && dbHost.length > 0;
 
 let pool = null;
@@ -11,9 +15,10 @@ if (isConfigured) {
   const isCloud = dbHost !== 'localhost' && dbHost !== '127.0.0.1';
   const config = {
     host: dbHost,
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'sobanukirwa',
+    port: parseInt(dbPort),
+    user: dbUser,
+    password: dbPass,
+    database: dbName,
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0,
@@ -24,9 +29,9 @@ if (isConfigured) {
     config.ssl = { rejectUnauthorized: false };
   }
   pool = mysql.createPool(config);
-  console.log('MySQL pool created for ' + dbHost);
+  console.log('MySQL pool created for ' + dbHost + ':' + dbPort + '/' + dbName);
 } else {
-  console.warn('DB_HOST not configured. Running without database.');
+  console.warn('DB_HOST/MYSQLHOST not configured. Running without database.');
 }
 
 const safePool = {

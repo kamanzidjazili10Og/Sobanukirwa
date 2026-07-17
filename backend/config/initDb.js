@@ -4,19 +4,23 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 async function initDb() {
-  const dbHost = process.env.DB_HOST;
+  const dbHost = process.env.DB_HOST || process.env.MYSQLHOST;
+  const dbUser = process.env.DB_USER || process.env.MYSQLUSER || 'root';
+  const dbPass = process.env.DB_PASSWORD || process.env.MYSQLPASSWORD || '';
+  const dbPort = process.env.DB_PORT || process.env.MYSQLPORT || 3306;
   const isConfigured = dbHost && dbHost.length > 0;
 
   if (!isConfigured) {
-    console.warn('DB_HOST not configured. Skipping database initialization.');
+    console.warn('DB_HOST/MYSQLHOST not configured. Skipping database initialization.');
     return;
   }
 
   const isCloud = dbHost !== 'localhost' && dbHost !== '127.0.0.1';
   const config = {
     host: dbHost,
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
+    port: parseInt(dbPort),
+    user: dbUser,
+    password: dbPass,
     multipleStatements: true,
     charset: 'utf8mb4',
     connectTimeout: 15000,
