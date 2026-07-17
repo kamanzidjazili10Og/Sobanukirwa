@@ -145,7 +145,7 @@ export default function AudioPlayerScreen({ route, navigation }) {
       <SafeAreaView style={styles.container}>
       <Animated.View style={[styles.topBar, { opacity: fadeAnim }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.topBtn}>
-          <Ionicons name="chevron-down" size={28} color={C.text} />
+          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <View style={styles.topCenter}>
           <Text style={styles.topTitle}>
@@ -156,7 +156,7 @@ export default function AudioPlayerScreen({ route, navigation }) {
           </Text>
         </View>
         <TouchableOpacity style={styles.topBtn}>
-          <Ionicons name="ellipsis-horizontal" size={22} color={C.textTer} />
+          <Ionicons name="ellipsis-horizontal" size={22} color="rgba(255,255,255,0.6)" />
         </TouchableOpacity>
       </Animated.View>
 
