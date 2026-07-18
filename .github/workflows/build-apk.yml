@@ -32,12 +32,13 @@ jobs:
 
       - name: Build APK
         working-directory: ./SobanukirwaNative/android
-        run: gradle assembleRelease
+        run: gradle assembleDebug
 
-      - name: Rename APK
+      - name: Find and copy APK
         run: |
           mkdir -p release
-          cp SobanukirwaNative/android/app/build/outputs/apk/release/app-release-unsigned.apk release/Sobanukirwa-v1.0.0.apk 2>/dev/null || cp SobanukirwaNative/android/app/build/outputs/apk/debug/app-debug.apk release/Sobanukirwa-v1.0.0.apk
+          find SobanukirwaNative -name "*.apk" -type f -exec cp {} release/Sobanukirwa-v1.0.0.apk \;
+          ls -la release/
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
@@ -56,12 +57,10 @@ jobs:
 
             **Auto-updates:** Changes to Railway show instantly - no reinstall needed!
 
-            ### Features
-            - Full-screen native Android experience
-            - Offline detection with retry page
-            - Green Islamic theme (#1B5E20)
-            - Back button navigation
-            - Camera, location, storage permissions
+            ### How to install
+            1. Download the APK below
+            2. Open it on your phone
+            3. Allow "Install from unknown sources"
+            4. Install and open
           files: release/Sobanukirwa-v1.0.0.apk
           make_latest: true
-          generate_release_notes: true
