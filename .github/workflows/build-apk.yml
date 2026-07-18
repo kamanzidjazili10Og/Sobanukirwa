@@ -5,6 +5,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -26,48 +29,39 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-        with:
-          api-level: 34
-          build-tools: '34.0.0'
 
       - name: Build APK
         working-directory: ./SobanukirwaNative/android
-        run: gradle assembleDebug
+        run: gradle assembleRelease
 
       - name: Rename APK
         run: |
           mkdir -p release
-          cp SobanukirwaNative/android/app/build/outputs/apk/debug/app-debug.apk release/Sobanukirwa-v1.0.0.apk
+          cp SobanukirwaNative/android/app/build/outputs/apk/release/app-release-unsigned.apk release/Sobanukirwa-v1.0.0.apk 2>/dev/null || cp SobanukirwaNative/android/app/build/outputs/apk/debug/app-debug.apk release/Sobanukirwa-v1.0.0.apk
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: Sobanukirwa-APK
           path: release/Sobanukirwa-v1.0.0.apk
-          retention-days: 30
+          retention-days: 90
 
-      - name: Create Release
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/heads/main')
         with:
-          tag_name: v1.0.0
-          name: "Sobanukirwa v1.0.0"
+          tag_name: v1.0.${{ github.run_number }}
+          name: "Sobanukirwa v1.0.${{ github.run_number }}"
           body: |
             ## Sobanukirwa Islamic App - Android APK
 
-            This is a native Android wrapper that loads the Railway-hosted web app.
+            **Auto-updates:** Changes to Railway show instantly - no reinstall needed!
 
-            **Auto-updates:** Any changes to the web app on Railway are automatically reflected - no need to reinstall!
-
-            ### Features:
-            - Full-screen immersive experience
+            ### Features
+            - Full-screen native Android experience
             - Offline detection with retry page
-            - Material Design green theme
+            - Green Islamic theme (#1B5E20)
             - Back button navigation
-            - Camera, location, and storage permissions
-
-            **Install:** Download the APK below, enable "Install from unknown sources" on your phone, and install.
+            - Camera, location, storage permissions
           files: release/Sobanukirwa-v1.0.0.apk
           make_latest: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          generate_release_notes: true
