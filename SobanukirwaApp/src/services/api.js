@@ -371,10 +371,12 @@ export async function fetchAdhkar(category) {
   } catch { return []; }
 }
 export async function createAdhkar(data) {
-  return adminFetch(`${BASE}/adhkar`, { method: 'POST', body: JSON.stringify(data) });
+  const isFormData = data instanceof FormData;
+  return adminFetch(`${BASE}/adhkar`, { method: 'POST', body: isFormData ? data : JSON.stringify(data) });
 }
 export async function updateAdhkar(id, data) {
-  return adminFetch(`${BASE}/adhkar/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  const isFormData = data instanceof FormData;
+  return adminFetch(`${BASE}/adhkar/${id}`, { method: 'PUT', body: isFormData ? data : JSON.stringify(data) });
 }
 export async function deleteAdhkar(id) {
   return adminFetch(`${BASE}/adhkar/${id}`, { method: 'DELETE' });
@@ -382,6 +384,10 @@ export async function deleteAdhkar(id) {
 
 export async function uploadSurahAudio(surahNumber, formData) {
   return adminFetch(`${BASE}/quran/surahs/${surahNumber}/audio`, { method: 'PUT', body: formData });
+}
+
+export async function updateSurah(surahNumber, data) {
+  return adminFetch(`${BASE}/quran/surahs/${surahNumber}`, { method: 'PUT', body: JSON.stringify(data) });
 }
 
 export async function fetchDashboard() {

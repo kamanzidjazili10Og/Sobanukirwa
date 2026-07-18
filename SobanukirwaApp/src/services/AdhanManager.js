@@ -10,9 +10,9 @@ let lastPlayedDate = '';
 const PRAYER_NAMES = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
 
 const ADHAN_FILES = {
-  Adhan1: 'https://sobanukirwa.onrender.com/Sounds/Adhan1.mpeg',
-  Adhan2: 'https://sobanukirwa.onrender.com/Sounds/Adhan2.mpeg',
-  Mansour: 'https://sobanukirwa.onrender.com/Sounds/Mansour_Adhan.mpeg',
+  Adhan1: 'https://sobanukirwa-production.up.railway.app/Sounds/Adhan1.mpeg',
+  Adhan2: 'https://sobanukirwa-production.up.railway.app/Sounds/Adhan2.mpeg',
+  Mansour: 'https://sobanukirwa-production.up.railway.app/Sounds/Mansour_Adhan.mpeg',
 };
 
 export async function startAdhanManager(getPrayerTimes, onAdhanPlay) {

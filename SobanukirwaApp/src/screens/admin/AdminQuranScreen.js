@@ -9,7 +9,7 @@ import { Audio } from 'expo-av';
 import * as DocumentPicker from 'expo-document-picker';
 import { useApp } from '../../context/AppContext';
 import { useToastContext } from '../../components/Toast';
-import { fetchSurahs, uploadSurahAudio, getMediaUrl } from '../../services/api';
+import { fetchSurahs, uploadSurahAudio, updateSurah, getMediaUrl } from '../../services/api';
 import AdminLayout from '../../components/admin/AdminLayout';
 
 const REVELATION_TYPES = ['Meccan', 'Medinan'];
@@ -38,10 +38,18 @@ export default function AdminQuranScreen({ navigation }) {
   useEffect(() => { loadSurahs(); }, []);
   useEffect(() => { return () => { if (previewSound) previewSound.unloadAsync(); }; }, []);
 
+  const getRevelationLabel = (s) => {
+    const rt = s.revelationType || s.revelation_type;
+    if (rt === 'Meccan' || rt === 'Makkah') return 'Meccan';
+    if (rt === 'Medinan' || rt === 'Madani') return 'Medinan';
+    return rt || '';
+  };
+
   const filtered = surahs.filter(s => {
-    const matchesTab = filterTab === 'all' || s.revelationType === filterTab;
+    const label = getRevelationLabel(s);
+    const matchesTab = filterTab === 'all' || label === filterTab;
     const q = search.toLowerCase();
-    const matchesSearch = !q || (s.name || '').toLowerCase().includes(q) || (s.englishName || s.name_en || '').toLowerCase().includes(q) || String(s.number || s.id).includes(q);
+    const matchesSearch = !q || (s.name || '').toLowerCase().includes(q) || (s.englishName || s.name_en || s.name || '').toLowerCase().includes(q) || String(s.number || s.surah_number || s.id).includes(q);
     return matchesTab && matchesSearch;
   });
 
@@ -50,11 +58,12 @@ export default function AdminQuranScreen({ navigation }) {
       const result = await DocumentPicker.getDocumentAsync({ type: 'audio/*' });
       if (result.canceled) return;
       const file = result.assets[0];
-      setUploading(surah.number || surah.id);
+      const num = surah.number || surah.surah_number || surah.id;
+      setUploading(num);
       const formData = new FormData();
       const ext = file.name?.split('.').pop() || 'mp3';
       formData.append('audio', { uri: file.uri, name: `surah.${ext}`, type: `audio/${ext}` });
-      await uploadSurahAudio(surah.number || surah.id, formData);
+      await uploadSurahAudio(num, formData);
       toast.show('Audio uploaded successfully', 'success');
       loadSurahs();
     } catch (e) { toast.show(e.message || 'Upload failed', 'error'); }
@@ -62,7 +71,7 @@ export default function AdminQuranScreen({ navigation }) {
   };
 
   const handlePreview = async (surah) => {
-    const num = surah.number || surah.id;
+    const num = surah.number || surah.surah_number || surah.id;
     if (previewingId === num) {
       if (previewSound) { await previewSound.stopAsync(); await previewSound.unloadAsync(); }
       setPreviewSound(null); setPreviewingId(null); return;
@@ -79,21 +88,34 @@ export default function AdminQuranScreen({ navigation }) {
   };
 
   const handleEdit = (surah) => {
-    setEditingSurah({ number: surah.number || surah.id, name: surah.name || '', englishName: surah.englishName || surah.name_en || '', numberOfAyahs: String(surah.numberOfAyahs || ''), revelationType: surah.revelationType || 'Meccan', audio_url: surah.audio_url || '' });
+    setEditingSurah({
+      number: surah.number || surah.id,
+      name: surah.name_arabic || '',
+      englishName: surah.englishName || surah.name || '',
+      numberOfAyahs: String(surah.numberOfAyahs || surah.ayahs_count || ''),
+      revelationType: surah.revelationType || (surah.revelation_type === 'Makkah' ? 'Meccan' : surah.revelation_type === 'Madani' ? 'Medinan' : 'Meccan'),
+      audio_url: surah.audio_url || ''
+    });
     setModalVisible(true);
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (!editingSurah) return;
-    setSurahs(prev => prev.map(s => {
-      if ((s.number || s.id) !== editingSurah.number) return s;
-      return { ...s, name: editingSurah.name, englishName: editingSurah.englishName, numberOfAyahs: parseInt(editingSurah.numberOfAyahs) || s.numberOfAyahs, revelationType: editingSurah.revelationType };
-    }));
-    setModalVisible(false); setEditingSurah(null);
-    toast.show('Surah updated (local)', 'success');
+    try {
+      const dbRevelation = editingSurah.revelationType === 'Meccan' ? 'Makkah' : 'Madani';
+      await updateSurah(editingSurah.number, {
+        name: editingSurah.englishName || editingSurah.name,
+        name_arabic: editingSurah.name,
+        ayahs_count: parseInt(editingSurah.numberOfAyahs) || 0,
+        revelation_type: dbRevelation,
+      });
+      toast.show('Surah updated', 'success');
+      setModalVisible(false); setEditingSurah(null);
+      loadSurahs();
+    } catch (e) { toast.show(e.message || 'Update failed', 'error'); }
   };
 
-  const stats = { total: surahs.length, withAudio: surahs.filter(s => s.audio_url).length, meccan: surahs.filter(s => s.revelationType === 'Meccan').length, medinan: surahs.filter(s => s.revelationType === 'Medinan').length };
+  const stats = { total: surahs.length, withAudio: surahs.filter(s => s.audio_url).length, meccan: surahs.filter(s => getRevelationLabel(s) === 'Meccan').length, medinan: surahs.filter(s => getRevelationLabel(s) === 'Medinan').length };
 
   const AnimatedListItem = React.memo(({ item, index, children }) => {
     const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -104,7 +126,7 @@ export default function AdminQuranScreen({ navigation }) {
   });
 
   const renderItem = ({ item, index }) => {
-    const num = item.number || item.id;
+    const num = item.number || item.surah_number || item.id;
     const isLoading = uploading === num;
     const hasAudio = !!item.audio_url;
     const isPreviewing = previewingId === num;
@@ -125,12 +147,12 @@ export default function AdminQuranScreen({ navigation }) {
                 </View>
               )}
             </View>
-            <Text style={styles.cardArabic} numberOfLines={1}>{item.name}</Text>
+            <Text style={styles.cardArabic} numberOfLines={1}>{item.name_arabic || ''}</Text>
             <View style={styles.cardMeta}>
-              {item.numberOfAyahs ? <Text style={styles.metaText}>{item.numberOfAyahs} ayahs</Text> : null}
-              {item.revelationType ? (
-                <View style={[styles.typeBadge, { backgroundColor: item.revelationType === 'Meccan' ? 'rgba(231,76,60,0.12)' : 'rgba(39,174,96,0.12)' }]}>
-                  <Text style={[styles.typeText, { color: item.revelationType === 'Meccan' ? '#e74c3c' : '#27ae60' }]}>{item.revelationType}</Text>
+              {item.numberOfAyahs || item.ayahs_count ? <Text style={styles.metaText}>{item.numberOfAyahs || item.ayahs_count} ayahs</Text> : null}
+              {getRevelationLabel(item) ? (
+                <View style={[styles.typeBadge, { backgroundColor: getRevelationLabel(item) === 'Meccan' ? 'rgba(231,76,60,0.12)' : 'rgba(39,174,96,0.12)' }]}>
+                  <Text style={[styles.typeText, { color: getRevelationLabel(item) === 'Meccan' ? '#e74c3c' : '#27ae60' }]}>{getRevelationLabel(item)}</Text>
                 </View>
               ) : null}
             </View>
@@ -187,7 +209,7 @@ export default function AdminQuranScreen({ navigation }) {
       {loading ? (
         <ActivityIndicator size="large" color="#F59E0B" style={{ flex: 1 }} />
       ) : (
-        <FlatList data={filtered} keyExtractor={item => String(item.number || item.id)} renderItem={renderItem} contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}
+        <FlatList data={filtered} keyExtractor={item => String(item.number || item.surah_number || item.id)} renderItem={renderItem} contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}
           ListEmptyComponent={<View style={styles.emptyState}><Ionicons name="book-outline" size={48} color="rgba(245,158,11,0.2)" /><Text style={styles.emptyText}>No surahs found</Text></View>}
         />
       )}

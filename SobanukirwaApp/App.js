@@ -6,6 +6,7 @@ import { AppProvider } from './src/context/AppContext';
 import { ToastProvider } from './src/components/Toast';
 import AppNavigator from './src/navigation/AppNavigator';
 import LoadingScreen from './src/screens/LoadingScreen';
+import OfflineBanner from './src/components/OfflineBanner';
 
 try {
   const Notifications = require('expo-notifications');
@@ -50,6 +51,7 @@ export default function App() {
         <AppProvider>
           <ToastProvider>
             <NavigationContainer>
+              <OfflineBanner />
               {!loading && <AppNavigator />}
               {loading && <LoadingScreen onFinish={() => setLoading(false)} />}
             </NavigationContainer>

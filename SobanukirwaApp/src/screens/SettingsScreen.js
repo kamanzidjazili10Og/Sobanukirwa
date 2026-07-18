@@ -532,6 +532,11 @@ export default function SettingsScreen({ navigation }) {
                 </View>
                 <Text style={styles.settingValue}>{cacheInfo.totalItems}</Text>
               </View>
+              <View style={[styles.settingItem, { paddingVertical: 4 }]}>
+                <Text style={[styles.settingLabel, { paddingLeft: 26, fontSize: 11, color: 'rgba(255,255,255,0.4)' }]}>
+                  {cacheInfo.itemCounts.tracks || 0} tracks • {cacheInfo.itemCounts.surahs || 0} surahs • {cacheInfo.itemCounts.adhkar || 0} adhkar • {cacheInfo.itemCounts.videos || 0} videos • {cacheInfo.itemCounts.books || 0} books
+                </Text>
+              </View>
               {cacheInfo.lastUpdated && (
                 <View style={styles.settingItem}>
                   <View style={styles.settingItemLeft}>

@@ -6,18 +6,19 @@ import { useApp } from '../context/AppContext';
 import { fetchPrayerTimes, fetchHijriDate, fetchAdhkar } from '../services/api';
 import SilentBanner from '../components/SilentBanner';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Home, BookOpen, Headphones, PlayCircle, Library, Settings, Globe, ChevronRight, Clock, Compass, Hand, Star, Heart } from 'lucide-react-native';
+import { Home, BookOpen, Headphones, PlayCircle, Library, Settings, Globe, ChevronRight, Clock, Compass, Hand, Star, Heart, Copy, Share2 } from 'lucide-react-native';
+import { copyToClipboard, shareText } from '../utils/clipboard';
 
 const { width } = Dimensions.get('window');
 
 const QURAN_VERSES = [
-  { verse: 'إِنَّ اللَّهَ لَا يُضِيعُ أَجْرَ الْمُحْسِنِينَ', translation: 'Indeed, Allah does not allow to be lost the reward of those who do good.', surah: 'Yusuf: 120' },
-  { verse: 'وَمَن يَتَوَكَّلْ عَلَى اللَّهِ فَهُوَ حَسْبُهُ', translation: 'And whoever relies upon Allah, then He is sufficient for him.', surah: 'At-Talaq: 3' },
-  { verse: 'رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً', translation: 'Our Lord, give us in this world good and in the Hereafter good.', surah: 'Al-Baqarah: 201' },
-  { verse: 'إِنَّ مَعَ الْعُسْرِ يُسْرًا', translation: 'Indeed, with hardship comes ease.', surah: 'Ash-Sharh: 6' },
-  { verse: 'فَاذْكُرُونِي أَذْكُرْكُمْ', translation: 'So remember Me; I will remember you.', surah: 'Al-Baqarah: 152' },
-  { verse: 'وَلَا تَيْأَسُوا مِن رَّوْحِ اللَّهِ', translation: 'And do not despair of the mercy of Allah.', surah: 'Yusuf: 87' },
-  { verse: 'إِنَّ اللَّهَ مَعَ الصَّابِرِينَ', translation: 'Indeed, Allah is with the patient.', surah: 'Al-Baqarah: 153' },
+  { verse: 'إِنَّ اللَّهَ لَا يُضِيعُ أَجْرَ الْمُحْسِنِينَ', translation_rw: 'Rwose Allah ntabwo arangiza igihembo cy\'abakoze neza.', translation: 'Indeed, Allah does not allow to be lost the reward of those who do good.', surah: 'Yusuf: 120' },
+  { verse: 'وَمَن يَتَوَكَّلْ عَلَى اللَّهِ فَهُوَ حَسْبُهُ', translation_rw: 'Uwemera Allah, ni we bwiza.', translation: 'And whoever relies upon Allah, then He is sufficient for him.', surah: 'At-Talaq: 3' },
+  { verse: 'رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً', translation_rw: 'Imana yacu, tuhe igihembo mu buzima bwo mu isi no mu buzima bukwiye.', translation: 'Our Lord, give us in this world good and in the Hereafter good.', surah: 'Al-Baqarah: 201' },
+  { verse: 'إِنَّ مَعَ الْعُسْرِ يُسْرًا', translation_rw: 'Rwose hamwe n\'ubukene harubaho ubukire.', translation: 'Indeed, with hardship comes ease.', surah: 'Ash-Sharh: 6' },
+  { verse: 'فَاذْكُرُونِي أَذْكُرْكُمْ', translation_rw: 'Mukumbuye nanjye namukumbaza.', translation: 'So remember Me; I will remember you.', surah: 'Al-Baqarah: 152' },
+  { verse: 'وَلَا تَيْأَسُوا مِن رَّوْحِ اللَّهِ', translation_rw: 'Kandi ntamwiyegereze guhinda ibanga rya Allah.', translation: 'And do not despair of the mercy of Allah.', surah: 'Yusuf: 87' },
+  { verse: 'إِنَّ اللَّهَ مَعَ الصَّابِرِينَ', translation_rw: 'Rwose Allah aho ari hegerewe abanyecishingwa.', translation: 'Indeed, Allah is with the patient.', surah: 'Al-Baqarah: 153' },
 ];
 
 const PRAYER_NAMES = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
@@ -288,8 +289,18 @@ export default function HomeScreen({ navigation }) {
           </View>
           <View style={styles.verseContent}>
             <Text style={styles.verseArabic}>{verseOfDay.verse}</Text>
-            <Text style={styles.verseTranslation}>{verseOfDay.translation}</Text>
+            <Text style={styles.verseTranslation}>{getVerseTranslation()}</Text>
             <Text style={styles.verseSurah}>{verseOfDay.surah}</Text>
+            <View style={styles.verseActions}>
+              <TouchableOpacity style={styles.verseActionBtn} onPress={() => copyToClipboard(`${verseOfDay.verse}\n\n${getVerseTranslation()}\n— ${verseOfDay.surah}`, 'Verse')}>
+                <Copy size={12} color={C.accent} />
+                <Text style={styles.verseActionText}>{t('Kubikoraho', 'Copy', 'نسخ')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.verseActionBtn} onPress={() => shareText(`${verseOfDay.verse}\n\n${getVerseTranslation()}\n— ${verseOfDay.surah}`, 'Quran Verse')}>
+                <Share2 size={12} color={C.accent} />
+                <Text style={styles.verseActionText}>{t('Sangira', 'Share', 'مشاركة')}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 
@@ -313,7 +324,12 @@ export default function HomeScreen({ navigation }) {
               const time = prayerTimes[name]?.replace(/ \(.*\)/, '') || '--:--';
               const isNext = name === nextPrayer;
               const isCurrent = isCurrentPrayer(name);
-              return (
+  const getVerseTranslation = () => {
+    if (language === 'rw') return verseOfDay.translation_rw || verseOfDay.translation;
+    return verseOfDay.translation;
+  };
+
+  return (
                 <View
                   key={name}
                   style={[
@@ -474,6 +490,9 @@ const styles = StyleSheet.create({
   verseArabic: { fontSize: 16, fontFamily: 'serif', textAlign: 'right', color: '#FFFFFF', lineHeight: 28 },
   verseTranslation: { fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 6, fontStyle: 'italic', lineHeight: 18 },
   verseSurah: { fontSize: 11, fontWeight: '600', color: '#5EEAD4', marginTop: 6 },
+  verseActions: { flexDirection: 'row', gap: 10, marginTop: 8 },
+  verseActionBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, backgroundColor: 'rgba(245,158,11,0.1)' },
+  verseActionText: { fontSize: 10, fontWeight: '600', color: C.accent },
 
   /* Prayer Widget */
   prayerCard: { backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },

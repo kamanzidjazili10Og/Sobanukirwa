@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { fetchTracks, fetchCategories, fetchSurahs, fetchVideos, fetchBooks } from '../services/api';
+import NetInfo from '@react-native-community/netinfo';
+import { fetchTracks, fetchCategories, fetchSurahs, fetchVideos, fetchBooks, fetchAdhkar } from '../services/api';
 
 const AppContext = createContext();
 
@@ -32,6 +33,7 @@ const CACHE_KEYS = {
   surahs: 'cache_surahs',
   videos: 'cache_videos',
   books: 'cache_books',
+  adhkar: 'cache_adhkar',
   cacheTime: 'cache_time',
 };
 
@@ -43,10 +45,12 @@ export function AppProvider({ children }) {
   const [surahs, setSurahs] = useState([]);
   const [videos, setVideos] = useState([]);
   const [books, setBooks] = useState([]);
+  const [adhkar, setAdhkar] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [language, setLanguage] = useState('rw');
   const [error, setError] = useState(null);
+  const [isOffline, setIsOffline] = useState(false);
   const [lastRead, setLastRead] = useState(null);
   const [bookmarks, setBookmarks] = useState([]);
   const [currentTrack, setCurrentTrack] = useState(null);
@@ -87,6 +91,10 @@ export function AppProvider({ children }) {
 
   useEffect(() => {
     loadPersistedState();
+    const unsub = NetInfo.addEventListener(state => {
+      setIsOffline(!state.isConnected || !state.isInternetReachable);
+    });
+    return () => unsub();
   }, []);
 
   async function loadPersistedState() {
@@ -151,6 +159,7 @@ export function AppProvider({ children }) {
         AsyncStorage.setItem(CACHE_KEYS.surahs, JSON.stringify(data.surahs || [])),
         AsyncStorage.setItem(CACHE_KEYS.videos, JSON.stringify(data.videos || [])),
         AsyncStorage.setItem(CACHE_KEYS.books, JSON.stringify(data.books || [])),
+        AsyncStorage.setItem(CACHE_KEYS.adhkar, JSON.stringify(data.adhkar || [])),
         AsyncStorage.setItem(CACHE_KEYS.cacheTime, String(Date.now())),
       ]);
     } catch (e) {}
@@ -158,12 +167,13 @@ export function AppProvider({ children }) {
 
   async function loadCacheData() {
     try {
-      const [cachedTracks, cachedCategories, cachedSurahs, cachedVideos, cachedBooks] = await Promise.all([
+      const [cachedTracks, cachedCategories, cachedSurahs, cachedVideos, cachedBooks, cachedAdhkar] = await Promise.all([
         AsyncStorage.getItem(CACHE_KEYS.tracks),
         AsyncStorage.getItem(CACHE_KEYS.categories),
         AsyncStorage.getItem(CACHE_KEYS.surahs),
         AsyncStorage.getItem(CACHE_KEYS.videos),
         AsyncStorage.getItem(CACHE_KEYS.books),
+        AsyncStorage.getItem(CACHE_KEYS.adhkar),
       ]);
       return {
         tracks: cachedTracks ? JSON.parse(cachedTracks) : [],
@@ -171,9 +181,10 @@ export function AppProvider({ children }) {
         surahs: cachedSurahs ? JSON.parse(cachedSurahs) : [],
         videos: cachedVideos ? JSON.parse(cachedVideos) : [],
         books: cachedBooks ? JSON.parse(cachedBooks) : [],
+        adhkar: cachedAdhkar ? JSON.parse(cachedAdhkar) : [],
       };
     } catch (e) {
-      return { tracks: [], categories: [], surahs: [], videos: [], books: [] };
+      return { tracks: [], categories: [], surahs: [], videos: [], books: [], adhkar: [] };
     }
   }
 
@@ -185,6 +196,7 @@ export function AppProvider({ children }) {
         AsyncStorage.removeItem(CACHE_KEYS.surahs),
         AsyncStorage.removeItem(CACHE_KEYS.videos),
         AsyncStorage.removeItem(CACHE_KEYS.books),
+        AsyncStorage.removeItem(CACHE_KEYS.adhkar),
         AsyncStorage.removeItem(CACHE_KEYS.cacheTime),
       ]);
     } catch (e) {}
@@ -192,21 +204,22 @@ export function AppProvider({ children }) {
 
   async function getCacheInfo() {
     try {
-      const [cacheTime, tracksCount, categoriesCount, surahsCount, videosCount, booksCount] = await Promise.all([
+      const [cacheTime, tracksCount, categoriesCount, surahsCount, videosCount, booksCount, adhkarCount] = await Promise.all([
         AsyncStorage.getItem(CACHE_KEYS.cacheTime),
         AsyncStorage.getItem(CACHE_KEYS.tracks).then(d => d ? JSON.parse(d).length : 0),
         AsyncStorage.getItem(CACHE_KEYS.categories).then(d => d ? JSON.parse(d).length : 0),
         AsyncStorage.getItem(CACHE_KEYS.surahs).then(d => d ? JSON.parse(d).length : 0),
         AsyncStorage.getItem(CACHE_KEYS.videos).then(d => d ? JSON.parse(d).length : 0),
         AsyncStorage.getItem(CACHE_KEYS.books).then(d => d ? JSON.parse(d).length : 0),
+        AsyncStorage.getItem(CACHE_KEYS.adhkar).then(d => d ? JSON.parse(d).length : 0),
       ]);
       return {
         lastUpdated: cacheTime ? new Date(parseInt(cacheTime)) : null,
-        itemCounts: { tracks: tracksCount, categories: categoriesCount, surahs: surahsCount, videos: videosCount, books: booksCount },
-        totalItems: tracksCount + categoriesCount + surahsCount + videosCount + booksCount,
+        itemCounts: { tracks: tracksCount, categories: categoriesCount, surahs: surahsCount, videos: videosCount, books: booksCount, adhkar: adhkarCount },
+        totalItems: tracksCount + categoriesCount + surahsCount + videosCount + booksCount + adhkarCount,
       };
     } catch (e) {
-      return { lastUpdated: null, itemCounts: { tracks: 0, categories: 0, surahs: 0, videos: 0, books: 0 }, totalItems: 0 };
+      return { lastUpdated: null, itemCounts: { tracks: 0, categories: 0, surahs: 0, videos: 0, books: 0, adhkar: 0 }, totalItems: 0 };
     }
   }
 
@@ -214,15 +227,16 @@ export function AppProvider({ children }) {
     setLoading(true);
     setError(null);
     try {
-      const [t, c, s, v, b] = await Promise.all([
-        fetchTracks(), fetchCategories(), fetchSurahs(), fetchVideos(), fetchBooks()
+      const [t, c, s, v, b, a] = await Promise.all([
+        fetchTracks(), fetchCategories(), fetchSurahs(), fetchVideos(), fetchBooks(), fetchAdhkar()
       ]);
       setTracks(t);
       setCategories(c);
       setSurahs(s);
       setVideos(v);
       setBooks(b);
-      await saveCacheData({ tracks: t, categories: c, surahs: s, videos: v, books: b });
+      setAdhkar(a);
+      await saveCacheData({ tracks: t, categories: c, surahs: s, videos: v, books: b, adhkar: a });
     } catch (e) {
       const cached = await loadCacheData();
       if (cached.surahs.length > 0 || cached.tracks.length > 0) {
@@ -231,6 +245,7 @@ export function AppProvider({ children }) {
         setSurahs(cached.surahs);
         setVideos(cached.videos);
         setBooks(cached.books);
+        setAdhkar(cached.adhkar);
       } else {
         setError('Failed to load data');
       }
@@ -242,15 +257,16 @@ export function AppProvider({ children }) {
     setRefreshing(true);
     setError(null);
     try {
-      const [t, c, s, v, b] = await Promise.all([
-        fetchTracks(), fetchCategories(), fetchSurahs(), fetchVideos(), fetchBooks()
+      const [t, c, s, v, b, a] = await Promise.all([
+        fetchTracks(), fetchCategories(), fetchSurahs(), fetchVideos(), fetchBooks(), fetchAdhkar()
       ]);
       setTracks(t);
       setCategories(c);
       setSurahs(s);
       setVideos(v);
       setBooks(b);
-      await saveCacheData({ tracks: t, categories: c, surahs: s, videos: v, books: b });
+      setAdhkar(a);
+      await saveCacheData({ tracks: t, categories: c, surahs: s, videos: v, books: b, adhkar: a });
     } catch (e) {
       const cached = await loadCacheData();
       if (cached.surahs.length > 0 || cached.tracks.length > 0) {
@@ -259,6 +275,7 @@ export function AppProvider({ children }) {
         setSurahs(cached.surahs);
         setVideos(cached.videos);
         setBooks(cached.books);
+        setAdhkar(cached.adhkar);
       }
     }
     setRefreshing(false);
@@ -295,7 +312,7 @@ export function AppProvider({ children }) {
 
   return (
     <AppContext.Provider value={{
-      tracks, categories, surahs, videos, books,
+      tracks, categories, surahs, videos, books, adhkar,
       loading, refreshing, error, language, setLanguage: changeLanguage,
       loadAllData, refreshData, t: tr, COLORS, saveSetting,
       lastRead, saveLastRead, bookmarks, toggleBookmark,
@@ -311,6 +328,7 @@ export function AppProvider({ children }) {
       isEffectivelySilent, isScheduledSilentActive,
       adminLoggedIn, setAdminLoggedIn,
       clearCache, getCacheInfo,
+      isOffline,
     }}>
       {children}
     </AppContext.Provider>

@@ -5,9 +5,10 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import * as DocumentPicker from 'expo-document-picker';
 import { useApp } from '../../context/AppContext';
 import { useToastContext } from '../../components/Toast';
-import { fetchAdhkar, createAdhkar, updateAdhkar, deleteAdhkar } from '../../services/api';
+import { fetchAdhkar, createAdhkar, updateAdhkar, deleteAdhkar, prepareFileForUpload } from '../../services/api';
 import AdminLayout, { AdminFAB, AdminEmptyState } from '../../components/admin/AdminLayout';
 
 const CATEGORY_OPTIONS = [
@@ -36,6 +37,7 @@ export default function AdminAdhkarScreen({ navigation }) {
   const [formCount, setFormCount] = useState('1');
   const [formCategory, setFormCategory] = useState('general');
   const [formReference, setFormReference] = useState('');
+  const [formAudio, setFormAudio] = useState(null);
 
   const loadAdhkar = useCallback(async () => {
     try {
@@ -58,7 +60,7 @@ export default function AdminAdhkarScreen({ navigation }) {
   const openAdd = () => {
     setEditing(null);
     setFormArabic(''); setFormTransliteration(''); setFormTransRw(''); setFormTransEn('');
-    setFormCount('1'); setFormCategory('general'); setFormReference('');
+    setFormCount('1'); setFormCategory('general'); setFormReference(''); setFormAudio(null);
     setModalVisible(true);
   };
 
@@ -71,20 +73,49 @@ export default function AdminAdhkarScreen({ navigation }) {
     setFormCount(String(item.count_target || 1));
     setFormCategory(item.category || 'general');
     setFormReference(item.reference || '');
+    setFormAudio(null);
     setModalVisible(true);
+  };
+
+  const pickAudio = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({ type: 'audio/*' });
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setFormAudio(result.assets[0]);
+      }
+    } catch (e) {
+      toast.show('Failed to pick audio', 'error');
+    }
   };
 
   const handleSave = async () => {
     if (!formArabic.trim()) { toast.show('Arabic text is required', 'error'); return; }
     setSaving(true);
     try {
-      const payload = {
-        arabic_text: formArabic.trim(), transliteration: formTransliteration.trim(),
-        translation_rw: formTransRw.trim(), translation_en: formTransEn.trim(),
-        count_target: parseInt(formCount) || 1, category: formCategory, reference: formReference.trim(),
-      };
-      if (editing) { await updateAdhkar(editing.id, payload); toast.show('Adhkar updated', 'success'); }
-      else { await createAdhkar(payload); toast.show('Adhkar created', 'success'); }
+      if (formAudio) {
+        const formData = new FormData();
+        formData.append('arabic_text', formArabic.trim());
+        formData.append('transliteration', formTransliteration.trim());
+        formData.append('translation_rw', formTransRw.trim());
+        formData.append('translation_en', formTransEn.trim());
+        formData.append('count_target', parseInt(formCount) || 1);
+        formData.append('category', formCategory);
+        formData.append('reference', formReference.trim());
+        if (editing) formData.append('audio_url', editing.audio_url || '');
+        const ext = formAudio.name?.split('.').pop() || 'mp3';
+        const audioFile = await prepareFileForUpload(formAudio, `adhkar.${ext}`, `audio/${ext}`);
+        if (audioFile) formData.append('audio', audioFile);
+        if (editing) { await updateAdhkar(editing.id, formData); toast.show('Adhkar updated', 'success'); }
+        else { await createAdhkar(formData); toast.show('Adhkar created', 'success'); }
+      } else {
+        const payload = {
+          arabic_text: formArabic.trim(), transliteration: formTransliteration.trim(),
+          translation_rw: formTransRw.trim(), translation_en: formTransEn.trim(),
+          count_target: parseInt(formCount) || 1, category: formCategory, reference: formReference.trim(),
+        };
+        if (editing) { await updateAdhkar(editing.id, payload); toast.show('Adhkar updated', 'success'); }
+        else { await createAdhkar(payload); toast.show('Adhkar created', 'success'); }
+      }
       setModalVisible(false);
       loadAdhkar();
     } catch (e) { toast.show(e.message || 'Save failed', 'error'); }
@@ -196,6 +227,17 @@ export default function AdminAdhkarScreen({ navigation }) {
               </View>
               <Text style={styles.label}>Reference</Text>
               <TextInput style={styles.input} value={formReference} onChangeText={setFormReference} placeholder="e.g. Sahih Bukhari" placeholderTextColor="rgba(255,255,255,0.3)" />
+              <Text style={styles.label}>Audio Sound</Text>
+              <TouchableOpacity style={styles.audioPickBtn} onPress={pickAudio}>
+                <Ionicons name={formAudio ? "musical-notes" : "cloud-upload-outline"} size={20} color="#F59E0B" />
+                <Text style={styles.audioPickText} numberOfLines={1}>
+                  {formAudio ? (formAudio.name || 'Audio selected') : (editing?.audio_url ? 'Replace current audio' : 'Pick audio file')}
+                </Text>
+                {formAudio && <Ionicons name="close-circle" size={18} color="rgba(255,255,255,0.4)" onPress={() => setFormAudio(null)} />}
+              </TouchableOpacity>
+              {editing?.audio_url && !formAudio && (
+                <Text style={styles.audioCurrent}>Current: {editing.audio_url.split('/').pop()}</Text>
+              )}
               <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={saving}>
                 <LinearGradient colors={['#F59E0B', '#D97706']} style={styles.saveBtnGradient}>
                   {saving ? <ActivityIndicator color="#0a1220" /> : <Text style={styles.saveBtnText}>{editing ? 'Update' : 'Create'}</Text>}
@@ -247,4 +289,7 @@ const styles = StyleSheet.create({
   saveBtn: { borderRadius: 14, overflow: 'hidden', marginTop: 8, marginBottom: 20 },
   saveBtnGradient: { paddingVertical: 15, borderRadius: 14, alignItems: 'center' },
   saveBtnText: { color: '#0a1220', fontSize: 16, fontWeight: '700' },
+  audioPickBtn: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 14, borderColor: 'rgba(245,158,11,0.3)', backgroundColor: 'rgba(245,158,11,0.05)' },
+  audioPickText: { flex: 1, fontSize: 14, color: 'rgba(255,255,255,0.6)' },
+  audioCurrent: { fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 4, fontStyle: 'italic' },
 });

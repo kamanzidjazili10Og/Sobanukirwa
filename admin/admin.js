@@ -623,11 +623,12 @@ function filterAdhkarTable() {
 }
 
 async function showAdhkarForm(id) {
-    var adhkar = { arabic_text: '', transliteration: '', translation_rw: '', translation_en: '', count_target: 33, category: 'general', reference: '' };
+    var adhkar = { arabic_text: '', transliteration: '', translation_rw: '', translation_en: '', count_target: 33, category: 'general', reference: '', audio_url: '' };
     if (id) { adhkar = await api(API_BASE + '/adhkar/' + id); }
+    var audioPreview = adhkar.audio_url ? '<div style="margin-top:6px"><audio controls src="' + getMediaUrl(adhkar.audio_url) + '" style="max-width:100%;height:36px"></audio></div>' : '';
     showModal('' +
         '<h3><i class="fas ' + (id ? 'fa-edit' : 'fa-plus') + '"></i> ' + (id ? t('editAdhkar') : t('addAdhkar')) + '</h3>' +
-        '<form id="adhkarForm"><div class="form-grid">' +
+        '<form id="adhkarForm" enctype="multipart/form-data"><div class="form-grid">' +
         '<div class="form-group full-width"><label><i class="fas fa-language"></i> ' + t('arabicText') + ' *</label><textarea id="af_arabic" required placeholder="' + t('arabicText') + '">' + esc(adhkar.arabic_text || '') + '</textarea></div>' +
         '<div class="form-group full-width"><label><i class="fas fa-globe"></i> ' + t('name') + '</label><input type="text" id="af_trans" value="' + esc(adhkar.transliteration || '') + '" placeholder="Subhanallah"></div>' +
         '<div class="form-group"><label><i class="fas fa-globe"></i> ' + t('translation') + ' (RW)</label><textarea id="af_rw" placeholder="Translation in Kinyarwanda">' + esc(adhkar.translation_rw || '') + '</textarea></div>' +
@@ -640,6 +641,7 @@ async function showAdhkarForm(id) {
         '<option value="sleep"' + (adhkar.category === 'sleep' ? ' selected' : '') + '>' + t('sleep') + '</option>' +
         '</select></div>' +
         '<div class="form-group full-width"><label><i class="fas fa-link"></i> ' + t('reference') + '</label><input type="text" id="af_ref" value="' + esc(adhkar.reference || '') + '" placeholder="Quran or Hadith reference"></div>' +
+        '<div class="form-group full-width"><label><i class="fas fa-volume-up"></i> Audio Sound</label><input type="file" id="af_audio" accept="audio/*">' + audioPreview + '</div>' +
         '</div>' +
         '<div class="modal-actions"><button type="submit" class="btn-primary" id="saveAdhkarBtn"><i class="fas fa-save"></i> ' + t('save') + '</button><button type="button" class="btn-secondary" onclick="closeModal()">' + t('cancel') + '</button></div></form>');
     document.getElementById('adhkarForm').addEventListener('submit', async function(e) {
@@ -647,17 +649,33 @@ async function showAdhkarForm(id) {
         const saveBtn = document.getElementById('saveAdhkarBtn');
         saveBtn.disabled = true;
         saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + t('saving');
-        var body = {
-            arabic_text: document.getElementById('af_arabic').value,
-            transliteration: document.getElementById('af_trans').value,
-            translation_rw: document.getElementById('af_rw').value,
-            translation_en: document.getElementById('af_en').value,
-            count_target: parseInt(document.getElementById('af_count').value) || 33,
-            category: document.getElementById('af_category').value,
-            reference: document.getElementById('af_ref').value
-        };
+        var audioFile = document.getElementById('af_audio').files[0];
         try {
-            await api(API_BASE + '/adhkar' + (id ? '/' + id : ''), { method: id ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+            if (audioFile) {
+                var fd = new FormData();
+                fd.append('arabic_text', document.getElementById('af_arabic').value);
+                fd.append('transliteration', document.getElementById('af_trans').value);
+                fd.append('translation_rw', document.getElementById('af_rw').value);
+                fd.append('translation_en', document.getElementById('af_en').value);
+                fd.append('count_target', parseInt(document.getElementById('af_count').value) || 33);
+                fd.append('category', document.getElementById('af_category').value);
+                fd.append('reference', document.getElementById('af_ref').value);
+                fd.append('audio_url', adhkar.audio_url || '');
+                fd.append('audio', audioFile);
+                await api(API_BASE + '/adhkar' + (id ? '/' + id : ''), { method: id ? 'PUT' : 'POST', body: fd });
+            } else {
+                var body = {
+                    arabic_text: document.getElementById('af_arabic').value,
+                    transliteration: document.getElementById('af_trans').value,
+                    translation_rw: document.getElementById('af_rw').value,
+                    translation_en: document.getElementById('af_en').value,
+                    count_target: parseInt(document.getElementById('af_count').value) || 33,
+                    category: document.getElementById('af_category').value,
+                    reference: document.getElementById('af_ref').value,
+                    audio_url: adhkar.audio_url || ''
+                };
+                await api(API_BASE + '/adhkar' + (id ? '/' + id : ''), { method: id ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+            }
             closeModal(); loadAdhkar();
             showToast(t('adhkarSaved'), 'success');
         } catch (err) { showToast('Error: ' + err.message, 'error'); } finally {
@@ -694,7 +712,8 @@ async function loadQuran() {
                     '<td>' + (s.ayahs_count || 0) + '</td>' +
                     '<td><span class="badge">' + (s.revelation_type || '') + '</span></td>' +
                     '<td><div class="action-group" style="justify-content:center">' + hasAudio +
-                    '<button class="action-btn upload-audio" onclick="uploadSurahAudio(' + s.surah_number + ')" title="' + t('uploadAudio') + '"><i class="fas fa-upload"></i></button></div></td></tr>';
+                    '<button class="action-btn upload-audio" onclick="uploadSurahAudio(' + s.surah_number + ')" title="' + t('uploadAudio') + '"><i class="fas fa-upload"></i></button>' +
+                    '<button class="action-btn edit" onclick="editSurah(' + s.surah_number + ')" title="' + t('edit') + '"><i class="fas fa-edit"></i></button></div></td></tr>';
             }
         }
         html += '</tbody></table></div>';
@@ -724,6 +743,47 @@ function uploadSurahAudio(surahNumber) {
         } catch (err) { showToast('Error: ' + err.message, 'error'); }
     };
     input.click();
+}
+
+async function editSurah(number) {
+    var surahs = await api(API_BASE + '/quran/surahs');
+    var surah = surahs.find(function(s) { return s.surah_number === number; }) || {};
+    var isMakkah = (surah.revelation_type || '') === 'Makkah';
+    showModal('' +
+        '<h3><i class="fas fa-edit"></i> Edit Surah ' + number + '</h3>' +
+        '<form id="surahForm"><div class="form-grid">' +
+        '<div class="form-group full-width"><label><i class="fas fa-language"></i> ' + t('name') + '</label><input type="text" id="sf_name" value="' + esc(surah.name || '') + '" placeholder="Al-Fatiha"></div>' +
+        '<div class="form-group full-width"><label><i class="fas fa-language"></i> Arabic Name</label><input type="text" id="sf_name_arabic" value="' + esc(surah.name_arabic || '') + '" placeholder="الفاتحة" style="font-family:Amiri,serif;font-size:1.2rem"></div>' +
+        '<div class="form-group"><label><i class="fas fa-sort-numeric-up-alt"></i> Ayahs Count</label><input type="number" id="sf_ayahs" value="' + (surah.ayahs_count || 0) + '" min="0"></div>' +
+        '<div class="form-group"><label><i class="fas fa-tag"></i> Revelation Type</label><select id="sf_revelation">' +
+        '<option value="Makkah"' + (isMakkah ? ' selected' : '') + '>Makkah</option>' +
+        '<option value="Madani"' + (!isMakkah ? ' selected' : '') + '>Madani</option>' +
+        '</select></div>' +
+        '</div>' +
+        '<div class="modal-actions"><button type="submit" class="btn-primary" id="saveSurahBtn"><i class="fas fa-save"></i> ' + t('save') + '</button><button type="button" class="btn-secondary" onclick="closeModal()">' + t('cancel') + '</button></div></form>');
+    document.getElementById('surahForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        var saveBtn = document.getElementById('saveSurahBtn');
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + t('saving');
+        try {
+            await api(API_BASE + '/quran/surahs/' + number, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: document.getElementById('sf_name').value,
+                    name_arabic: document.getElementById('sf_name_arabic').value,
+                    ayahs_count: parseInt(document.getElementById('sf_ayahs').value) || 0,
+                    revelation_type: document.getElementById('sf_revelation').value
+                })
+            });
+            closeModal(); loadQuran();
+            showToast(t('surah') + ' ' + number + ' ' + t('saved'), 'success');
+        } catch (err) { showToast('Error: ' + err.message, 'error'); } finally {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fas fa-save"></i> ' + t('save');
+        }
+    });
 }
 
 // ===== BOOKS =====

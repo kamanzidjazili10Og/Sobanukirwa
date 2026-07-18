@@ -1,11 +1,12 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator, Animated, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { BookOpen, Search, BookMarked, RotateCcw, ChevronLeft, Hand, Hash } from 'lucide-react-native';
+import { BookOpen, Search, BookMarked, RotateCcw, ChevronLeft, Hand, Hash, Copy, Share2 } from 'lucide-react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useApp } from '../context/AppContext';
 import { fetchAdhkar, getMediaUrl } from '../services/api';
+import { copyToClipboard, shareText } from '../utils/clipboard';
 
 let Audio = null;
 try { Audio = require('expo-av').Audio; } catch (e) {}
@@ -55,7 +56,7 @@ const COLORS = {
 };
 
 export default function AdhkarScreen({ navigation }) {
-  const { t, language } = useApp();
+  const { t, language, adhkar: cachedAdhkar } = useApp();
   const [counts, setCounts] = useState({});
   const [adhkarList, setAdhkarList] = useState(FALLBACK_ADHKAR);
   const [refreshing, setRefreshing] = useState(false);
@@ -92,11 +93,12 @@ export default function AdhkarScreen({ navigation }) {
 
   async function loadAdhkarData() {
     try {
-      const data = await fetchAdhkar();
+      let data = await fetchAdhkar();
+      if (!data || data.length === 0) data = cachedAdhkar;
       if (data && data.length > 0) {
         setAdhkarList(data.map(a => ({
           id: a.id,
-          arabic: a.arabic_text,
+          arabic: a.arabic_text || a.arabic,
           transliteration: a.transliteration,
           translation_en: a.translation_en || '',
           translation_rw: a.translation_rw || a.translation_en || '',
@@ -106,7 +108,20 @@ export default function AdhkarScreen({ navigation }) {
         })));
       }
     } catch (e) {
-      setAdhkarList(FALLBACK_ADHKAR);
+      if (cachedAdhkar && cachedAdhkar.length > 0) {
+        setAdhkarList(cachedAdhkar.map(a => ({
+          id: a.id,
+          arabic: a.arabic_text || a.arabic,
+          transliteration: a.transliteration,
+          translation_en: a.translation_en || '',
+          translation_rw: a.translation_rw || a.translation_en || '',
+          count_target: a.count_target || 100,
+          audio_url: a.audio_url || null,
+          category: a.category || 'general',
+        })));
+      } else {
+        setAdhkarList(FALLBACK_ADHKAR);
+      }
     }
   }
 
@@ -331,6 +346,17 @@ export default function AdhkarScreen({ navigation }) {
                     <Text style={styles.completeText}>{t('Urarangira', 'Complete', 'مكتمل')}</Text>
                   </View>
                 )}
+
+                <View style={styles.actionRow}>
+                  <TouchableOpacity style={styles.actionBtn} onPress={() => copyToClipboard(`${adhkar.arabic}\n\n${adhkar.transliteration}\n${translation}`, adhkar.transliteration)}>
+                    <Copy size={14} color={COLORS.textSecondary} />
+                    <Text style={styles.actionText}>{t('Kubikoraho', 'Copy', 'نسخ')}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.actionBtn} onPress={() => shareText(`${adhkar.arabic}\n\n${adhkar.transliteration}\n${translation}`, 'Adhkar')}>
+                    <Share2 size={14} color={COLORS.textSecondary} />
+                    <Text style={styles.actionText}>{t('Sangira', 'Share', 'مشاركة')}</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
           );
@@ -456,6 +482,10 @@ const styles = StyleSheet.create({
     gap: 6, marginTop: 10,
   },
   completeText: { fontSize: 12, fontWeight: '600', color: COLORS.success },
+
+  actionRow: { flexDirection: 'row', justifyContent: 'center', gap: 16, marginTop: 10 },
+  actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: '#F3F4F6' },
+  actionText: { fontSize: 11, fontWeight: '500', color: COLORS.textSecondary },
 
   emptyState: { alignItems: 'center', paddingVertical: 48, gap: 12 },
   emptyText: { fontSize: 14, fontWeight: '500', color: COLORS.textSecondary },

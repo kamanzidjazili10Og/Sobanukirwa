@@ -1545,9 +1545,36 @@ function showArtists() {
 }
 
 // ===== QIBLA FUNCTIONS =====
+function generateCompassTicks() {
+    const face = document.getElementById('compassFace');
+    if (!face) return;
+    const TICK_COUNT = 72;
+    const DEGREE_MARKS = [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330];
+    const CARDINALS = [0, 90, 180, 270];
+    for (let i = 0; i < TICK_COUNT; i++) {
+        const deg = (i / TICK_COUNT) * 360;
+        const rounded = Math.round(deg);
+        const isMajor = DEGREE_MARKS.includes(rounded);
+        const isCardinal = CARDINALS.includes(rounded);
+        const tick = document.createElement('div');
+        tick.style.cssText = `
+            position: absolute; top: 8px; left: 50%; transform-origin: center 122px;
+            width: ${isCardinal ? 2 : isMajor ? 1.5 : 1}px;
+            height: ${isMajor ? 14 : 7}px;
+            background: ${isCardinal ? '#D4AF37' : isMajor ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.3)'};
+            transform: translateX(-50%) rotate(${deg}deg);
+            border-radius: 1px;
+        `;
+        face.appendChild(tick);
+    }
+}
+
 function initQibla() {
     const KAABA_LAT = 21.4225;
     const KAABA_LNG = 39.8262;
+    
+    // Generate compass tick marks
+    generateCompassTicks();
     
     const savedLat = localStorage.getItem('userLat');
     const savedLng = localStorage.getItem('userLng');
@@ -1640,11 +1667,27 @@ function handleOrientation(event) {
     
     if (heading !== null) {
         compassHeading = heading;
-        const needleAngle = (currentQibla - compassHeading + 360) % 360;
-        const needle = document.getElementById('compassNeedle');
-        if (needle) {
-            needle.style.transform = `translate(-50%, -50%) rotate(${needleAngle}deg)`;
+        
+        // Rotate compass face (inverse of heading so North stays up)
+        const compassFace = document.getElementById('compassFace');
+        if (compassFace) {
+            compassFace.style.transform = `rotate(${-heading}deg)`;
         }
+        
+        // Position Qibla arrow and Kaaba marker at the Qibla angle
+        const qiblaArrow = document.getElementById('qiblaArrowFixed');
+        const kaabaMarker = document.getElementById('kaabaMarkerTop');
+        if (qiblaArrow) {
+            qiblaArrow.style.transform = `translateX(-50%) rotate(${currentQibla}deg)`;
+            qiblaArrow.style.transformOrigin = 'center bottom';
+        }
+        if (kaabaMarker) {
+            kaabaMarker.style.transform = `rotate(${currentQibla}deg)`;
+        }
+        
+        // Update heading display
+        const headingDisplay = document.getElementById('headingDisplay');
+        if (headingDisplay) headingDisplay.textContent = Math.round(heading) + '°';
     }
 }
 

@@ -22,6 +22,19 @@ router.get('/surahs/:number', async (req, res) => {
   }
 });
 
+router.put('/surahs/:number', async (req, res) => {
+  try {
+    const { name, name_arabic, ayahs_count, revelation_type } = req.body;
+    await pool.query(
+      'UPDATE quran_surahs SET name=?, name_arabic=?, ayahs_count=?, revelation_type=? WHERE surah_number=?',
+      [name, name_arabic, ayahs_count, revelation_type, req.params.number]
+    );
+    res.json({ message: 'Surah updated' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
 router.put('/surahs/:number/audio', upload.single('audio'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'No audio file uploaded' });

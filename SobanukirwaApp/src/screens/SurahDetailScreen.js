@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions, Animated, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft, BookOpen, Flame, Leaf, FileText, User, Mic, Square, Play, Pause, RotateCcw, Loader } from 'lucide-react-native';
+import { ChevronLeft, BookOpen, Flame, Leaf, FileText, User, Mic, Square, Play, Pause, RotateCcw, Loader, Copy, Share2 } from 'lucide-react-native';
 import { useApp } from '../context/AppContext';
 import { getMediaUrl } from '../services/api';
+import { copyToClipboard, shareText } from '../utils/clipboard';
 
 let Audio = null;
 try { Audio = require('expo-av').Audio; } catch (e) {}
@@ -191,6 +192,17 @@ export default function SurahDetailScreen({ route, navigation }) {
               <Text style={[styles.badgeText, { color: C.primary }]}>{t('Juz', 'Juz', 'جزء')} {juz}</Text>
             </View>
           </View>
+
+          <View style={styles.heroActions}>
+            <TouchableOpacity style={styles.heroActionBtn} onPress={() => copyToClipboard(`${surahData.name}\n${surah.englishName || surahData.englishName}\n${surahData.englishNameTranslation}\n${totalAyahs} ayahs`, surah.englishName || surahData.englishName)}>
+              <Copy size={14} color={C.primary} />
+              <Text style={styles.heroActionText}>{t('Kubikoraho', 'Copy', 'نسخ')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.heroActionBtn} onPress={() => shareText(`${surahData.name} - ${surah.englishName || surahData.englishName} (${surahData.englishNameTranslation})\n${totalAyahs} ayahs`, 'Quran Surah')}>
+              <Share2 size={14} color={C.primary} />
+              <Text style={styles.heroActionText}>{t('Sangira', 'Share', 'مشاركة')}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.playerCard}>
@@ -372,6 +384,28 @@ const styles = StyleSheet.create({
     gap: 8,
     flexWrap: 'wrap',
     justifyContent: 'center',
+  },
+  heroActions: {
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'center',
+    marginTop: 14,
+  },
+  heroActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: '#F0F9FF',
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
+  },
+  heroActionText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: C.primary,
   },
   badge: {
     flexDirection: 'row',
