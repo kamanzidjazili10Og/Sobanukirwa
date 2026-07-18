@@ -1048,13 +1048,19 @@ function renderQuran() {
     container.innerHTML = surahs.map(s => {
         const lang = document.body.getAttribute('data-language') || 'rw';
         const nameDisplay = lang === 'ar' ? s.nameArabic : s.name;
+        const isMeccan = (s.type || '').toLowerCase() === 'makkah';
+        const typeClass = isMeccan ? 'surah-type-makkah' : 'surah-type-madani';
+        const typeLabel = isMeccan ? (lang === 'ar' ? 'مكية' : lang === 'rw' ? 'Makka' : 'Meccan') : (lang === 'ar' ? 'مدنية' : lang === 'rw' ? 'Madina' : 'Medinan');
         return '<div class="surah-card" onclick="playSurah(' + s.number + ')">' +
             '<div class="surah-info">' +
             '<div class="surah-number">' + s.number + '</div>' +
             '<div class="surah-details">' +
             '<div class="surah-name-arabic">' + s.nameArabic + '</div>' +
             '<div class="surah-name">' + s.name + '</div>' +
-            '<div class="surah-meta"><span class="surah-type-badge">' + s.type + '</span> ' + s.ayahs + ' ayahs</div>' +
+            '<div class="surah-meta">' +
+            '<span class="surah-type-badge ' + typeClass + '">' + typeLabel + '</span> ' +
+            (s.ayahs ? '<span class="surah-ayah-count">' + s.ayahs + ' ayahs</span>' : '') +
+            '</div>' +
             '</div>' +
             '</div>' +
             '<button class="surah-play-btn" onclick="event.stopPropagation(); playSurah(' + s.number + ')"><i class="fas fa-play"></i></button>' +
@@ -1068,13 +1074,20 @@ function filterSurahs() {
     if (!container) return;
     const filtered = surahs.filter(s => s.name.toLowerCase().includes(query) || s.nameArabic.includes(query) || String(s.number).includes(query));
     container.innerHTML = filtered.map(s => {
+        const isMeccan = (s.type || '').toLowerCase() === 'makkah';
+        const typeClass = isMeccan ? 'surah-type-makkah' : 'surah-type-madani';
+        const lang = document.body.getAttribute('data-language') || 'rw';
+        const typeLabel = isMeccan ? (lang === 'ar' ? 'مكية' : lang === 'rw' ? 'Makka' : 'Meccan') : (lang === 'ar' ? 'مدنية' : lang === 'rw' ? 'Madina' : 'Medinan');
         return '<div class="surah-card" onclick="playSurah(' + s.number + ')">' +
             '<div class="surah-info">' +
             '<div class="surah-number">' + s.number + '</div>' +
             '<div class="surah-details">' +
             '<div class="surah-name-arabic">' + s.nameArabic + '</div>' +
             '<div class="surah-name">' + s.name + '</div>' +
-            '<div class="surah-meta"><span class="surah-type-badge">' + s.type + '</span> ' + s.ayahs + ' ayahs</div>' +
+            '<div class="surah-meta">' +
+            '<span class="surah-type-badge ' + typeClass + '">' + typeLabel + '</span> ' +
+            (s.ayahs ? '<span class="surah-ayah-count">' + s.ayahs + ' ayahs</span>' : '') +
+            '</div>' +
             '</div>' +
             '</div>' +
             '<button class="surah-play-btn" onclick="event.stopPropagation(); playSurah(' + s.number + ')"><i class="fas fa-play"></i></button>' +
@@ -1388,6 +1401,27 @@ function renderAdhkarCards() {
     }).join('');
 }
 
+let dhikrSound = null;
+function playDhikrSound() {
+    try {
+        if (!dhikrSound) {
+            dhikrSound = new Audio('Sounds/Subhanallah.m4a');
+            dhikrSound.preload = 'auto';
+        }
+        const clone = dhikrSound.cloneNode();
+        clone.volume = 0.6;
+        clone.play().catch(function() {});
+    } catch(e) {}
+}
+
+function playCompletionSound() {
+    try {
+        const audio = new Audio('Sounds/Subhanallah.m4a');
+        audio.volume = 0.8;
+        audio.play().catch(function() {});
+    } catch(e) {}
+}
+
 function updateCounter(index, delta) {
     const el = document.getElementById('counter' + index);
     if (!el) return;
@@ -1398,10 +1432,24 @@ function updateCounter(index, delta) {
     if (current > max) current = 0;
     el.textContent = current + '/' + max;
     localStorage.setItem('adhkar_' + index, String(current));
-    if (current >= max) {
-        el.parentElement.parentElement.classList.add('completed');
+
+    if (delta > 0) {
+        if (current >= max) {
+            el.parentElement.parentElement.classList.add('completed');
+            playCompletionSound();
+            el.style.transform = 'scale(1.3)';
+            el.style.color = '#10B981';
+            setTimeout(function() { el.style.transform = ''; }, 300);
+        } else {
+            playDhikrSound();
+            el.style.transform = 'scale(1.2)';
+            setTimeout(function() { el.style.transform = ''; }, 200);
+        }
     } else {
-        el.parentElement.parentElement.classList.remove('completed');
+        if (current < max) {
+            el.parentElement.parentElement.classList.remove('completed');
+            el.style.color = '';
+        }
     }
 }
 

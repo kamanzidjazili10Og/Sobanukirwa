@@ -9,6 +9,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { useApp } from '../../context/AppContext';
 import { useToastContext } from '../../components/Toast';
 import { fetchAdhkar, createAdhkar, updateAdhkar, deleteAdhkar, prepareFileForUpload } from '../../services/api';
+import { addPendingOp, processPendingOps } from '../../services/SyncQueue';
 import AdminLayout, { AdminFAB, AdminEmptyState } from '../../components/admin/AdminLayout';
 
 const CATEGORY_OPTIONS = [
@@ -20,7 +21,7 @@ const CATEGORY_OPTIONS = [
 ];
 
 export default function AdminAdhkarScreen({ navigation }) {
-  const { COLORS, t } = useApp();
+  const { COLORS, t, isOffline } = useApp();
   const toast = useToastContext();
   const [adhkar, setAdhkar] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -92,27 +93,20 @@ export default function AdminAdhkarScreen({ navigation }) {
     if (!formArabic.trim()) { toast.show('Arabic text is required', 'error'); return; }
     setSaving(true);
     try {
-      if (formAudio) {
-        const formData = new FormData();
-        formData.append('arabic_text', formArabic.trim());
-        formData.append('transliteration', formTransliteration.trim());
-        formData.append('translation_rw', formTransRw.trim());
-        formData.append('translation_en', formTransEn.trim());
-        formData.append('count_target', parseInt(formCount) || 1);
-        formData.append('category', formCategory);
-        formData.append('reference', formReference.trim());
-        if (editing) formData.append('audio_url', editing.audio_url || '');
-        const ext = formAudio.name?.split('.').pop() || 'mp3';
-        const audioFile = await prepareFileForUpload(formAudio, `adhkar.${ext}`, `audio/${ext}`);
-        if (audioFile) formData.append('audio', audioFile);
-        if (editing) { await updateAdhkar(editing.id, formData); toast.show('Adhkar updated', 'success'); }
-        else { await createAdhkar(formData); toast.show('Adhkar created', 'success'); }
+      const payload = {
+        arabic_text: formArabic.trim(), transliteration: formTransliteration.trim(),
+        translation_rw: formTransRw.trim(), translation_en: formTransEn.trim(),
+        count_target: parseInt(formCount) || 1, category: formCategory, reference: formReference.trim(),
+      };
+
+      if (isOffline) {
+        await addPendingOp({
+          method: editing ? 'PUT' : 'POST',
+          endpoint: editing ? `/adhkar/${editing.id}` : '/adhkar',
+          body: payload,
+        });
+        toast.show(editing ? 'Saved offline - will sync when online' : 'Created offline - will sync when online', 'info');
       } else {
-        const payload = {
-          arabic_text: formArabic.trim(), transliteration: formTransliteration.trim(),
-          translation_rw: formTransRw.trim(), translation_en: formTransEn.trim(),
-          count_target: parseInt(formCount) || 1, category: formCategory, reference: formReference.trim(),
-        };
         if (editing) { await updateAdhkar(editing.id, payload); toast.show('Adhkar updated', 'success'); }
         else { await createAdhkar(payload); toast.show('Adhkar created', 'success'); }
       }
@@ -126,8 +120,16 @@ export default function AdminAdhkarScreen({ navigation }) {
     Alert.alert('Delete Adhkar', 'Delete this adhkar?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: async () => {
-        try { await deleteAdhkar(item.id); toast.show('Deleted', 'success'); loadAdhkar(); }
-        catch { toast.show('Delete failed', 'error'); }
+        try {
+          if (isOffline) {
+            await addPendingOp({ method: 'DELETE', endpoint: `/adhkar/${item.id}` });
+            toast.show('Delete saved offline - will sync when online', 'info');
+          } else {
+            await deleteAdhkar(item.id);
+            toast.show('Deleted', 'success');
+          }
+          loadAdhkar();
+        } catch { toast.show('Delete failed', 'error'); }
       }},
     ]);
   };

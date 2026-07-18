@@ -3,6 +3,7 @@ import { AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 import { fetchTracks, fetchCategories, fetchSurahs, fetchVideos, fetchBooks, fetchAdhkar } from '../services/api';
+import { startAutoSync, processPendingOps, getPendingCount, onSyncStatusChange } from '../services/SyncQueue';
 
 const AppContext = createContext();
 
@@ -70,6 +71,8 @@ export function AppProvider({ children }) {
   const [silentTo, setSilentTo] = useState('06:00');
   const [silentPrayers, setSilentPrayers] = useState({ Fajr: true, Dhuhr: true, Asr: true, Maghrib: true, Isha: true });
   const [adminLoggedIn, setAdminLoggedIn] = useState(false);
+  const [pendingSyncCount, setPendingSyncCount] = useState(0);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const pauseAudioRef = useRef(null);
   const pauseVideoRef = useRef(null);
@@ -94,7 +97,21 @@ export function AppProvider({ children }) {
     const unsub = NetInfo.addEventListener(state => {
       setIsOffline(!state.isConnected || !state.isInternetReachable);
     });
-    return () => unsub();
+
+    const stopSync = startAutoSync(60000);
+
+    const unsubSync = onSyncStatusChange((status) => {
+      setPendingSyncCount(status.pending || 0);
+      setIsSyncing(status.syncing || false);
+    });
+
+    getPendingCount().then(count => setPendingSyncCount(count));
+
+    return () => {
+      unsub();
+      stopSync();
+      unsubSync();
+    };
   }, []);
 
   async function loadPersistedState() {
@@ -329,6 +346,7 @@ export function AppProvider({ children }) {
       adminLoggedIn, setAdminLoggedIn,
       clearCache, getCacheInfo,
       isOffline,
+      pendingSyncCount, isSyncing, processPendingOps,
     }}>
       {children}
     </AppContext.Provider>

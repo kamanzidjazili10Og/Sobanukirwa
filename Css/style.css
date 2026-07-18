@@ -286,7 +286,8 @@ body.silent-mode .silent-indicator { display: flex; }
 }
 .count-btn:hover { background: var(--secondary); color: var(--primary-dark); transform: scale(1.15); box-shadow: 0 4px 15px rgba(212,175,55,0.3); }
 .count-btn:active { transform: scale(0.95); }
-.count-number { font-size: 1.15rem; font-weight: 700; color: var(--secondary); min-width: 60px; text-align: center; font-variant-numeric: tabular-nums; letter-spacing: 1px; }
+.count-number { font-size: 1.15rem; font-weight: 700; color: var(--secondary); min-width: 60px; text-align: center; font-variant-numeric: tabular-nums; letter-spacing: 1px; transition: transform 0.2s ease, color 0.3s ease; display: inline-block; }
+.count-btn:active .count-number { transform: scale(1.2); }
 .adhkar-card.completed { border-color: rgba(76,175,80,0.4); background: rgba(76,175,80,0.06); }
 .adhkar-card.completed::after { background: linear-gradient(180deg, #4CAF50, #2E7D32); opacity: 0.8; }
 .adhkar-card.completed .count-number { color: #4CAF50; }
@@ -821,6 +822,9 @@ main { flex: 1; position: relative; overflow: hidden; margin-bottom: 60px; }
     font-size: 0.55rem; padding: 1px 6px; border-radius: 8px;
     background: rgba(212,175,55,0.1); color: var(--secondary); text-transform: uppercase; letter-spacing: 0.3px;
 }
+.surah-type-makkah { background: rgba(239,68,68,0.1); color: #EF4444; }
+.surah-type-madani { background: rgba(16,185,129,0.1); color: #10B981; }
+.surah-ayah-count { font-size: 0.6rem; color: var(--text-muted); }
 .surah-play-btn {
     width: 34px; height: 34px; background: rgba(212,175,55,0.08);
     border: 1.5px solid var(--secondary); border-radius: var(--radius-full);

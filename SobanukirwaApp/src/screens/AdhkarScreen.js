@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator, Animated, Platform } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator, Animated, Platform, Vibration } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BookOpen, Search, BookMarked, RotateCcw, ChevronLeft, Hand, Hash, Copy, Share2 } from 'lucide-react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -10,6 +10,8 @@ import { copyToClipboard, shareText } from '../utils/clipboard';
 
 let Audio = null;
 try { Audio = require('expo-av').Audio; } catch (e) {}
+
+const DHIKR_SOUND = 'https://server7.mp3quran.net/ahmed/001.mp3';
 
 const FALLBACK_ADHKAR = [
   { id: 1, arabic: 'سُبْحَانَ اللَّهِ', transliteration: 'Subhanallah', translation_en: 'Glory be to Allah', translation_rw: 'Imana ni yose', count_target: 33, category: 'general' },
@@ -137,11 +139,32 @@ export default function AdhkarScreen({ navigation }) {
     try { await AsyncStorage.setItem('adhkar_counts', JSON.stringify(newCounts)); } catch (e) {}
   }
 
+  async function playCountSound(isComplete) {
+    if (!Audio) {
+      Vibration.vibrate(isComplete ? [0, 50, 100, 50] : [0, 30]);
+      return;
+    }
+    try {
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: DHIKR_SOUND },
+        { shouldPlay: true, volume: isComplete ? 0.8 : 0.4, isLooping: false }
+      );
+      setTimeout(async () => {
+        try { await sound.unloadAsync(); } catch (e) {}
+      }, 1500);
+    } catch (e) {
+      Vibration.vibrate(isComplete ? [0, 50, 100, 50] : [0, 30]);
+    }
+  }
+
   function increment(id) {
     const adhkar = adhkarList.find(a => a.id === id);
     const current = counts[id] || 0;
-    if (current < (adhkar?.count_target || 100)) {
-      saveCounts({ ...counts, [id]: current + 1 });
+    const maxCount = adhkar?.count_target || 100;
+    if (current < maxCount) {
+      const newCount = current + 1;
+      saveCounts({ ...counts, [id]: newCount });
+      playCountSound(newCount >= maxCount);
     }
   }
 
