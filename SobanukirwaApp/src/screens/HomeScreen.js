@@ -3,9 +3,13 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions, Refre
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useApp } from '../context/AppContext';
-import { fetchPrayerTimes, fetchHijriDate, fetchAdhkar } from '../services/api';
+import { fetchPrayerTimes, fetchHijriDate, fetchAdhkar, getMediaUrl } from '../services/api';
 import SilentBanner from '../components/SilentBanner';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+let Audio = null;
+try { Audio = require('expo-av').Audio; } catch (e) {}
+
 import { Home, BookOpen, Headphones, PlayCircle, Library, Settings, Globe, ChevronRight, Clock, Compass, Hand, Star, Heart, Copy, Share2 } from 'lucide-react-native';
 import { copyToClipboard, shareText } from '../utils/clipboard';
 
@@ -60,6 +64,7 @@ export default function HomeScreen({ navigation }) {
   const [adhkarList, setAdhkarList] = useState(FALLBACK_ADHKAR);
   const [adhkarCounts, setAdhkarCounts] = useState({});
   const [adhkarCompletedCount, setAdhkarCompletedCount] = useState(0);
+  const soundRef = useRef(null);
   const glowAnim = useRef(new Animated.Value(0.3)).current;
 
   useEffect(() => {
@@ -116,6 +121,7 @@ export default function HomeScreen({ navigation }) {
           translation_en: a.translation_en || '',
           count_target: a.count_target || 100,
           category: a.category || 'general',
+          audio_url: a.audio_url || null,
         })));
       }
     } catch (e) {
@@ -165,6 +171,27 @@ export default function HomeScreen({ navigation }) {
     return `${mins}m`;
   }
 
+  async function playAdhkarSound(adhkar) {
+    if (!Audio || !adhkar?.audio_url) return;
+    try {
+      if (soundRef.current) {
+        await soundRef.current.unloadAsync();
+        soundRef.current = null;
+      }
+      const url = getMediaUrl(adhkar.audio_url);
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: url },
+        { shouldPlay: true }
+      );
+      soundRef.current = sound;
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.didJustFinish) {
+          soundRef.current = null;
+        }
+      });
+    } catch (e) {}
+  }
+
   function incrementAdhkar(id) {
     const adhkar = adhkarList.find(a => a.id === id);
     const current = adhkarCounts[id] || 0;
@@ -173,6 +200,7 @@ export default function HomeScreen({ navigation }) {
       setAdhkarCounts(newCounts);
       AsyncStorage.setItem('adhkar_counts', JSON.stringify(newCounts));
       updateCompletedCount(newCounts);
+      playAdhkarSound(adhkar);
     }
   }
 
