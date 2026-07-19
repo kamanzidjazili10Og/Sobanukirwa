@@ -1046,13 +1046,17 @@ class AdhkarReminderManager {
         this.lastReminded = null;
         this.snoozeUntil = null;
         this.reminderInterval = null;
+        this.currentAudio = null;
         
         this.adhkars = [
-            { arabic: "سُبْحَانَ اللَّهِ", transliteration: "Subhanallah", translation: "Glory be to Allah" },
-            { arabic: "الْحَمْدُ لِلَّهِ", transliteration: "Alhamdulillah", translation: "Praise be to Allah" },
-            { arabic: "اللَّهُ أَكْبَرُ", transliteration: "Allahu Akbar", translation: "Allah is the Greatest" },
-            { arabic: "لَا إِلَٰهَ إِلَّا اللَّهُ", transliteration: "La ilaha illallah", translation: "There is no god but Allah" },
-            { arabic: "أَسْتَغْفِرُ اللَّهَ", transliteration: "Astaghfirullah", translation: "I seek forgiveness from Allah" }
+            { arabic: "سُبْحَانَ اللَّهِ", transliteration: "Subhanallah", translation: "Glory be to Allah", audio_url: "audio/Subhanallah.m4a" },
+            { arabic: "الْحَمْدُ لِلَّهِ", transliteration: "Alhamdulillah", translation: "Praise be to Allah", audio_url: "audio/Subhanallah Alhamdulillah Wa La ilaha IlAllah (Dhikr).m4a" },
+            { arabic: "اللَّهُ أَكْبَرُ", transliteration: "Allahu Akbar", translation: "Allah is the Greatest", audio_url: "audio/Subhanallah.m4a" },
+            { arabic: "لَا إِلَٰهَ إِلَّا اللَّهُ", transliteration: "La ilaha illallah", translation: "There is no god but Allah", audio_url: "audio/Subhanallah Alhamdulillah Wa La ilaha IlAllah (Dhikr).m4a" },
+            { arabic: "أَسْتَغْفِرُ اللَّهَ", transliteration: "Astaghfirullah", translation: "I seek forgiveness from Allah", audio_url: "audio/Subhanallah.m4a" },
+            { arabic: "سُبْحَانَ اللَّهِ وَبِحَمْدِهِ", transliteration: "Subhanallahi wa bihamdihi", translation: "Glory and praise be to Allah", audio_url: "audio/Subhanallah.m4a" },
+            { arabic: "لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ", transliteration: "La hawla wa la quwwata illa billah", translation: "There is no power except with Allah", audio_url: "audio/Subhanallah.m4a" },
+            { arabic: "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ", transliteration: "Allahumma salli ala Muhammad", translation: "O Allah, send blessings upon Muhammad", audio_url: "audio/Allahuma Salli Ala.m4a" }
         ];
         
         this.startReminders();
@@ -1095,21 +1099,44 @@ class AdhkarReminderManager {
         
         this.lastReminded = Date.now();
         
-        // Auto hide after 2 minutes
+        this.playReminderSound(randomAdhkar.audio_url);
+        
         setTimeout(() => {
             popup.classList.remove('show');
         }, 120000);
     }
     
+    playReminderSound(audioUrl) {
+        if (!audioUrl) return;
+        try {
+            if (this.currentAudio) {
+                this.currentAudio.pause();
+                this.currentAudio = null;
+            }
+            this.currentAudio = new Audio('/' + audioUrl);
+            this.currentAudio.volume = 0.6;
+            this.currentAudio.play().catch(() => {});
+        } catch (e) {}
+    }
+    
     snooze() {
+        this.stopReminderSound();
         this.snoozeUntil = Date.now() + (5 * 60 * 1000);
         this.hideReminder();
         this.showToast('Reminder snoozed for 5 minutes');
     }
     
     dismiss() {
+        this.stopReminderSound();
         this.hideReminder();
         this.showToast('Alhamdulillah! Remembered to recite Adhkar');
+    }
+    
+    stopReminderSound() {
+        if (this.currentAudio) {
+            this.currentAudio.pause();
+            this.currentAudio = null;
+        }
     }
     
     hideReminder() {

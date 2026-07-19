@@ -27,10 +27,26 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.post('/', upload.single('audio'), async (req, res) => {
+router.post('/', (req, res, next) => {
+  upload.single('audio')(req, res, (err) => {
+    if (err && err.code !== 'LIMIT_UNEXPECTED_FILE') {
+      return res.status(400).json({ message: 'Upload error', error: err.message });
+    }
+    next();
+  });
+}, async (req, res) => {
   try {
     const { arabic_text, transliteration, translation_rw, translation_en, translation_ar, count_target, category, audio_url, reference } = req.body;
     const audioPath = req.file ? `/uploads/audio/${req.file.filename}` : (audio_url || null);
+
+    const [existing] = await pool.query(
+      'SELECT id FROM adhkar WHERE arabic_text = ? AND is_active = 1 LIMIT 1',
+      [arabic_text]
+    );
+    if (existing.length > 0) {
+      return res.status(409).json({ message: 'Adhkar already exists', existingId: existing[0].id });
+    }
+
     const [result] = await pool.query(
       'INSERT INTO adhkar (arabic_text, transliteration, translation_rw, translation_en, translation_ar, count_target, category, audio_url, reference) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [arabic_text, transliteration, translation_rw, translation_en, translation_ar, count_target || 33, category || 'general', audioPath, reference]
@@ -41,7 +57,14 @@ router.post('/', upload.single('audio'), async (req, res) => {
   }
 });
 
-router.put('/:id', upload.single('audio'), async (req, res) => {
+router.put('/:id', (req, res, next) => {
+  upload.single('audio')(req, res, (err) => {
+    if (err && err.code !== 'LIMIT_UNEXPECTED_FILE') {
+      return res.status(400).json({ message: 'Upload error', error: err.message });
+    }
+    next();
+  });
+}, async (req, res) => {
   try {
     const { arabic_text, transliteration, translation_rw, translation_en, translation_ar, count_target, category, audio_url, reference } = req.body;
     let audioPath = audio_url || null;
