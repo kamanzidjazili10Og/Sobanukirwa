@@ -6,7 +6,7 @@ function getMediaUrl(path) {
     if (path.startsWith('http')) return path;
     var origin = window.location.origin;
     if (path.startsWith('/')) return origin + path;
-    if (/^audio\//i.test(path)) return origin + '/uploads/' + path;
+    if (/^audio\//i.test(path)) return origin + '/' + path;
     if (/^Videos\//i.test(path)) return origin + '/uploads/videos/' + path.replace(/^Videos\//i, '');
     return origin + '/' + path;
 }

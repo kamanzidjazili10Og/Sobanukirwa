@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal, Animated, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { getMediaUrl } from '../services/api';
 
 let Audio = null;
 try { Audio = require('expo-av').Audio; } catch (e) {}
@@ -58,7 +59,7 @@ export function AdhkarReminderModal({ visible, adhkar, language, silentMode, onS
     if (!Audio) return;
     try {
       if (sound) await sound.unloadAsync();
-      const uri = adhkar?.audio_url || 'https://sobanukirwa-production.up.railway.app/Sounds/Subhanallah.m4a';
+      const uri = getMediaUrl(adhkar?.audio_url) || 'https://sobanukirwa-production.up.railway.app/Sounds/Subhanallah.m4a';
       const { sound: s } = await Audio.Sound.createAsync(
         { uri },
         { shouldPlay: true, volume: 0.6 }

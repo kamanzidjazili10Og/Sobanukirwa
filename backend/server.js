@@ -26,6 +26,15 @@ app.use(express.urlencoded({ extended: true, limit: '500mb' }));
 
 app.use('/uploads', express.static(UPLOAD_DIR));
 
+const AUDIO_DIR = path.join(ROOT_DIR, 'audio');
+if (fs.existsSync(AUDIO_DIR)) {
+  app.use('/audio', express.static(AUDIO_DIR));
+}
+const SOUNDS_DIR = path.join(ROOT_DIR, 'Sounds');
+if (fs.existsSync(SOUNDS_DIR)) {
+  app.use('/Sounds', express.static(SOUNDS_DIR));
+}
+
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Kamanzi@123';
 
 app.post('/api/auth/login', (req, res) => {
