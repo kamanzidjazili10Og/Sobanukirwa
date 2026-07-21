@@ -79,6 +79,14 @@ router.post('/', async (req, res) => {
     if (!name) return res.status(400).json({ message: 'Name is required' });
     const finalSlug = slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
+    const [existing] = await pool.query(
+      'SELECT id FROM categories WHERE (name = ? OR slug = ?) AND is_active = 1 LIMIT 1',
+      [name, finalSlug]
+    );
+    if (existing.length > 0) {
+      return res.status(409).json({ message: 'Category already exists', existingId: existing[0].id });
+    }
+
     const [result] = await pool.query(
       'INSERT INTO categories (name, name_ar, name_en, slug, description, icon, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)',
       [name, name_ar || null, name_en || null, finalSlug, description || null, icon || null, sort_order || 0]

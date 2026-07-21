@@ -208,7 +208,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     if (adminToken) {
         setLang(currentLang);
-        navigateTo('dashboard');
     }
 });
 
@@ -257,6 +256,8 @@ function showModal(html) {
     document.getElementById('modalOverlay').style.display = 'flex';
 }
 function closeModal() {
+    var pv = document.getElementById('af_preview');
+    if (pv) { pv.pause(); pv.src = ''; }
     document.getElementById('modalOverlay').style.display = 'none';
     document.getElementById('modalContent').innerHTML = '';
 }
@@ -268,10 +269,17 @@ function refreshCurrentPage() {
 async function api(url, options) {
     try {
         options = options || {};
-        options.headers = { 'Accept': 'application/json', ...options.headers };
+        var isFormData = options.body instanceof FormData;
+        if (isFormData) {
+            delete options.headers;
+        } else {
+            options.headers = { 'Accept': 'application/json', ...options.headers };
+        }
         var res = await fetch(url, options);
-        var data = await res.json();
-        if (!res.ok) throw new Error(data.message || 'Request failed');
+        var text = await res.text();
+        var data;
+        try { data = JSON.parse(text); } catch (e) { data = text; }
+        if (!res.ok) throw new Error((data && data.message) || 'Request failed');
         return data;
     } catch (err) {
         throw err;
@@ -366,7 +374,7 @@ async function showArtistForm(id) {
         if (img) fd.append('image', img);
         try {
             await api(API_BASE + '/artists' + (id ? '/' + id : ''), { method: id ? 'PUT' : 'POST', body: fd });
-            closeModal(); refreshCurrentPage();
+            closeModal(); loadArtists();
             showToast(t('artists') + ' ' + t('saved'), 'success');
         } catch (err) { showToast('Error: ' + err.message, 'error'); } finally {
             saveBtn.disabled = false;
@@ -377,7 +385,7 @@ async function showArtistForm(id) {
 
 async function deleteArtist(id) {
     if (!confirm(t('delete') + ' ' + t('artists') + '?')) return;
-    try { await api(API_BASE + '/artists/' + id, { method: 'DELETE' }); refreshCurrentPage(); showToast(t('artists') + ' ' + t('deleted'), 'success'); }
+    try { await api(API_BASE + '/artists/' + id, { method: 'DELETE' }); loadArtists(); showToast(t('artists') + ' ' + t('deleted'), 'success'); }
     catch (err) { showToast('Error: ' + err.message, 'error'); }
 }
 
@@ -480,7 +488,7 @@ async function showTrackForm(id) {
         if (audioFile) fd.append('audio', audioFile);
         try {
             await api(API_BASE + '/tracks' + (id ? '/' + id : ''), { method: id ? 'PUT' : 'POST', body: fd });
-            closeModal(); refreshCurrentPage();
+            closeModal(); loadTracks();
             showToast(t('tracks') + ' ' + t('saved'), 'success');
         } catch (err) { showToast('Error: ' + err.message, 'error'); } finally {
             saveBtn.disabled = false;
@@ -491,7 +499,7 @@ async function showTrackForm(id) {
 
 async function deleteTrack(id) {
     if (!confirm(t('delete') + ' ' + t('tracks') + '?')) return;
-    try { await api(API_BASE + '/tracks/' + id, { method: 'DELETE' }); refreshCurrentPage(); showToast(t('tracks') + ' ' + t('deleted'), 'success'); }
+    try { await api(API_BASE + '/tracks/' + id, { method: 'DELETE' }); loadTracks(); showToast(t('tracks') + ' ' + t('deleted'), 'success'); }
     catch (err) { showToast('Error: ' + err.message, 'error'); }
 }
 
@@ -641,11 +649,27 @@ async function showAdhkarForm(id) {
         '<option value="sleep"' + (adhkar.category === 'sleep' ? ' selected' : '') + '>' + t('sleep') + '</option>' +
         '</select></div>' +
         '<div class="form-group full-width"><label><i class="fas fa-link"></i> ' + t('reference') + '</label><input type="text" id="af_ref" value="' + esc(adhkar.reference || '') + '" placeholder="Quran or Hadith reference"></div>' +
-        '<div class="form-group full-width"><label><i class="fas fa-volume-up"></i> Audio Sound</label><input type="file" id="af_audio" accept="audio/*">' + audioPreview + '</div>' +
+        '<div class="form-group full-width"><label><i class="fas fa-volume-up"></i> Audio Sound</label><input type="file" id="af_audio" accept="audio/*"><audio id="af_preview" controls loop style="display:none;width:100%;height:36px;margin-top:8px"></audio>' + audioPreview + '</div>' +
         '</div>' +
         '<div class="modal-actions"><button type="submit" class="btn-primary" id="saveAdhkarBtn"><i class="fas fa-save"></i> ' + t('save') + '</button><button type="button" class="btn-secondary" onclick="closeModal()">' + t('cancel') + '</button></div></form>');
+    var audioInput = document.getElementById('af_audio');
+    var previewPlayer = document.getElementById('af_preview');
+    audioInput.addEventListener('change', function() {
+        var file = this.files[0];
+        if (file) {
+            var url = URL.createObjectURL(file);
+            previewPlayer.src = url;
+            previewPlayer.style.display = 'block';
+            previewPlayer.play();
+        } else {
+            previewPlayer.pause();
+            previewPlayer.src = '';
+            previewPlayer.style.display = 'none';
+        }
+    });
     document.getElementById('adhkarForm').addEventListener('submit', async function(e) {
         e.preventDefault();
+        if (previewPlayer.src) { previewPlayer.pause(); previewPlayer.src = ''; }
         const saveBtn = document.getElementById('saveAdhkarBtn');
         saveBtn.disabled = true;
         saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + t('saving');
@@ -894,7 +918,7 @@ async function loadCategories() {
                 var c = cats[i];
                 html += '<tr data-search="' + esc((c.name + ' ' + (c.name_en || '') + ' ' + (c.name_ar || '') + ' ' + c.slug).toLowerCase()) + '">' +
                     '<td>' + esc(c.name) + '</td><td style="font-size:1.1rem">' + (c.name_ar || '-') + '</td><td>' + (c.name_en || '-') + '</td>' +
-                    '<td><code class="slug-badge">' + esc(c.slug) + '</code></td><td>' + (c.total_tracks || 0) + '</td>' +
+                    '<td><code class="slug-badge">' + esc(c.slug) + '</code></td><td>' + (c.tracks_count || 0) + '</td>' +
                     '<td><div class="action-group"><button class="action-btn edit" onclick="showCategoryForm(' + c.id + ')" title="' + t('edit') + '"><i class="fas fa-edit"></i></button>' +
                     '<button class="action-btn delete" onclick="deleteCategory(' + c.id + ')" title="' + t('delete') + '"><i class="fas fa-trash"></i></button></div></td></tr>';
             }

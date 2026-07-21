@@ -84,6 +84,14 @@ router.post('/', upload.fields([{ name: 'video', maxCount: 1 }, { name: 'thumbna
     const videoUrl = req.files.video ? `/uploads/videos/${req.files.video[0].filename}` : req.body.video_url;
     const thumbnailUrl = req.files.thumbnail ? `/uploads/images/${req.files.thumbnail[0].filename}` : req.body.thumbnail_url;
 
+    const [existing] = await pool.query(
+      'SELECT id FROM videos WHERE title = ? AND is_active = 1 LIMIT 1',
+      [title]
+    );
+    if (existing.length > 0) {
+      return res.status(409).json({ message: 'Video already exists', existingId: existing[0].id });
+    }
+
     const [result] = await pool.query(
       'INSERT INTO videos (title, title_ar, title_en, author, author_ar, author_en, description, video_url, thumbnail_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [title, title_ar || null, title_en || null, author || null, author_ar || null, author_en || null, description || null, videoUrl, thumbnailUrl || null]

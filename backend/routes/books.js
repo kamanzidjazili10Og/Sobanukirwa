@@ -65,6 +65,14 @@ router.post('/', upload.fields([{ name: 'file', maxCount: 1 }, { name: 'image', 
       : (req.body.image_url || null);
     if (!fileUrl) return res.status(400).json({ message: 'A file upload or URL is required' });
 
+    const [existing] = await pool.query(
+      'SELECT id FROM books WHERE title = ? AND is_active = 1 LIMIT 1',
+      [title]
+    );
+    if (existing.length > 0) {
+      return res.status(409).json({ message: 'Book already exists', existingId: existing[0].id });
+    }
+
     const [result] = await pool.query(
       'INSERT INTO books (title, title_ar, title_en, author, author_ar, author_en, description, file_url, image_url, category, file_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [title, title_ar || null, title_en || null, author || null, author_ar || null, author_en || null, description || null, fileUrl, imageUrl, category || null, file_type || 'pdf']

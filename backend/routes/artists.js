@@ -29,6 +29,14 @@ router.post('/', upload.single('image'), async (req, res) => {
     const { name, name_ar, name_en, bio } = req.body;
     const imageUrl = req.file ? `/uploads/images/${req.file.filename}` : null;
 
+    const [existing] = await pool.query(
+      'SELECT id FROM artists WHERE name = ? AND is_active = 1 LIMIT 1',
+      [name]
+    );
+    if (existing.length > 0) {
+      return res.status(409).json({ message: 'Artist already exists', existingId: existing[0].id });
+    }
+
     const [result] = await pool.query(
       'INSERT INTO artists (name, name_ar, name_en, bio, image_url) VALUES (?, ?, ?, ?, ?)',
       [name, name_ar, name_en, bio, imageUrl]

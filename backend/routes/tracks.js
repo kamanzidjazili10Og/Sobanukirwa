@@ -127,6 +127,14 @@ router.post('/', upload.single('audio'), async (req, res) => {
     const { artist_id, category_id, title, title_ar, title_en, description, duration_str } = req.body;
     const audioUrl = req.file ? `/uploads/audio/${req.file.filename}` : req.body.audio_url;
 
+    const [existing] = await pool.query(
+      'SELECT id FROM tracks WHERE title = ? AND is_active = 1 LIMIT 1',
+      [title]
+    );
+    if (existing.length > 0) {
+      return res.status(409).json({ message: 'Track already exists', existingId: existing[0].id });
+    }
+
     let resolvedArtistId = artist_id || null;
     if (!resolvedArtistId) {
       const [firstArtist] = await pool.query('SELECT id FROM artists ORDER BY id ASC LIMIT 1');
