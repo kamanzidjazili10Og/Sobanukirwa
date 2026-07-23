@@ -88,9 +88,46 @@ export function AppProvider({ children }) {
     if (stopAdhanRef.current) stopAdhanRef.current();
   }, []);
 
+  function isScheduledSilentActive() {
+    if (!scheduledSilent) return false;
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const [sh, sm] = silentFrom.split(':').map(Number);
+    const [eh, em] = silentTo.split(':').map(Number);
+    const startMin = sh * 60 + sm;
+    const endMin = eh * 60 + em;
+    if (startMin <= endMin) return currentMinutes >= startMin && currentMinutes < endMin;
+    return currentMinutes >= startMin || currentMinutes < endMin;
+  }
+
+  const isEffectivelySilent = silentMode || isScheduledSilentActive();
+
+  const wasEffectivelySilentRef = useRef(isEffectivelySilent);
+
+  useEffect(() => {
+    if (isEffectivelySilent && !wasEffectivelySilentRef.current) {
+      stopAllMedia();
+    }
+    wasEffectivelySilentRef.current = isEffectivelySilent;
+  }, [isEffectivelySilent]);
+
   useEffect(() => {
     if (silentMode) stopAllMedia();
   }, [silentMode]);
+
+  useEffect(() => {
+    if (!scheduledSilent) return;
+    const checkInterval = setInterval(() => {
+      const inSilent = isScheduledSilentActive();
+      if (inSilent && !wasEffectivelySilentRef.current) {
+        stopAllMedia();
+        wasEffectivelySilentRef.current = true;
+      } else if (!inSilent && wasEffectivelySilentRef.current && !silentMode) {
+        wasEffectivelySilentRef.current = false;
+      }
+    }, 15000);
+    return () => clearInterval(checkInterval);
+  }, [scheduledSilent, silentFrom, silentTo, silentMode]);
 
   useEffect(() => {
     loadPersistedState();
@@ -312,20 +349,6 @@ export function AppProvider({ children }) {
     if (language === 'ar') return ar;
     return rw;
   };
-
-  function isScheduledSilentActive() {
-    if (!scheduledSilent) return false;
-    const now = new Date();
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    const [sh, sm] = silentFrom.split(':').map(Number);
-    const [eh, em] = silentTo.split(':').map(Number);
-    const startMin = sh * 60 + sm;
-    const endMin = eh * 60 + em;
-    if (startMin <= endMin) return currentMinutes >= startMin && currentMinutes < endMin;
-    return currentMinutes >= startMin || currentMinutes < endMin;
-  }
-
-  const isEffectivelySilent = silentMode || isScheduledSilentActive();
 
   return (
     <AppContext.Provider value={{

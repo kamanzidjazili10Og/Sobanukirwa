@@ -14,12 +14,13 @@ const ADHAN_FILES = {
   Mansour: `${ADHAN_BASE}/Sounds/Mansour_Adhan.mpeg`,
 };
 
-export default function AdhanNotification({ visible, prayerName, reciter, volume, onDismiss }) {
+export default function AdhanNotification({ visible, prayerName, reciter, volume, onDismiss, isSilent }) {
   const slideAnim = useRef(new Animated.Value(-200)).current;
   const soundRef = useRef(null);
 
   useEffect(() => {
     if (visible) {
+      if (isSilent) { stopAdhan(); return; }
       Animated.spring(slideAnim, { toValue: 0, useNativeDriver: true, tension: 50, friction: 8 }).start();
       playAdhan();
     } else {
@@ -27,7 +28,7 @@ export default function AdhanNotification({ visible, prayerName, reciter, volume
       stopAdhan();
     }
     return () => stopAdhan();
-  }, [visible]);
+  }, [visible, isSilent]);
 
   async function playAdhan() {
     if (!Audio) return;

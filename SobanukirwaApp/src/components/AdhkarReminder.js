@@ -63,7 +63,7 @@ export function AdhkarReminderModal({ visible, adhkar, language, onSnooze, onDis
     onDismiss && onDismiss();
   }
 
-  if (!visible || !adhkar) return null;
+  if (!visible || !adhkar || silentMode) return null;
 
   return (
     <Modal transparent animationType="fade" visible={visible}>

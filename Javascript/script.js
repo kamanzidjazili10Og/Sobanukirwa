@@ -609,12 +609,26 @@ class SilentModeManager {
         document.getElementById('scheduledSilentToggle')?.classList.toggle('active', this.isScheduled);
         document.getElementById('silentStart').value = this.scheduledStart;
         document.getElementById('silentEnd').value = this.scheduledEnd;
-        if (this.isActive) {
-            var ra = document.getElementById('reminderAudio');
-            if (ra && !ra.paused) { ra.pause(); }
-        }
+        if (this.isActive) this.stopAllAudio();
+        if (this.isScheduled && this.checkScheduledNow()) this.stopAllAudio();
         if (this.isScheduled) this.startScheduledCheck();
         if (this.isSmart) this.checkSmartSilent();
+    }
+
+    stopAllAudio() {
+        if (typeof audio !== 'undefined' && audio && !audio.paused) audio.pause();
+        var quran = document.getElementById('quranAudio');
+        if (quran && !quran.paused) { quran.pause(); quran.currentTime = 0; }
+        var adhan = document.getElementById('adhanAudio');
+        if (adhan && !adhan.paused) { adhan.pause(); adhan.currentTime = 0; }
+        var vid = document.getElementById('videoElement');
+        if (vid && !vid.paused) vid.pause();
+        var ra = document.getElementById('reminderAudio');
+        if (ra && !ra.paused) ra.pause();
+        var notif = document.getElementById('adhanNotification');
+        if (notif) notif.classList.remove('show');
+        var toast = document.getElementById('adhanToast');
+        if (toast) toast.classList.remove('show');
     }
 
     toggle() {
@@ -624,8 +638,7 @@ class SilentModeManager {
         document.getElementById('silentIndicator')?.classList.toggle('active', this.isActive);
         localStorage.setItem('silentMode', this.isActive ? 'true' : 'false');
         if (this.isActive) {
-            var ra = document.getElementById('reminderAudio');
-            if (ra && !ra.paused) { ra.pause(); }
+            this.stopAllAudio();
             if (typeof showToast === 'function') showToast(document.body.getAttribute('data-language') === 'rw' ? 'Ibyumweru byo guceceka byakozwe' : 'Silent mode activated', 'info');
         }
     }
@@ -646,9 +659,18 @@ class SilentModeManager {
             if (card.classList.contains('adhan-playing')) isPrayerTime = true;
         });
         if (isPrayerTime && !this.isActive) {
-            this.toggle();
-        } else if (!isPrayerTime && this.isActive) {
-            this.toggle();
+            this.isActive = true;
+            document.body.classList.add('silent-mode');
+            document.getElementById('silentToggle')?.classList.add('active');
+            document.getElementById('silentIndicator')?.classList.add('active');
+            localStorage.setItem('silentMode', 'true');
+            this.stopAllAudio();
+        } else if (!isPrayerTime && this.isActive && this.isSmart) {
+            this.isActive = false;
+            document.body.classList.remove('silent-mode');
+            document.getElementById('silentToggle')?.classList.remove('active');
+            document.getElementById('silentIndicator')?.classList.remove('active');
+            localStorage.setItem('silentMode', 'false');
         }
     }
 
@@ -668,6 +690,7 @@ class SilentModeManager {
 
     checkScheduled() {
         if (!this.isScheduled) return;
+        const wasActive = this.isActive;
         const now = new Date();
         const currentMinutes = now.getHours() * 60 + now.getMinutes();
         const startParts = this.scheduledStart.split(':').map(Number);
@@ -680,8 +703,33 @@ class SilentModeManager {
         } else {
             shouldBeActive = currentMinutes >= startMinutes || currentMinutes < endMinutes;
         }
-        if (shouldBeActive && !this.isActive) this.toggle();
-        else if (!shouldBeActive && this.isActive) this.toggle();
+        if (shouldBeActive && !wasActive) {
+            this.isActive = true;
+            document.body.classList.add('silent-mode');
+            document.getElementById('silentToggle')?.classList.add('active');
+            document.getElementById('silentIndicator')?.classList.add('active');
+            localStorage.setItem('silentMode', 'true');
+            this.stopAllAudio();
+            if (typeof showToast === 'function') showToast(document.body.getAttribute('data-language') === 'rw' ? 'Ibyumweru byo guceceka byatangiye' : 'Scheduled silent mode activated', 'info');
+        } else if (!shouldBeActive && wasActive) {
+            this.isActive = false;
+            document.body.classList.remove('silent-mode');
+            document.getElementById('silentToggle')?.classList.remove('active');
+            document.getElementById('silentIndicator')?.classList.remove('active');
+            localStorage.setItem('silentMode', 'false');
+            if (typeof showToast === 'function') showToast(document.body.getAttribute('data-language') === 'rw' ? 'Ibyumweru byo guceceka birarangiye' : 'Scheduled silent mode ended', 'info');
+        }
+    }
+
+    checkScheduledNow() {
+        const now = new Date();
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+        const startParts = this.scheduledStart.split(':').map(Number);
+        const endParts = this.scheduledEnd.split(':').map(Number);
+        const startMinutes = startParts[0] * 60 + startParts[1];
+        const endMinutes = endParts[0] * 60 + endParts[1];
+        if (startMinutes <= endMinutes) return currentMinutes >= startMinutes && currentMinutes < endMinutes;
+        return currentMinutes >= startMinutes || currentMinutes < endMinutes;
     }
 
     updateTimes(start, end) {
@@ -1312,6 +1360,7 @@ class AdhanManager {
 
     play(prayerName) {
         if (!this.audio) return;
+        if (silentMode.isActive || silentMode.checkScheduledNow()) return;
         const adhanFiles = {
             adhan1: 'Sounds/Adhan1.mpeg',
             adhan2: 'Sounds/Adhan2.mpeg',

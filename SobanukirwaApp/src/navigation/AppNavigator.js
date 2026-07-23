@@ -162,6 +162,7 @@ export default function AppNavigator() {
         prayerName={adhanPrayer}
         reciter={adhanReciter}
         volume={adhanVolume}
+        isSilent={isEffectivelySilent}
         onDismiss={() => { setAdhanVisible(false); stopAdhan(); }}
       />
       <AdhkarReminderModal
