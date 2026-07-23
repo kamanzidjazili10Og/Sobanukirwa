@@ -376,16 +376,17 @@ function updatePlayPauseButton() { audioManager.updatePlayPauseButton(); }
 function renderTracks() {
     const container = document.getElementById('tracksContainer');
     if (!container) return;
+    const tracksToRender = tracksData.length > 0 ? tracksData : (typeof fallbackTracks !== 'undefined' ? fallbackTracks : []);
     filteredTracks = currentCategory === 'all'
-        ? [...tracksData]
-        : tracksData.filter(t => t.category === currentCategory);
+        ? [...tracksToRender]
+        : tracksToRender.filter(t => t.category === currentCategory);
     if (filteredTracks.length === 0) {
         container.innerHTML = '<div class="empty-state"><i class="fas fa-music"></i><p data-i18n="noTracks">Nta nyigisho zibonetse</p></div>';
         return;
     }
     container.innerHTML = filteredTracks.map((track, i) => {
-        const idx = tracksData.indexOf(track);
-        const isCurrentlyPlaying = isPlaying && currentTracks === tracksData && currentTrackIndex === idx;
+        const idx = tracksToRender.indexOf(track);
+        const isCurrentlyPlaying = isPlaying && currentTracks === tracksToRender && currentTrackIndex === idx;
         return '<div class="track-card' + (isCurrentlyPlaying ? ' playing' : '') + '" data-index="' + idx + '">' +
             '<div class="track-info">' +
             '<button class="track-play-btn' + (isCurrentlyPlaying ? ' playing' : '') + '" onclick="playTrack(null, ' + track.id + ')" title="Play">' +
@@ -970,10 +971,8 @@ function switchSection(sectionId) {
         setTimeout(() => initQibla(), 100);
     }
     if (sectionId === 'audio') {
-        if (tracksData.length > 0) {
-            renderTracks();
-            renderCategoryTabs();
-        }
+        if (typeof renderTracks === 'function') renderTracks();
+        if (typeof renderCategoryTabs === 'function') renderCategoryTabs();
     }
     if (sectionId === 'videos') {
         if (typeof renderVideos === 'function') renderVideos();
@@ -982,10 +981,10 @@ function switchSection(sectionId) {
         if (typeof renderBooks === 'function') renderBooks();
     }
     if (sectionId === 'quran') {
-        if (surahs.length > 0 && typeof renderQuran === 'function') renderQuran();
+        if (typeof renderQuran === 'function') renderQuran();
     }
     if (sectionId === 'adhkar') {
-        if (adhkarList.length > 0 && typeof renderAdhkarCards === 'function') renderAdhkarCards();
+        if (typeof renderAdhkarCards === 'function') renderAdhkarCards();
     }
 }
 
@@ -1185,11 +1184,12 @@ function calibrateCompass() {
 function renderQuran() {
     const container = document.getElementById('quranContainer');
     if (!container) return;
-    if (surahs.length === 0) {
+    const surahsToRender = surahs.length > 0 ? surahs : (typeof fallbackSurahs !== 'undefined' ? fallbackSurahs : []);
+    if (surahsToRender.length === 0) {
         container.innerHTML = '<div class="empty-state"><i class="fas fa-quran"></i><p data-i18n="noSurahs">Nta surahi zibonetse</p></div>';
         return;
     }
-    container.innerHTML = surahs.map(s => {
+    container.innerHTML = surahsToRender.map(s => {
         const lang = document.body.getAttribute('data-language') || 'rw';
         const nameDisplay = lang === 'ar' ? s.nameArabic : s.name;
         const isMeccan = (s.type || '').toLowerCase() === 'makkah';
@@ -1528,8 +1528,13 @@ function updateAdhkarBadge() {
 function renderAdhkarCards() {
     updateAdhkarBadge();
     const grid = document.getElementById('adhkarGrid');
-    if (!grid || adhkarList.length === 0) return;
-    grid.innerHTML = adhkarList.map(function(item, idx) {
+    if (!grid) return;
+    const adhkarToRender = adhkarList.length > 0 ? adhkarList : (typeof fallbackAdhkar !== 'undefined' ? fallbackAdhkar : []);
+    if (adhkarToRender.length === 0) {
+        grid.innerHTML = '<div class="empty-state"><i class="fas fa-hands-praying"></i><p>Nta adhkar yabonetse</p></div>';
+        return;
+    }
+    grid.innerHTML = adhkarToRender.map(function(item, idx) {
         var current = localStorage.getItem('adhkar_' + idx);
         if (current === null) current = '0';
         return '<div class="adhkar-card">' +
