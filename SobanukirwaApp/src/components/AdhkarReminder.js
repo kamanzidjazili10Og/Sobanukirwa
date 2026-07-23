@@ -1,10 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, Animated, Platform } from 'react-native';
+import React, { useEffect, useCallback, useRef } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { getMediaUrl } from '../services/api';
-
-let Audio = null;
-try { Audio = require('expo-av').Audio; } catch (e) {}
 
 const DEFAULT_ADHKAR = [
   { id: 1, arabic: 'سُبْحَانَ اللَّهِ', transliteration: 'Subhanallah', translation_en: 'Glory be to Allah', translation_rw: 'Imana ni yose', count_target: 33 },
@@ -23,13 +19,14 @@ let adhkarIndex = 0;
 export function startAdhkarReminder(interval, adhkarList, onShow) {
   stopAdhkarReminder();
   if (!interval || interval <= 0) return;
+  const intervalMs = (interval || 10) * 60 * 1000;
   reminderTimer = setInterval(() => {
     if (adhkarList && adhkarList.length > 0) {
       const adhkar = adhkarList[adhkarIndex % adhkarList.length];
       adhkarIndex++;
       if (onShow) onShow(adhkar);
     }
-  }, interval * 60 * 1000);
+  }, intervalMs);
 }
 
 export function stopAdhkarReminder() {
@@ -37,55 +34,32 @@ export function stopAdhkarReminder() {
     clearInterval(reminderTimer);
     reminderTimer = null;
   }
+  adhkarIndex = 0;
 }
 
-export function snoozeAdhkarReminder(adhkar, onShow) {
-  setTimeout(() => {
-    if (onShow) onShow(adhkar);
-  }, 5 * 60 * 1000);
+export function snoozeAdhkarReminder(adhkar, onShow, delayMs) {
+  const delay = delayMs || 5 * 60 * 1000;
+  return setTimeout(() => {
+    if (onShow && typeof onShow === 'function') onShow(adhkar);
+  }, delay);
 }
 
-export function AdhkarReminderModal({ visible, adhkar, language, silentMode, onSnooze, onDismiss }) {
-  const [sound, setSound] = useState(null);
+export function AdhkarReminderModal({ visible, adhkar, language, onSnooze, onDismiss }) {
+  const snoozeTimerRef = useRef(null);
 
   useEffect(() => {
-    if (visible && !silentMode) {
-      playReminderAudio();
-    }
-    return () => stopAudio();
-  }, [visible]);
-
-  async function playReminderAudio() {
-    if (!Audio) return;
-    try {
-      if (sound) await sound.unloadAsync();
-      const uri = getMediaUrl(adhkar?.audio_url) || 'https://sobanukirwa-production.up.railway.app/Sounds/Subhanallah.m4a';
-      const { sound: s } = await Audio.Sound.createAsync(
-        { uri },
-        { shouldPlay: true, volume: 0.6 }
-      );
-      setSound(s);
-    } catch (e) {}
-  }
-
-  async function stopAudio() {
-    try {
-      if (sound) {
-        await sound.stopAsync();
-        await sound.unloadAsync();
-        setSound(null);
-      }
-    } catch (e) {}
-  }
+    return () => { if (snoozeTimerRef.current) clearTimeout(snoozeTimerRef.current); };
+  }, []);
 
   function handleSnooze() {
-    stopAudio();
-    snoozeAdhkarReminder(adhkar, null);
-    onSnooze && onSnooze();
+    if (snoozeTimerRef.current) clearTimeout(snoozeTimerRef.current);
+    snoozeTimerRef.current = snoozeAdhkarReminder(adhkar, (reminder) => {
+      if (onSnooze) onSnooze(reminder);
+    });
+    onDismiss && onDismiss();
   }
 
   function handleDismiss() {
-    stopAudio();
     onDismiss && onDismiss();
   }
 
@@ -103,7 +77,7 @@ export function AdhkarReminderModal({ visible, adhkar, language, silentMode, onS
           <Text style={styles.arabic}>{adhkar.arabic}</Text>
           <Text style={styles.translit}>{adhkar.transliteration}</Text>
           <Text style={styles.translation}>
-            {language === 'ar' ? (adhkar.translation_rw || adhkar.translation_en) :
+            {language === 'ar' ? (adhkar.translation_en || adhkar.translation_rw) :
              language === 'rw' ? (adhkar.translation_rw || adhkar.translation_en) :
              adhkar.translation_en}
           </Text>

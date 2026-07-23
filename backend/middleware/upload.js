@@ -23,17 +23,23 @@ const storage = multer.diskStorage({
 });
 
 function fileFilter(req, file, cb) {
-  const allowedAudio = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/m4a', 'audio/aac', 'audio/ogg'];
-  const allowedVideo = ['video/mp4', 'video/mpeg', 'video/webm', 'video/ogg'];
+  const allowedAudio = [
+    'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-wav',
+    'audio/mp4', 'audio/x-m4a', 'audio/m4a', 'audio/aac',
+    'audio/ogg', 'audio/flac', 'audio/x-flac',
+    'audio/webm', 'audio/x-matroska', 'audio/x-ms-wma',
+    'audio/amr', 'audio/x-amr'
+  ];
+  const allowedVideo = ['video/mp4', 'video/mpeg', 'video/webm', 'video/ogg', 'video/x-matroska'];
   const allowedDoc = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
   const allowedImage = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp'];
 
   const allAllowed = [...allowedAudio, ...allowedVideo, ...allowedDoc, ...allowedImage];
 
-  if (allAllowed.includes(file.mimetype)) {
+  if (allAllowed.includes(file.mimetype) || file.mimetype.startsWith('audio/')) {
     cb(null, true);
   } else {
-    cb(new Error('File type not allowed'), false);
+    cb(new Error('File type not allowed: ' + file.mimetype), false);
   }
 }
 

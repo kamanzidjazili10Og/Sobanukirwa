@@ -4,6 +4,7 @@ const surahs = [];
 let currentVerseIndex = -1;
 const adhkarList = [];
 const videosData = [];
+const booksData = [];
 const versesOfTheDay = [
     {
         en: { verse: "So remember Me; I will remember you. And be grateful to Me and do not deny Me.", surah: "Qur'an 2:152" },
@@ -70,6 +71,8 @@ const translations = {
         loading: "Ikurura...", playlist: "Urutonde rw'Inyigisho",
         todayPrayerTimes: "Ibihe by'Isengesho",
         allCategories: "Byose",
+        books: "Amatabo", searchBook: "Shakisha itabo...", noBooks: "Nta bitabo byabonetse", noVideos: "Nta amashusho yabonetse",
+        noTracks: "Nta nyigisho zibonetse", noSurahs: "Nta surahi zibonetse",
         adhkarReminders: "Adhkar zo Kwibutsa",
         scheduledSilent: "Guceceka bitewe n'ibihe"
     },
@@ -109,6 +112,8 @@ const translations = {
         loading: "Loading...", playlist: "Playlist",
         todayPrayerTimes: "Today's Prayer Times",
         allCategories: "All",
+        books: "Books", searchBook: "Search books...", noBooks: "No books found", noVideos: "No videos found",
+        noTracks: "No tracks found", noSurahs: "No surahs found",
         adhkarReminders: "Adhkar Reminders",
         scheduledSilent: "Scheduled Silent"
     },
@@ -148,6 +153,8 @@ const translations = {
         loading: "جارٍ التحميل...", playlist: "قائمة التشغيل",
         todayPrayerTimes: "أوقات الصلاة اليوم",
         allCategories: "الكل",
+        books: "الكتب", searchBook: "ابحث عن كتاب...", noBooks: "لم يتم العثور على كتب", noVideos: "لم يتم العثور على فيديوهات",
+        noTracks: "لم يتم العثور على مقاطع", noSurahs: "لم يتم العثور على سور",
         adhkarReminders: "تذكير الأذكار",
         scheduledSilent: "الصامت المجدول"
     }
@@ -373,7 +380,7 @@ function renderTracks() {
         ? [...tracksData]
         : tracksData.filter(t => t.category === currentCategory);
     if (filteredTracks.length === 0) {
-        container.innerHTML = '<div class="empty-state"><i class="fas fa-music"></i><p>Nta nyigisho zibonetse</p></div>';
+        container.innerHTML = '<div class="empty-state"><i class="fas fa-music"></i><p data-i18n="noTracks">Nta nyigisho zibonetse</p></div>';
         return;
     }
     container.innerHTML = filteredTracks.map((track, i) => {
@@ -427,7 +434,7 @@ function filterTracks() {
         ? tracksData.filter(t => getTrackTitle(t).toLowerCase().includes(query))
         : tracksData.filter(t => t.category === currentCategory && getTrackTitle(t).toLowerCase().includes(query));
     if (visible.length === 0) {
-        container.innerHTML = '<div class="empty-state"><i class="fas fa-search"></i><p>Nta nyigisho zibonetse</p></div>';
+        container.innerHTML = '<div class="empty-state"><i class="fas fa-search"></i><p data-i18n="noTracks">Nta nyigisho zibonetse</p></div>';
         return;
     }
     container.innerHTML = visible.map((track, i) => {
@@ -460,9 +467,12 @@ function getTrackTitle(track) {
 
 function getArtistName(track) { // track can be an artist object or a track object
     const lang = document.body.getAttribute('data-language') || 'rw';
-    if (lang === 'ar') return track.artistAr || track.artist;
-    if (lang === 'en') return track.artistEn || track.artist;
-    return track.artist;
+    const name = track.artist || track.name;
+    const nameEn = track.artistEn || track.nameEn;
+    const nameAr = track.artistAr || track.nameAr;
+    if (lang === 'ar') return nameAr || name;
+    if (lang === 'en') return nameEn || name;
+    return name;
 }
 
 function getCategoryName(track) {
@@ -502,6 +512,43 @@ function renderVideos() {
             </div>
         `;
 	}).join('');
+}
+
+// ===== BOOKS =====
+function renderBooks() {
+    const container = document.getElementById('booksContainer');
+    if (!container) return;
+    const booksToRender = booksData.length > 0 ? booksData : (typeof fallbackBooks !== 'undefined' ? fallbackBooks : []);
+    if (booksToRender.length === 0) {
+        container.innerHTML = '<div class="empty-state"><i class="fas fa-book"></i><p data-i18n="noBooks">No books found</p></div>';
+        return;
+    }
+    const lang = document.body.getAttribute('data-language') || 'rw';
+    container.innerHTML = booksToRender.map(function(book) {
+        const title = lang === 'ar' ? (book.titleAr || book.title) : lang === 'en' ? (book.titleEn || book.title) : book.title;
+        const author = lang === 'ar' ? (book.authorAr || book.author) : lang === 'en' ? (book.authorEn || book.author) : book.author;
+        const cover = book.image || 'Images/logo2.png';
+        const actionBtn = book.pdfUrl ? '<a href="' + book.pdfUrl + '" target="_blank" class="btn-download" onclick="event.stopPropagation()"><i class="fas fa-download"></i></a>' : '';
+        return '<div class="book-card">' +
+            '<div class="book-cover"><img src="' + cover + '" alt="' + title + '" loading="lazy" onerror="this.src=\'Images/logo2.png\'">' +
+            (book.type === 'pdf' ? '<div class="book-badge"><i class="fas fa-file-pdf"></i> PDF</div>' : '') +
+            '</div>' +
+            '<div class="book-info">' +
+            '<h4 class="book-title">' + title + '</h4>' +
+            (author ? '<p class="book-author"><i class="fas fa-user"></i> ' + author + '</p>' : '') +
+            (book.description ? '<p class="book-desc">' + book.description.substring(0, 100) + (book.description.length > 100 ? '...' : '') + '</p>' : '') +
+            '<div class="book-actions">' + actionBtn + '</div>' +
+            '</div></div>';
+    }).join('');
+}
+
+function filterBooks() {
+    const query = (document.getElementById('booksSearch')?.value || '').toLowerCase();
+    const cards = document.querySelectorAll('#booksContainer .book-card');
+    cards.forEach(function(card) {
+        const text = card.textContent.toLowerCase();
+        card.style.display = text.includes(query) ? '' : 'none';
+    });
 }
 
 function playVideo(id) {
@@ -931,101 +978,198 @@ function switchSection(sectionId) {
     if (sectionId === 'videos') {
         if (typeof renderVideos === 'function') renderVideos();
     }
-}
-
-// ===== PRAYER SUMMARY WIDGET (Home) =====
-function updatePrayerSummary() {
-    const list = document.getElementById('prayerSummaryList');
-    const nextEl = document.getElementById('prayerSummaryNext');
-    const dateEl = document.getElementById('prayerSummaryDate');
-    if (!list) return;
-    if (dateEl) dateEl.textContent = new Date().toLocaleDateString();
-
-    if (!prayerManager.prayerTimes) {
-        list.innerHTML = '<div class="prayer-summary-loading">Loading prayer times...</div>';
-        return;
+    if (sectionId === 'books') {
+        if (typeof renderBooks === 'function') renderBooks();
     }
-
-    const lang = document.body.getAttribute('data-language') || 'rw';
-    const names = lang === 'ar' ? prayerManager.prayerNamesAr : lang === 'rw' ? prayerManager.prayerNamesRw : prayerManager.prayerNames;
-    const nextPrayer = prayerManager.getNextPrayer();
-    const now = new Date();
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
-
-    list.innerHTML = prayerManager.prayerNames.map((name, i) => {
-        const time = prayerManager.prayerTimes[name];
-        if (!time || !/^\d{1,2}:\d{2}$/.test(time)) return '';
-        const parts = time.split(':');
-        const prayerMinutes = parseInt(parts[0]) * 60 + parseInt(parts[1]);
-        const isNext = nextPrayer && nextPrayer.name === name;
-        return '<div class="prayer-summary-row' + (isNext ? ' is-next' : '') + '">' +
-            '<span class="prayer-summary-name">' + names[i] + '</span>' +
-            '<span class="prayer-summary-value">' + time + '</span>' +
-            (isNext ? '<span class="prayer-summary-badge">Next</span>' : '') +
-            '</div>';
-    }).join('');
-
-    if (nextEl && nextPrayer) {
-        nextEl.innerHTML = '<i class="fas fa-bell"></i> <span>' + (translations[lang]?.nextPrayer || 'Next prayer:') + '</span> <strong>' + nextPrayer.name + ' - ' + nextPrayer.time + '</strong>';
+    if (sectionId === 'quran') {
+        if (surahs.length > 0 && typeof renderQuran === 'function') renderQuran();
+    }
+    if (sectionId === 'adhkar') {
+        if (adhkarList.length > 0 && typeof renderAdhkarCards === 'function') renderAdhkarCards();
     }
 }
 
 // ===== QIBLA =====
 let compassActive = false;
+let qiblaState = { qiblaAngle: 0, heading: 0, wasAligned: false, lastPlayTime: 0 };
 
 function initQibla() {
+    buildCompassTicks();
     calculateAndDisplayQibla();
     startCompass();
 }
 
+function buildCompassTicks() {
+    const face = document.getElementById('qiblaCompassFace');
+    if (!face || face.querySelector('.qibla-tick')) return;
+    const CARDINALS = { 0: 'N', 90: 'E', 180: 'S', 270: 'W' };
+    const INTER = { 45: 'NE', 135: 'SE', 225: 'SW', 315: 'NW' };
+    for (let i = 0; i < 72; i++) {
+        const deg = (i / 72) * 360;
+        const rounded = Math.round(deg);
+        const isCard = CARDINALS[rounded] !== undefined;
+        const isInter = INTER[rounded] !== undefined;
+        const isMajor = rounded % 30 === 0;
+        const tickH = isCard ? 16 : isMajor ? 12 : 6;
+        const tick = document.createElement('div');
+        tick.className = 'qibla-tick' + (isCard ? ' cardinal' : isMajor ? ' major' : '');
+        tick.style.transform = 'rotate(' + deg + 'deg)';
+        const line = document.createElement('div');
+        line.className = 'qibla-tick-line';
+        line.style.height = tickH + 'px';
+        tick.appendChild(line);
+        face.appendChild(tick);
+    }
+    var labels = [
+        { deg: 0, label: 'N', cls: 'cardinal-label dir-n' },
+        { deg: 45, label: 'NE', cls: 'intercardinal-label' },
+        { deg: 90, label: 'E', cls: 'cardinal-label' },
+        { deg: 135, label: 'SE', cls: 'intercardinal-label' },
+        { deg: 180, label: 'S', cls: 'cardinal-label' },
+        { deg: 225, label: 'SW', cls: 'intercardinal-label' },
+        { deg: 270, label: 'W', cls: 'cardinal-label' },
+        { deg: 315, label: 'NW', cls: 'intercardinal-label' }
+    ];
+    var radius = 95;
+    labels.forEach(function(d) {
+        var rad = (d.deg - 90) * Math.PI / 180;
+        var el = document.createElement('div');
+        el.className = 'qibla-dir-label ' + d.cls;
+        el.textContent = d.label;
+        var x = 130 + Math.cos(rad) * radius;
+        var y = 130 + Math.sin(rad) * radius;
+        el.style.left = (x - 15) + 'px';
+        el.style.top = (y - 10) + 'px';
+        el.style.width = '30px';
+        el.style.textAlign = 'center';
+        face.appendChild(el);
+    });
+    var ring = document.createElement('div');
+    ring.className = 'qibla-compass-inner-ring';
+    face.appendChild(ring);
+    var center = document.createElement('div');
+    center.className = 'qibla-compass-center';
+    center.innerHTML = '<div class="qibla-compass-center-dot"></div>';
+    face.appendChild(center);
+}
+
 function calculateAndDisplayQibla() {
-    const result = calculateQibla(prayerManager.location.lat, prayerManager.location.lng);
-    const degreeEl = document.getElementById('qiblaDegree');
-    const dirEl = document.getElementById('qiblaDirection');
-    const distEl = document.getElementById('distanceInfo');
-    if (degreeEl) degreeEl.textContent = result.degrees.toFixed(1) + '° ' + result.direction;
-    if (dirEl) dirEl.textContent = result.direction + ' (' + result.degrees.toFixed(1) + '°)';
-    if (distEl) distEl.textContent = 'Distance: ' + result.distance.toFixed(0) + ' km';
+    var result = calculateQibla(prayerManager.location.lat, prayerManager.location.lng);
+    qiblaState.qiblaAngle = result.degrees;
+    var bearingEl = document.getElementById('qiblaBearingValue');
+    var bearingCard = document.getElementById('qiblaBearingCard');
+    var distEl = document.getElementById('distanceInfo');
+    if (bearingEl) bearingEl.textContent = result.degrees.toFixed(1) + '° ' + result.direction;
+    if (bearingCard) bearingCard.textContent = result.degrees.toFixed(0) + '°';
+    if (distEl) distEl.textContent = Math.round(result.distance).toLocaleString() + ' km';
+    positionKaabaMarker(result.degrees);
+}
+
+function positionKaabaMarker(angle) {
+    var marker = document.getElementById('qiblaKaabaMarker');
+    if (!marker) return;
+    var radius = 110;
+    var rad = (angle - 90) * Math.PI / 180;
+    var x = 130 + Math.cos(rad) * radius;
+    var y = 130 + Math.sin(rad) * radius;
+    marker.style.left = x + 'px';
+    marker.style.top = y + 'px';
 }
 
 function calculateQibla(lat, lng) {
-    const kaaba = { lat: 21.4225, lng: 39.8262 };
-    const lat1 = lat * Math.PI / 180, lng1 = lng * Math.PI / 180;
-    const lat2 = kaaba.lat * Math.PI / 180, lng2 = kaaba.lng * Math.PI / 180;
-    const dLng = lng2 - lng1;
-    const y = Math.sin(dLng);
-    const x = Math.cos(lat1) * Math.tan(lat2) - Math.sin(lat1) * Math.cos(dLng);
-    let angle = Math.atan2(y, x) * 180 / Math.PI;
+    var kaaba = { lat: 21.4225, lng: 39.8262 };
+    var lat1 = lat * Math.PI / 180, lng1 = lng * Math.PI / 180;
+    var lat2 = kaaba.lat * Math.PI / 180, lng2 = kaaba.lng * Math.PI / 180;
+    var dLng = lng2 - lng1;
+    var y = Math.sin(dLng);
+    var x = Math.cos(lat1) * Math.tan(lat2) - Math.sin(lat1) * Math.cos(dLng);
+    var angle = Math.atan2(y, x) * 180 / Math.PI;
     angle = (angle + 360) % 360;
-    const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
-    const dirIdx = Math.round(angle / 45) % 8;
-    const distance = calculateDistance(lat, lng, kaaba.lat, kaaba.lng);
-    return { degrees: angle, direction: directions[dirIdx], distance };
+    var directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+    var dirIdx = Math.round(angle / 45) % 8;
+    var distance = calculateDistance(lat, lng, kaaba.lat, kaaba.lng);
+    return { degrees: angle, direction: directions[dirIdx], distance: distance };
 }
 
 function calculateDistance(lat1, lng1, lat2, lng2) {
-    const R = 6371;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLng = (lng2 - lng1) * Math.PI / 180;
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    var R = 6371;
+    var dLat = (lat2 - lat1) * Math.PI / 180;
+    var dLng = (lng2 - lng1) * Math.PI / 180;
+    var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 function startCompass() {
     if (compassActive) return;
-    if (!window.DeviceOrientationEvent) return;
-    compassActive = true;
-    window.addEventListener('deviceorientation', handleOrientation);
+    if (window.DeviceOrientationEvent) {
+        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+            DeviceOrientationEvent.requestPermission().then(function(state) {
+                if (state === 'granted') {
+                    compassActive = true;
+                    window.addEventListener('deviceorientation', handleOrientation);
+                }
+            }).catch(function() {
+                compassActive = true;
+                window.addEventListener('deviceorientation', handleOrientation);
+            });
+        } else {
+            compassActive = true;
+            window.addEventListener('deviceorientation', handleOrientation);
+        }
+    }
 }
 
 function handleOrientation(event) {
-    const needle = document.getElementById('compassNeedle');
-    if (!needle) return;
-    let alpha = event.webkitCompassHeading || event.alpha || 0;
+    var face = document.getElementById('qiblaCompassFace');
+    if (!face) return;
+    var alpha = event.webkitCompassHeading || event.alpha;
     if (typeof alpha !== 'number') return;
-    const qiblaResult = calculateQibla(prayerManager.location.lat, prayerManager.location.lng);
-    const qiblaAngle = (qiblaResult.degrees - alpha + 360) % 360;
-    needle.style.transform = 'translate(-50%, -50%) rotate(' + qiblaAngle + 'deg)';
+    qiblaState.heading = alpha;
+    face.style.transform = 'rotate(' + (-alpha) + 'deg)';
+    var diffEl = document.getElementById('qiblaDiffValue');
+    var labelEl = document.getElementById('qiblaDiffLabel');
+    var headingEl = document.getElementById('headingDisplay');
+    var glowRing = document.getElementById('qiblaGlowRing');
+    var foundBadge = document.getElementById('qiblaFoundBadge');
+    var qAngle = qiblaState.qiblaAngle;
+    var diff = ((qAngle - alpha) % 360 + 360) % 360;
+    if (diff > 180) diff = diff - 360;
+    var absDiff = Math.abs(diff);
+    if (headingEl) headingEl.textContent = Math.round(alpha) + '°';
+    if (diffEl) {
+        if (absDiff < 1) {
+            diffEl.textContent = '✓';
+        } else {
+            diffEl.textContent = Math.round(absDiff) + '°';
+        }
+        diffEl.className = 'qibla-diff-value' + (absDiff < 5 ? ' aligned' : absDiff < 15 ? ' close' : '');
+    }
+    if (labelEl) {
+        if (absDiff < 5) {
+            labelEl.textContent = 'Qibla iri hano! Facing Qibla!';
+            labelEl.className = 'qibla-diff-label aligned';
+        } else if (diff > 0) {
+            labelEl.textContent = 'Turn right ' + Math.round(absDiff) + '°';
+            labelEl.className = 'qibla-diff-label';
+        } else {
+            labelEl.textContent = 'Turn left ' + Math.round(absDiff) + '°';
+            labelEl.className = 'qibla-diff-label';
+        }
+    }
+    var aligned = absDiff < 5;
+    if (aligned && !qiblaState.wasAligned) {
+        qiblaState.wasAligned = true;
+        if (glowRing) glowRing.classList.add('aligned');
+        if (foundBadge) foundBadge.classList.add('visible');
+        if (Date.now() - qiblaState.lastPlayTime > 8000) {
+            qiblaState.lastPlayTime = Date.now();
+            if (navigator.vibrate) navigator.vibrate(200);
+        }
+    } else if (!aligned && qiblaState.wasAligned) {
+        qiblaState.wasAligned = false;
+        if (glowRing) glowRing.classList.remove('aligned');
+        if (foundBadge) foundBadge.classList.remove('visible');
+    }
 }
 
 function calibrateCompass() {
@@ -1042,7 +1186,7 @@ function renderQuran() {
     const container = document.getElementById('quranContainer');
     if (!container) return;
     if (surahs.length === 0) {
-        container.innerHTML = '<div class="empty-state"><i class="fas fa-quran"></i><p>Nta surahi zibonetse</p></div>';
+        container.innerHTML = '<div class="empty-state"><i class="fas fa-quran"></i><p data-i18n="noSurahs">Nta surahi zibonetse</p></div>';
         return;
     }
     container.innerHTML = surahs.map(s => {
@@ -1553,7 +1697,7 @@ function renderFeaturedAudio() {
         return;
     }
 
-    container.innerHTML = featured.map(track => {
+    container.innerHTML = '<div class="featured-audio-grid">' + featured.map(track => {
         const title = getTrackTitle(track);
         const artistName = getArtistName(track);
         return `
@@ -1568,7 +1712,7 @@ function renderFeaturedAudio() {
                 </div>
             </div>
         `;
-    }).join('');
+    }).join('') + '</div>';
 }
 
 function displayVerseOfTheDay() {
@@ -1659,42 +1803,94 @@ function initApp() {
     }
 
     updateLoading(10, 'Loading data...');
-    setTimeout(() => {
-        updateLoading(30, 'Loading tracks...');
-        loadDataFromAPI().catch(function(e) { console.error('loadDataFromAPI failed:', e.message); });
-        setTimeout(() => {
-            updateLoading(60, 'Setting up prayer times...');
-            updatePrayerTimes();
-            setTimeout(() => {
-                updateLoading(80, 'Preparing app...');
-                detectDeviceLanguage();
-                silentMode.restoreUI();
-                renderPrayerCheckboxes();
-                adhanManager.startCheck();
-                adhkarReminder.start();
-                setTimeout(() => {
-                    updateLoading(100, 'Ready!');
-                    setTimeout(() => {
-                        if (loadingScreen) loadingScreen.classList.add('hidden');
-                        if (tracksData.length === 0 && typeof fallbackTracks !== 'undefined') {
-                            fallbackTracks.forEach(function(t) { tracksData.push({...t, categoryAr: (typeof categoryNames !== 'undefined' && categoryNames[t.category]) ? categoryNames[t.category].ar : t.category, categoryEn: (typeof categoryNames !== 'undefined' && categoryNames[t.category]) ? categoryNames[t.category].en : t.category }); });
-                            if (typeof renderTracks === 'function') renderTracks();
-                            if (typeof renderCategoryTabs === 'function') renderCategoryTabs();
-                        }
-                        if (videosData.length === 0 && typeof fallbackVideos !== 'undefined') {
-                            fallbackVideos.forEach(function(v) { videosData.push({...v}); });
-                            if (typeof renderVideos === 'function') renderVideos();
-                        }
-                        updatePrayerSummary();
-                        displayVerseOfTheDay();
-                        renderFeaturedAudio();
-                        updateAdhkarTimer();
-                setupAudioListeners();
-                    }, 500);
-                }, 300);
-            }, 300);
-        }, 300);
-    }, 500);
+    loadDataFromAPI().then(function() {
+        updateLoading(60, 'Setting up prayer times...');
+        updatePrayerTimes();
+        detectDeviceLanguage();
+        silentMode.restoreUI();
+        renderPrayerCheckboxes();
+        adhanManager.startCheck();
+        adhkarReminder.start();
+        updateLoading(100, 'Ready!');
+        setTimeout(function() {
+            if (loadingScreen) loadingScreen.classList.add('hidden');
+            if (tracksData.length === 0 && typeof fallbackTracks !== 'undefined') {
+                tracksData.length = 0;
+                fallbackTracks.forEach(function(t) { tracksData.push({...t, categoryAr: (typeof categoryNames !== 'undefined' && categoryNames[t.category]) ? categoryNames[t.category].ar : t.category, categoryEn: (typeof categoryNames !== 'undefined' && categoryNames[t.category]) ? categoryNames[t.category].en : t.category }); });
+                if (typeof renderTracks === 'function') renderTracks();
+                if (typeof renderCategoryTabs === 'function') renderCategoryTabs();
+            }
+            if (videosData.length === 0 && typeof fallbackVideos !== 'undefined') {
+                videosData.length = 0;
+                fallbackVideos.forEach(function(v) { videosData.push({...v}); });
+                if (typeof renderVideos === 'function') renderVideos();
+            }
+            if (booksData.length === 0 && typeof fallbackBooks !== 'undefined') {
+                booksData.length = 0;
+                fallbackBooks.forEach(function(b) { booksData.push({...b}); });
+                if (typeof renderBooks === 'function') renderBooks();
+            }
+            if (adhkarList.length === 0 && typeof fallbackAdhkar !== 'undefined') {
+                adhkarList.length = 0;
+                fallbackAdhkar.forEach(function(a) { adhkarList.push({...a}); });
+                if (typeof renderAdhkarCards === 'function') renderAdhkarCards();
+            }
+            if (surahs.length === 0 && typeof fallbackSurahs !== 'undefined') {
+                surahs.length = 0;
+                fallbackSurahs.forEach(function(s) { surahs.push({...s}); });
+                if (typeof renderQuran === 'function') renderQuran();
+            }
+            updatePrayerSummary();
+            displayVerseOfTheDay();
+            renderFeaturedAudio();
+            updateAdhkarTimer();
+            setupAudioListeners();
+        }, 500);
+    }).catch(function(e) {
+        console.error('loadDataFromAPI failed:', e.message);
+        updateLoading(60, 'Setting up prayer times...');
+        updatePrayerTimes();
+        detectDeviceLanguage();
+        silentMode.restoreUI();
+        renderPrayerCheckboxes();
+        adhanManager.startCheck();
+        adhkarReminder.start();
+        updateLoading(100, 'Ready!');
+        setTimeout(function() {
+            if (loadingScreen) loadingScreen.classList.add('hidden');
+            tracksData.length = 0;
+            if (typeof fallbackTracks !== 'undefined') {
+                fallbackTracks.forEach(function(t) { tracksData.push({...t, categoryAr: (typeof categoryNames !== 'undefined' && categoryNames[t.category]) ? categoryNames[t.category].ar : t.category, categoryEn: (typeof categoryNames !== 'undefined' && categoryNames[t.category]) ? categoryNames[t.category].en : t.category }); });
+            }
+            videosData.length = 0;
+            if (typeof fallbackVideos !== 'undefined') {
+                fallbackVideos.forEach(function(v) { videosData.push({...v}); });
+            }
+            booksData.length = 0;
+            if (typeof fallbackBooks !== 'undefined') {
+                fallbackBooks.forEach(function(b) { booksData.push({...b}); });
+            }
+            adhkarList.length = 0;
+            if (typeof fallbackAdhkar !== 'undefined') {
+                fallbackAdhkar.forEach(function(a) { adhkarList.push({...a}); });
+            }
+            surahs.length = 0;
+            if (typeof fallbackSurahs !== 'undefined') {
+                fallbackSurahs.forEach(function(s) { surahs.push({...s}); });
+            }
+            if (typeof renderTracks === 'function') renderTracks();
+            if (typeof renderCategoryTabs === 'function') renderCategoryTabs();
+            if (typeof renderQuran === 'function') renderQuran();
+            if (typeof renderVideos === 'function') renderVideos();
+            if (typeof renderBooks === 'function') renderBooks();
+            if (typeof renderAdhkarCards === 'function') renderAdhkarCards();
+            updatePrayerSummary();
+            displayVerseOfTheDay();
+            renderFeaturedAudio();
+            updateAdhkarTimer();
+            setupAudioListeners();
+        }, 500);
+    });
 }
 
 // ===== PRAYER CHECKBOXES SETTINGS =====

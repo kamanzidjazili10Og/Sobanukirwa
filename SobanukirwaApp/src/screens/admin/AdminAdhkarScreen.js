@@ -93,11 +93,27 @@ export default function AdminAdhkarScreen({ navigation }) {
     if (!formArabic.trim()) { toast.show('Arabic text is required', 'error'); return; }
     setSaving(true);
     try {
-      const payload = {
-        arabic_text: formArabic.trim(), transliteration: formTransliteration.trim(),
-        translation_rw: formTransRw.trim(), translation_en: formTransEn.trim(),
-        count_target: parseInt(formCount) || 1, category: formCategory, reference: formReference.trim(),
-      };
+      let payload;
+      if (formAudio) {
+        const fd = new FormData();
+        fd.append('arabic_text', formArabic.trim());
+        fd.append('transliteration', formTransliteration.trim());
+        fd.append('translation_rw', formTransRw.trim());
+        fd.append('translation_en', formTransEn.trim());
+        fd.append('count_target', String(parseInt(formCount) || 1));
+        fd.append('category', formCategory);
+        fd.append('reference', formReference.trim());
+        if (editing && editing.audio_url) fd.append('audio_url', editing.audio_url);
+        const prepared = await prepareFileForUpload(formAudio, 'adhkar-sound.m4a', 'audio/mp4');
+        if (prepared) fd.append('audio', prepared);
+        payload = fd;
+      } else {
+        payload = {
+          arabic_text: formArabic.trim(), transliteration: formTransliteration.trim(),
+          translation_rw: formTransRw.trim(), translation_en: formTransEn.trim(),
+          count_target: parseInt(formCount) || 1, category: formCategory, reference: formReference.trim(),
+        };
+      }
 
       if (isOffline) {
         await addPendingOp({

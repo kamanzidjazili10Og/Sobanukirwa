@@ -7,10 +7,24 @@ import { Platform } from 'react-native';
 
 const BASE = PRODUCTION_API;
 
+async function safeFetch(url, options = {}) {
+  const timeout = options.timeout || 15000;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
+  try {
+    const res = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(timer);
+    return res;
+  } catch (e) {
+    clearTimeout(timer);
+    throw e;
+  }
+}
+
 export async function fetchTracks(params = {}) {
   try {
     const query = new URLSearchParams(params).toString();
-    const res = await fetch(`${BASE}/tracks${query ? '?' + query : ''}`);
+    const res = await safeFetch(`${BASE}/tracks${query ? '?' + query : ''}`);
     const data = await res.json();
     if (Array.isArray(data)) {
       return data.map(t => ({
@@ -24,7 +38,7 @@ export async function fetchTracks(params = {}) {
 
 export async function fetchCategories() {
   try {
-    const res = await fetch(`${BASE}/categories`);
+    const res = await safeFetch(`${BASE}/categories`);
     return await res.json();
   } catch { return []; }
 }
@@ -148,7 +162,7 @@ const fallbackSurahs = [
 
 export async function fetchSurahs() {
   try {
-    const res = await fetch(`${BASE}/quran/surahs`);
+    const res = await safeFetch(`${BASE}/quran/surahs`);
     const data = await res.json();
     if (data && data.length > 0) return data;
     return fallbackSurahs;
@@ -172,7 +186,7 @@ const fallbackVideos = [
 
 export async function fetchVideos() {
   try {
-    const res = await fetch(`${BASE}/videos`);
+    const res = await safeFetch(`${BASE}/videos`);
     const data = await res.json();
     if (data && data.length > 0) {
       return data.map(v => ({
@@ -197,7 +211,7 @@ export async function fetchVideos() {
 
 export async function fetchBooks() {
   try {
-    const res = await fetch(`${BASE}/books`);
+    const res = await safeFetch(`${BASE}/books`);
     const data = await res.json();
     if (data && data.length > 0) {
       return data.map(b => ({
@@ -233,7 +247,7 @@ export async function fetchPrayerTimes(lat, lng) {
     const dd = String(date.getDate()).padStart(2, '0');
     const mm = String(date.getMonth() + 1).padStart(2, '0');
     const yyyy = date.getFullYear();
-    const res = await fetch(
+    const res = await safeFetch(
       `https://api.aladhan.com/v1/timings/${dd}-${mm}-${yyyy}?latitude=${lat}&longitude=${lng}&method=3`
     );
     const data = await res.json();
@@ -247,7 +261,7 @@ export async function fetchHijriDate() {
     const yyyy = date.getFullYear();
     const mm = String(date.getMonth() + 1).padStart(2, '0');
     const dd = String(date.getDate()).padStart(2, '0');
-    const res = await fetch(`https://api.aladhan.com/v1/gToH?date=${yyyy}-${mm}-${dd}`);
+    const res = await safeFetch(`https://api.aladhan.com/v1/gToH?date=${yyyy}-${mm}-${dd}`);
     const data = await res.json();
     if (data.code === 200) return data.data.hijri.date;
   } catch {}
@@ -256,7 +270,7 @@ export async function fetchHijriDate() {
 
 export async function loginAdmin(username, password) {
   try {
-    const res = await fetch(`${BASE}/auth/login`, {
+    const res = await safeFetch(`${BASE}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })
@@ -295,7 +309,7 @@ async function adminFetch(url, options = {}) {
     if (options.body && !isFormData) {
       headers['Content-Type'] = 'application/json';
     }
-    const timeout = isFormData ? 300000 : 30000;
+    const timeout = isFormData ? 120000 : 20000;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeout);
     const res = await fetch(url, { ...options, headers, signal: controller.signal });
@@ -309,7 +323,7 @@ async function adminFetch(url, options = {}) {
 }
 
 export async function fetchArtists() {
-  try { const res = await fetch(`${BASE}/artists`); return await res.json(); } catch { return []; }
+  try { const res = await safeFetch(`${BASE}/artists`); return await res.json(); } catch { return []; }
 }
 export async function createArtist(formData) {
   return adminFetch(`${BASE}/artists`, { method: 'POST', body: formData });
@@ -367,7 +381,7 @@ export async function deleteCategory(id) {
 export async function fetchAdhkar(category) {
   try {
     const url = category ? `${BASE}/adhkar?category=${category}` : `${BASE}/adhkar`;
-    const res = await fetch(url); return await res.json();
+    const res = await safeFetch(url); return await res.json();
   } catch { return []; }
 }
 export async function createAdhkar(data) {
@@ -391,10 +405,10 @@ export async function updateSurah(surahNumber, data) {
 }
 
 export async function fetchDashboard() {
-  try { const res = await fetch(`${BASE}/stats/dashboard`); return await res.json(); } catch { return null; }
+  try { const res = await safeFetch(`${BASE}/stats/dashboard`); return await res.json(); } catch { return null; }
 }
 export async function fetchHealth() {
-  try { const res = await fetch(`${BASE.replace('/api', '')}/api/health`); return await res.json(); } catch { return null; }
+  try { const res = await safeFetch(`${BASE.replace('/api', '')}/api/health`); return await res.json(); } catch { return null; }
 }
 
 export async function prepareFileForUpload(file, fallbackName, fallbackType) {

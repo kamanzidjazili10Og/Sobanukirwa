@@ -22,6 +22,7 @@ import AboutScreen from '../screens/AboutScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import BooksScreen from '../screens/BooksScreen';
 import AdhkarScreen from '../screens/AdhkarScreen';
+import ArtistsScreen from '../screens/ArtistsScreen';
 import AdminNavigator from './AdminNavigator';
 
 const Tab = createBottomTabNavigator();
@@ -176,6 +177,7 @@ export default function AppNavigator() {
         <Stack.Screen name="AudioPlayer" component={AudioPlayerScreen} options={{ animation: 'slide_from_bottom' }} />
         <Stack.Screen name="VideoPlayer" component={VideoPlayerScreen} options={{ animation: 'slide_from_bottom' }} />
         <Stack.Screen name="SurahDetail" component={SurahDetailScreen} options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="Artists" component={ArtistsScreen} options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="Qibla" component={QiblaScreen} options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="Settings" component={SettingsScreen} options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="Adhkar" component={AdhkarScreen} options={{ animation: 'slide_from_right' }} />

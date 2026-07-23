@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ImageBackground, Animated } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, ImageBackground, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -42,7 +42,7 @@ export function AdminSearchBar({ value, onChangeText, placeholder }) {
     <View style={styles.searchBar}>
       <Ionicons name="search" size={18} color="rgba(255,255,255,0.3)" />
       <View style={styles.searchInputWrap}>
-        <AnimatedTextInput
+        <TextInput
           style={styles.searchInput}
           placeholder={placeholder || 'Search...'}
           placeholderTextColor="rgba(255,255,255,0.3)"
@@ -58,8 +58,6 @@ export function AdminSearchBar({ value, onChangeText, placeholder }) {
     </View>
   );
 }
-
-import { TextInput as AnimatedTextInput } from 'react-native';
 
 export function AdminFAB({ onPress, icon }) {
   return (

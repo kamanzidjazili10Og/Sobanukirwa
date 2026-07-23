@@ -3,16 +3,12 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions, Refre
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useApp } from '../context/AppContext';
-import { fetchPrayerTimes, fetchHijriDate, fetchAdhkar, getMediaUrl } from '../services/api';
+import { fetchPrayerTimes, fetchHijriDate, fetchAdhkar } from '../services/api';
 import SilentBanner from '../components/SilentBanner';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-let Audio = null;
-try { Audio = require('expo-av').Audio; } catch (e) {}
-
-import { Home, BookOpen, Headphones, PlayCircle, Library, Settings, Globe, ChevronRight, Clock, Compass, Hand, Star, Heart, Copy, Share2 } from 'lucide-react-native';
+import { Home, BookOpen, Headphones, PlayCircle, Library, Settings, Globe, ChevronRight, Clock, Compass, Hand, Star, Heart, Copy, Share2, Users } from 'lucide-react-native';
 import { copyToClipboard, shareText } from '../utils/clipboard';
-
 const { width } = Dimensions.get('window');
 
 const QURAN_VERSES = [
@@ -43,6 +39,7 @@ const FEATURE_CARDS = [
   { key: 'audio', iconComponent: Headphones, labelRw: 'Inyigisho', labelEn: 'Audio', labelAr: 'صوتي', descRw: 'Amasomo ya audio', descEn: 'Audio lessons', descAr: 'دروس صوتية', screen: 'Audio' },
   { key: 'books', iconComponent: Library, labelRw: 'Ibitabo', labelEn: 'Books', labelAr: 'كتب', descRw: 'Ibitabo by\'ubumenyi', descEn: 'Islamic books', descAr: 'كتب إسلامية', screen: 'Books' },
   { key: 'videos', iconComponent: PlayCircle, labelRw: 'Amashusho', labelEn: 'Videos', labelAr: 'فيديو', descRw: 'Amashusho y\'inyigisho', descEn: 'Teaching videos', descAr: 'فيديوهات تعليمية', screen: 'Videos' },
+  { key: 'artists', iconComponent: Users, labelRw: 'Abahanzi', labelEn: 'Artists', labelAr: 'فنانون', descRw: 'Abahanzi n\'inyigisho', descEn: 'Artists & audio', descAr: 'فنانون وصوتيات', screen: 'Artists' },
 ];
 
 const C = {
@@ -53,7 +50,7 @@ const C = {
 };
 
 export default function HomeScreen({ navigation }) {
-  const { t, COLORS, tracks, refreshing, refreshData, isEffectivelySilent, language, setLanguage, saveSetting } = useApp();
+  const { t, COLORS, refreshing, refreshData, isEffectivelySilent, language, setLanguage, saveSetting } = useApp();
   const [showLangDropdown, setShowLangDropdown] = useState(false);
   const [prayerTimes, setPrayerTimes] = useState({});
   const [nextPrayer, setNextPrayer] = useState('');
@@ -64,7 +61,6 @@ export default function HomeScreen({ navigation }) {
   const [adhkarList, setAdhkarList] = useState(FALLBACK_ADHKAR);
   const [adhkarCounts, setAdhkarCounts] = useState({});
   const [adhkarCompletedCount, setAdhkarCompletedCount] = useState(0);
-  const soundRef = useRef(null);
   const glowAnim = useRef(new Animated.Value(0.3)).current;
 
   useEffect(() => {
@@ -171,27 +167,6 @@ export default function HomeScreen({ navigation }) {
     return `${mins}m`;
   }
 
-  async function playAdhkarSound(adhkar) {
-    if (!Audio || !adhkar?.audio_url) return;
-    try {
-      if (soundRef.current) {
-        await soundRef.current.unloadAsync();
-        soundRef.current = null;
-      }
-      const url = getMediaUrl(adhkar.audio_url);
-      const { sound } = await Audio.Sound.createAsync(
-        { uri: url },
-        { shouldPlay: true }
-      );
-      soundRef.current = sound;
-      sound.setOnPlaybackStatusUpdate((status) => {
-        if (status.didJustFinish) {
-          soundRef.current = null;
-        }
-      });
-    } catch (e) {}
-  }
-
   function incrementAdhkar(id) {
     const adhkar = adhkarList.find(a => a.id === id);
     const current = adhkarCounts[id] || 0;
@@ -200,7 +175,6 @@ export default function HomeScreen({ navigation }) {
       setAdhkarCounts(newCounts);
       AsyncStorage.setItem('adhkar_counts', JSON.stringify(newCounts));
       updateCompletedCount(newCounts);
-      playAdhkarSound(adhkar);
     }
   }
 
@@ -212,6 +186,7 @@ export default function HomeScreen({ navigation }) {
     const start = h * 60 + m;
     const nextPrayerIndex = PRAYER_NAMES.indexOf(name) + 1;
     const nextPrayerName = PRAYER_NAMES[nextPrayerIndex % PRAYER_NAMES.length];
+    if (!prayerTimes[nextPrayerName]) return false;
     const [nh, nm] = prayerTimes[nextPrayerName].replace(/ \(.*\)/, '').split(':').map(Number);
     let end = nh * 60 + nm;
     if (end < start) end += 24 * 60;
@@ -221,9 +196,16 @@ export default function HomeScreen({ navigation }) {
   function navigateToFeature(screen) {
     if (screen === 'Qibla') {
       navigation.navigate('Qibla');
+    } else if (screen === 'Artists') {
+      navigation.navigate('Artists');
     } else {
       navigation.navigate('MainTabs', { screen });
     }
+  }
+
+  function getVerseTranslation() {
+    if (language === 'rw') return verseOfDay.translation_rw || verseOfDay.translation;
+    return verseOfDay.translation;
   }
 
   return (
@@ -352,12 +334,7 @@ export default function HomeScreen({ navigation }) {
               const time = prayerTimes[name]?.replace(/ \(.*\)/, '') || '--:--';
               const isNext = name === nextPrayer;
               const isCurrent = isCurrentPrayer(name);
-  const getVerseTranslation = () => {
-    if (language === 'rw') return verseOfDay.translation_rw || verseOfDay.translation;
-    return verseOfDay.translation;
-  };
-
-  return (
+              return (
                 <View
                   key={name}
                   style={[

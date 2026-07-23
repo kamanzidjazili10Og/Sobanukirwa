@@ -1,5 +1,6 @@
 const API_BASE = window.location.origin + '/api';
 let currentPage = 'dashboard';
+let _navSeq = 0;
 
 function getMediaUrl(path) {
     if (!path) return '';
@@ -235,8 +236,10 @@ function navigateTo(page) {
 }
 
 function showLoading() {
+    _navSeq++;
     document.getElementById('contentBody').innerHTML = '<div class="spinner"><i class="fas fa-spinner fa-pulse"></i></div>';
 }
+function isStale(seq) { return seq !== _navSeq; }
 function showError(msg) {
     document.getElementById('contentBody').innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>' + msg + '</p></div>';
 }
@@ -275,6 +278,9 @@ async function api(url, options) {
         } else {
             options.headers = { 'Accept': 'application/json', ...options.headers };
         }
+        if (adminToken) {
+            options.headers = { ...options.headers, 'Authorization': 'Bearer ' + adminToken };
+        }
         var res = await fetch(url, options);
         var text = await res.text();
         var data;
@@ -288,9 +294,10 @@ async function api(url, options) {
 
 // ===== DASHBOARD =====
 async function loadDashboard() {
-    showLoading();
+    showLoading(); var seq = _navSeq;
     try {
         var data = await api(API_BASE + '/stats/dashboard');
+        if (isStale(seq)) return;
         document.getElementById('contentBody').innerHTML =
             `<div class="stats-grid">
                 <div class="stat-card" onclick="navigateTo('artists')"><i class="fas fa-users"></i><div class="stat-number">${data.total_artists}</div><div class="stat-label">${t('artists')}</div></div>
@@ -312,9 +319,10 @@ async function loadDashboard() {
 
 // ===== ARTISTS =====
 async function loadArtists() {
-    showLoading();
+    showLoading(); var seq = _navSeq;
     try {
         var artists = await api(API_BASE + '/artists');
+        if (isStale(seq)) return;
         var html = '<div class="toolbar"><div class="toolbar-left"><button class="btn-primary" onclick="showArtistForm()"><i class="fas fa-plus"></i> ' + t('addArtist') + '</button><input type="text" class="search-input" id="artistSearch" placeholder="' + t('search') + '" onkeyup="filterArtistTable()"></div></div>';
         html += '<div class="table-wrapper"><table class="data-table" id="artistTable"><thead><tr><th>' + t('image') + '</th><th>' + t('name') + '</th><th>' + t('name') + ' (Ar)</th><th>' + t('tracks') + '</th><th style="width:100px">' + t('actions') + '</th></tr></thead><tbody id="artistBody">';
         if (artists.length === 0) {
@@ -391,11 +399,14 @@ async function deleteArtist(id) {
 
 // ===== TRACKS =====
 async function loadTracks() {
-    showLoading();
+    showLoading(); var seq = _navSeq;
     try {
         var tracks = await api(API_BASE + '/tracks');
+        if (isStale(seq)) return;
         var artists = await api(API_BASE + '/artists');
+        if (isStale(seq)) return;
         var cats = await api(API_BASE + '/categories');
+        if (isStale(seq)) return;
         window._artists = artists;
         window._categories = cats;
         var html = '<div class="toolbar"><div class="toolbar-left"><button class="btn-primary" onclick="showTrackForm()"><i class="fas fa-plus"></i> ' + t('addTrack') + '</button><input type="text" class="search-input" id="trackSearch" placeholder="' + t('search') + '" onkeyup="filterTrackTable()"></div></div>';
@@ -505,9 +516,10 @@ async function deleteTrack(id) {
 
 // ===== VIDEOS =====
 async function loadVideos() {
-    showLoading();
+    showLoading(); var seq = _navSeq;
     try {
         var videos = await api(API_BASE + '/videos');
+        if (isStale(seq)) return;
         var html = '<div class="toolbar"><div class="toolbar-left"><button class="btn-primary" onclick="showVideoForm()"><i class="fas fa-plus"></i> ' + t('addVideo') + '</button><input type="text" class="search-input" id="videoSearch" placeholder="' + t('searchVideos') + '" onkeyup="filterVideoTable()"></div></div>';
         html += '<div class="table-wrapper"><table class="data-table" id="videoTable"><thead><tr><th>' + t('thumbnail') + '</th><th>' + t('title') + '</th><th>' + t('author') + '</th><th>' + t('duration') + '</th><th>' + t('views') + '</th><th style="width:100px">' + t('actions') + '</th></tr></thead><tbody id="videoBody">';
         if (videos.length === 0) {
@@ -598,9 +610,10 @@ async function deleteVideo(id) {
 
 // ===== ADHKAR =====
 async function loadAdhkar() {
-    showLoading();
+    showLoading(); var seq = _navSeq;
     try {
         var adhkar = await api(API_BASE + '/adhkar');
+        if (isStale(seq)) return;
         var html = '<div class="toolbar"><div class="toolbar-left"><button class="btn-primary" onclick="showAdhkarForm()"><i class="fas fa-plus"></i> ' + t('addAdhkar') + '</button><input type="text" class="search-input" id="adhkarSearch" placeholder="' + t('searchAdhkar') + '" onkeyup="filterAdhkarTable()"></div></div>';
         html += '<div class="table-wrapper"><table class="data-table" id="adhkarTable"><thead><tr><th>' + t('arabic') + '</th><th>' + t('name') + '</th><th>' + t('translation') + '</th><th>' + t('count') + '</th><th>' + t('category') + '</th><th style="width:100px">' + t('actions') + '</th></tr></thead><tbody id="adhkarBody">';
         if (adhkar.length === 0) {
@@ -717,9 +730,10 @@ async function deleteAdhkar(id) {
 
 // ===== QURAN =====
 async function loadQuran() {
-    showLoading();
+    showLoading(); var seq = _navSeq;
     try {
         var surahs = await api(API_BASE + '/quran/surahs');
+        if (isStale(seq)) return;
         var html = '<div class="toolbar"><div class="toolbar-left"><input type="text" class="search-input" id="surahSearch" placeholder="' + t('search') + '" onkeyup="filterSurahTable()"></div></div>';
         html += '<div class="table-wrapper"><table class="data-table"><thead><tr><th>#</th><th>' + t('name') + '</th><th>' + t('arabic') + '</th><th>' + t('verses') + '</th><th>' + t('type') + '</th><th>' + t('audio') + '</th></tr></thead><tbody id="surahBody">';
         if (surahs.length === 0) {
@@ -812,9 +826,10 @@ async function editSurah(number) {
 
 // ===== BOOKS =====
 async function loadBooks() {
-    showLoading();
+    showLoading(); var seq = _navSeq;
     try {
         var books = await api(API_BASE + '/books');
+        if (isStale(seq)) return;
         var html = '<div class="toolbar"><div class="toolbar-left"><button class="btn-primary" onclick="showBookForm()"><i class="fas fa-plus"></i> ' + t('addBook') + '</button><input type="text" class="search-input" id="bookSearch" placeholder="' + t('searchBooks') + '" onkeyup="filterBookTable()"></div></div>';
         html += '<div class="table-wrapper"><table class="data-table"><thead><tr><th>' + t('cover') + '</th><th>' + t('title') + '</th><th>' + t('author') + '</th><th>' + t('fileType') + '</th><th style="width:120px">' + t('actions') + '</th></tr></thead><tbody id="bookBody">';
         if (books.length === 0) {
@@ -906,9 +921,10 @@ async function deleteBook(id) {
 
 // ===== CATEGORIES =====
 async function loadCategories() {
-    showLoading();
+    showLoading(); var seq = _navSeq;
     try {
         var cats = await api(API_BASE + '/categories');
+        if (isStale(seq)) return;
         var html = '<div class="toolbar"><div class="toolbar-left"><button class="btn-primary" onclick="showCategoryForm()"><i class="fas fa-plus"></i> ' + t('addCategory') + '</button><input type="text" class="search-input" id="catSearch" placeholder="' + t('search') + '" onkeyup="filterCatTable()"></div></div>';
         html += '<div class="table-wrapper"><table class="data-table"><thead><tr><th>' + t('name') + '</th><th>' + t('name') + ' (Ar)</th><th>' + t('name') + ' (En)</th><th>' + t('slug') + '</th><th>' + t('tracks') + '</th><th style="width:100px">' + t('actions') + '</th></tr></thead><tbody id="catBody">';
         if (cats.length === 0) {

@@ -1,12 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Switch, Animated, Dimensions, ImageBackground } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Switch, Animated, ImageBackground } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Settings, Globe, Bell, Volume2, Moon, Shield, ChevronLeft, ChevronRight, Check, HardDrive, Star } from 'lucide-react-native';
+import { Settings, Globe, Bell, Volume2, Moon, Shield, ChevronLeft, ChevronRight, Check, HardDrive, Star, Headphones, Video, BookOpen, Book } from 'lucide-react-native';
 import { useApp } from '../context/AppContext';
 import SilentBanner from '../components/SilentBanner';
-
-const { width } = Dimensions.get('window');
 
 const RECITER_OPTIONS = [
   { key: 'Adhan1', label: 'Adhan 1 (Makkah)', labelRw: 'Adhan 1 (Makka)' },
@@ -16,7 +14,7 @@ const RECITER_OPTIONS = [
 
 const PRAYER_KEYS = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
 const VOLUME_LEVELS = [0, 25, 50, 75, 100];
-const INTERVAL_OPTIONS = [5, 15, 30, 45, 60];
+const INTERVAL_OPTIONS = [5, 10, 15, 30, 45, 60];
 
 function GlassToggle({ value, onValueChange }) {
   return (
@@ -491,14 +489,14 @@ export default function SettingsScreen({ navigation }) {
               <View style={styles.sectionDivider} />
               <View style={styles.statsGrid}>
                 {[
-                  { count: tracks.length, labelRw: 'Inyigisho', labelEn: 'Lessons', labelAr: 'دروس', icon: 'headset', color: '#5EEAD4' },
-                  { count: videos.length, labelRw: 'Amashusho', labelEn: 'Videos', labelAr: 'فيديو', icon: 'videocam', color: '#F59E0B' },
-                  { count: books.length, labelRw: 'Ibitabo', labelEn: 'Books', labelAr: 'كتب', icon: 'book', color: '#14B8A6' },
-                  { count: surahs.length, labelRw: 'Sura', labelEn: 'Surahs', labelAr: 'سور', icon: 'book-outline', color: '#FBBF24' },
+                  { count: tracks.length, labelRw: 'Inyigisho', labelEn: 'Lessons', labelAr: 'دروس', IconComp: Headphones, color: '#5EEAD4' },
+                  { count: videos.length, labelRw: 'Amashusho', labelEn: 'Videos', labelAr: 'فيديو', IconComp: Video, color: '#F59E0B' },
+                  { count: books.length, labelRw: 'Ibitabo', labelEn: 'Books', labelAr: 'كتب', IconComp: BookOpen, color: '#14B8A6' },
+                  { count: surahs.length, labelRw: 'Sura', labelEn: 'Surahs', labelAr: 'سور', IconComp: Book, color: '#FBBF24' },
                 ].map((stat, i) => (
                   <View key={i} style={styles.statItem}>
                     <View style={[styles.statIconWrap, { backgroundColor: stat.color + '18' }]}>
-                      <Volume2 size={18} color={stat.color} />
+                      <stat.IconComp size={18} color={stat.color} />
                     </View>
                     <Text style={[styles.statNumber, { color: stat.color }]}>{stat.count}</Text>
                     <Text style={styles.statLabel}>{t(stat.labelRw, stat.labelEn, stat.labelAr)}</Text>

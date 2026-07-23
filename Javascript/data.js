@@ -124,6 +124,12 @@ for (let i = 1; i <= 114; i++) {
   }
 }
 
+const fallbackBooks = [
+  { id: 1, title: "Usul al-Thalathah", titleEn: "The Three Fundamentals", titleAr: "الأصول الثلاثة", author: "Sheikh Muhammad ibn Abdul Wahhab", authorEn: "Sheikh Muhammad ibn Abdul Wahhab", authorAr: "الشيخ محمد بن عبد الوهاب", image: "Images/logo2.png", pdfUrl: "", content: "", category: "Tauhid", type: "pdf", description: "A brief explanation of the three fundamental pillars of Islam." },
+  { id: 2, title: "Al-Qawa'id al-Arba'", titleEn: "The Four Rules", titleAr: "القواعد الأربعة", author: "Sheikh Muhammad ibn Abdul Wahhab", authorEn: "Sheikh Muhammad ibn Abdul Wahhab", authorAr: "الشيخ محمد بن عبد الوهاب", image: "Images/logo2.png", pdfUrl: "", content: "", category: "Tauhid", type: "pdf", description: "Four rules that every Muslim must know about shirk and tawheed." },
+  { id: 3, title: "Kitab al-Tawhid", titleEn: "The Book of Monotheism", titleAr: "كتاب التوحيد", author: "Sheikh Muhammad ibn Abdul Wahhab", authorEn: "Sheikh Muhammad ibn Abdul Wahhab", authorAr: "الشيخ محمد بن عبد الوهاب", image: "Images/logo2.png", pdfUrl: "", content: "", category: "Tauhid", type: "pdf", description: "The foundational book on Islamic monotheism." }
+];
+
 const fallbackAdhkar = [
   { arabic: "سُبْحَانَ اللَّهِ", transliteration: "Subhanallah", translation: "Ibyubahiro ni ibya Allah", count: 33, category: "general", audioFile: "audio/Subhanallah.m4a" },
   { arabic: "الْحَمْدُ لِلَّهِ", transliteration: "Alhamdulillah", translation: "Ishimwe n'ikuzo ni ibya Allah", count: 33, category: "general", audioFile: "audio/Subhanallah.m4a" },
@@ -159,6 +165,7 @@ function initFallbackData() {
   surahs.length = 0;
   adhkarList.length = 0;
   videosData.length = 0;
+  booksData.length = 0;
   fallbackTracks.forEach(t => tracksData.push({
     ...t,
     categoryAr: categoryNames[t.category]?.ar || t.category,
@@ -167,10 +174,12 @@ function initFallbackData() {
   fallbackSurahs.forEach(s => surahs.push({...s}));
   fallbackAdhkar.forEach(a => adhkarList.push({...a}));
   fallbackVideos.forEach(v => videosData.push({...v}));
+  fallbackBooks.forEach(b => booksData.push({...b}));
   if (typeof renderTracks === 'function') renderTracks();
   if (typeof renderCategoryTabs === 'function') renderCategoryTabs();
   if (typeof renderQuran === 'function') renderQuran();
   if (typeof renderVideos === 'function') renderVideos();
+  if (typeof renderBooks === 'function') renderBooks();
   if (typeof renderAdhkarCards === 'function') renderAdhkarCards();
   if (typeof renderFeaturedAudio === 'function') renderFeaturedAudio();
 }

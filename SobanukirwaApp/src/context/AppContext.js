@@ -62,7 +62,7 @@ export function AppProvider({ children }) {
   const [adhanVolume, setAdhanVolume] = useState(80);
   const [adhanReciter, setAdhanReciter] = useState('Adhan1');
   const [reminderEnabled, setReminderEnabled] = useState(false);
-  const [reminderInterval, setReminderInterval] = useState(30);
+  const [reminderInterval, setReminderInterval] = useState(10);
   const [adhkarReminder, setAdhkarReminder] = useState(false);
   const [silentMode, setSilentMode] = useState(false);
   const [smartSilent, setSmartSilent] = useState(false);
@@ -256,7 +256,7 @@ export function AppProvider({ children }) {
       await saveCacheData({ tracks: t, categories: c, surahs: s, videos: v, books: b, adhkar: a });
     } catch (e) {
       const cached = await loadCacheData();
-      if (cached.surahs.length > 0 || cached.tracks.length > 0) {
+      if (cached.surahs.length > 0 || cached.tracks.length > 0 || cached.books.length > 0) {
         setTracks(cached.tracks);
         setCategories(cached.categories);
         setSurahs(cached.surahs);
@@ -264,7 +264,7 @@ export function AppProvider({ children }) {
         setBooks(cached.books);
         setAdhkar(cached.adhkar);
       } else {
-        setError('Failed to load data');
+        setError('network');
       }
     }
     setLoading(false);
@@ -286,7 +286,7 @@ export function AppProvider({ children }) {
       await saveCacheData({ tracks: t, categories: c, surahs: s, videos: v, books: b, adhkar: a });
     } catch (e) {
       const cached = await loadCacheData();
-      if (cached.surahs.length > 0 || cached.tracks.length > 0) {
+      if (cached.surahs.length > 0 || cached.tracks.length > 0 || cached.books.length > 0) {
         setTracks(cached.tracks);
         setCategories(cached.categories);
         setSurahs(cached.surahs);
