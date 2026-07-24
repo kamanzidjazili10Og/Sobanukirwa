@@ -620,13 +620,33 @@
                     <div class="section-icon"><i class="fas fa-book-open"></i></div>
                     <h2 class="section-title" data-i18n="books">Ibitabo</h2>
                 </div>
-                <div class="books-search">
-                    <input type="text" class="search-box" id="booksSearch" placeholder="Shakisha itabo..." onkeyup="filterBooks()" data-i18n-placeholder="searchBook">
+                <p class="section-subtitle" data-i18n="booksDesc">Soma ibitabo by'ubumenyi bw'Islam</p>
+                <div class="books-search-wrap">
+                    <div class="books-search">
+                        <i class="fas fa-search books-search-icon"></i>
+                        <input type="text" class="books-search-input" id="booksSearch" placeholder="Shakisha itabo..." onkeyup="filterBooks()" data-i18n-placeholder="searchBook">
+                        <button class="books-search-clear" id="booksSearchClear" onclick="clearBooksSearch()" style="display:none"><i class="fas fa-times"></i></button>
+                    </div>
+                </div>
+                <div class="books-filters" id="booksFilters">
+                    <button class="book-filter-chip active" onclick="filterBooksByCategory('all', this)" data-i18n="allCategories">Byose</button>
+                    <button class="book-filter-chip" onclick="filterBooksByCategory('hadith', this)">Hadith</button>
+                    <button class="book-filter-chip" onclick="filterBooksByCategory('tafsir', this)">Tafsir</button>
+                    <button class="book-filter-chip" onclick="filterBooksByCategory('fiqh', this)">Fiqh</button>
+                    <button class="book-filter-chip" onclick="filterBooksByCategory('aqeedah', this)">Aqeedah</button>
+                    <button class="book-filter-chip" onclick="filterBooksByCategory('seerah', this)">Seerah</button>
                 </div>
                 <div class="books-grid" id="booksContainer"></div>
+                <div class="books-empty" id="booksEmpty" style="display:none">
+                    <i class="fas fa-book-open"></i>
+                    <p data-i18n="noBooks">Nta bitabo biriho</p>
+                </div>
                 <div class="book-reader-modal" id="bookReaderModal">
                     <div class="book-reader-header">
-                        <h3 id="bookReaderTitle"></h3>
+                        <div class="book-reader-header-info">
+                            <i class="fas fa-book-open"></i>
+                            <h3 id="bookReaderTitle"></h3>
+                        </div>
                         <button class="book-reader-close" onclick="closeBookReader()"><i class="fas fa-times"></i></button>
                     </div>
                     <div class="book-reader-body" id="bookReaderBody"></div>
@@ -872,7 +892,7 @@
         </button>
         <button class="nav-item" onclick="switchSection('books')" data-section="books">
             <i class="fas fa-book-open"></i>
-            <span class="nav-label" data-i18n="books">Ibikubiyemo</span>
+            <span class="nav-label" data-i18n="books">Ibitabo</span>
         </button>
         <button class="nav-item" onclick="switchSection('videos')" data-section="videos">
             <i class="fas fa-video"></i>

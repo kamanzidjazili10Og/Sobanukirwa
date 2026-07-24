@@ -402,7 +402,10 @@ const translations = {
         chooseFile: "Hitamo fayili y'amajwi",
         adhanUploadInfo: "Shyiraho fayili ya Adhan ukunda (MP3, WAV, M4A)",
         removeFile: "Kuraho",
-        playstore: "Kuramo Izindi Porogaramu zacu za Kiyisilamu"
+        playstore: "Kuramo Izindi Porogaramu zacu za Kiyisilamu",
+        searchBook: "Shakisha itabo...",
+        allCategories: "Byose",
+        noBooks: "Nta bitabo biriho"
     },
     en: {
         welcomeTitle: "Understand Islam",
@@ -478,7 +481,10 @@ const translations = {
         chooseFile: "Choose audio file",
         adhanUploadInfo: "Upload your favorite Adhan file (MP3, WAV, M4A)",
         removeFile: "Remove",
-        playstore: "Download Our Other Islamic Apps"
+        playstore: "Download Our Other Islamic Apps",
+        searchBook: "Search books...",
+        allCategories: "All",
+        noBooks: "No books found"
     },
     ar: {
         welcomeTitle: "افهم الإسلام",
@@ -554,7 +560,10 @@ const translations = {
         chooseFile: "اختر ملف صوتي",
         adhanUploadInfo: "رفع ملف الأذان المفضل لديك (MP3, WAV, M4A)",
         removeFile: "إزالة",
-        playstore: "حمّل تطبيقاتنا الإسلامية الأخرى"
+        playstore: "حمّل تطبيقاتنا الإسلامية الأخرى",
+        searchBook: "ابحث عن كتاب...",
+        allCategories: "الكل",
+        noBooks: "لا توجد كتب"
     }
 };
 
@@ -2130,11 +2139,17 @@ function playSurah(surahNumber) {
 }
 
 // ===== BOOKS FUNCTIONS =====
+let booksActiveCategory = 'all';
+
 function renderBooks() {
     const container = document.getElementById('booksContainer');
     if (!container) return;
     
     container.innerHTML = '';
+    const emptyEl = document.getElementById('booksEmpty');
+    let visibleCount = 0;
+    const search = (document.getElementById('booksSearch')?.value || '').toLowerCase();
+
     booksData.forEach(book => {
         const title = currentLanguage === 'en' ? book.titleEn : 
                      currentLanguage === 'ar' ? book.titleAr : book.title;
@@ -2142,15 +2157,22 @@ function renderBooks() {
                       currentLanguage === 'ar' ? book.authorAr : book.author;
         const typeClass = book.type === 'pdf' ? 'pdf' : 'text';
         const typeLabel = book.type === 'pdf' ? 'PDF' : 'TEXT';
+        const cat = (book.category || '').toLowerCase();
+        const matchesCategory = booksActiveCategory === 'all' || cat === booksActiveCategory;
+        const matchesSearch = !search || title.toLowerCase().includes(search) || cat.includes(search);
+        const visible = matchesCategory && matchesSearch;
+        if (!visible) return;
+        visibleCount++;
         
         const card = document.createElement('div');
         card.className = 'book-card';
         card.setAttribute('data-title', title.toLowerCase());
-        card.setAttribute('data-category', (book.category || '').toLowerCase());
+        card.setAttribute('data-category', cat);
         card.innerHTML = `
             <div class="book-cover">
                 <img src="${book.image || 'Images/logo2.png'}" alt="${title}" loading="lazy">
                 <div class="book-cover-overlay"></div>
+                <div class="book-cover-spine"></div>
                 <span class="book-type-badge ${typeClass}">${typeLabel}</span>
                 ${book.category ? `<span class="book-category-badge">${book.category}</span>` : ''}
             </div>
@@ -2166,16 +2188,30 @@ function renderBooks() {
         `;
         container.appendChild(card);
     });
+
+    if (emptyEl) emptyEl.style.display = visibleCount === 0 ? '' : 'none';
 }
 
 function filterBooks() {
-    const search = document.getElementById('booksSearch')?.value.toLowerCase() || '';
-    const cards = document.querySelectorAll('.book-card');
-    cards.forEach(card => {
-        const title = card.getAttribute('data-title') || '';
-        const category = card.getAttribute('data-category') || '';
-        card.style.display = (title.includes(search) || category.includes(search)) ? '' : 'none';
-    });
+    const searchInput = document.getElementById('booksSearch');
+    const clearBtn = document.getElementById('booksSearchClear');
+    if (clearBtn) clearBtn.style.display = searchInput && searchInput.value ? '' : 'none';
+    renderBooks();
+}
+
+function clearBooksSearch() {
+    const input = document.getElementById('booksSearch');
+    if (input) input.value = '';
+    const clearBtn = document.getElementById('booksSearchClear');
+    if (clearBtn) clearBtn.style.display = 'none';
+    renderBooks();
+}
+
+function filterBooksByCategory(category, btn) {
+    booksActiveCategory = category;
+    document.querySelectorAll('.book-filter-chip').forEach(c => c.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    renderBooks();
 }
 
 function openBook(bookId) {

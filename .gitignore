@@ -12,10 +12,6 @@ audio/**/*
 !audio/.gitkeep
 Videos/**/*
 !Videos/.gitkeep
-Css/
-Javascript/
-database/
-font-awasome/
 SobanukirwaApp/node_modules/
 SobanukirwaApp/.expo/
 SobanukirwaApp/android/
