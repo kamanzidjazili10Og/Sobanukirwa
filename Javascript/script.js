@@ -1530,6 +1530,7 @@ class AdhkarReminder {
         this.interval = parseInt(localStorage.getItem('reminderInterval') || '30');
         this.timer = null;
         this.adhkarIndex = 0;
+        this._keyHandler = (e) => { if (e.key === 'Escape') this.dismiss(); };
     }
 
     start() {
@@ -1541,6 +1542,7 @@ class AdhkarReminder {
     show() {
         if (adhkarList.length === 0) return;
         const popup = document.getElementById('adhkarReminderPopup');
+        const backdrop = document.getElementById('adhkarReminderBackdrop');
         const arabic = document.getElementById('reminderArabic');
         const trans = document.getElementById('reminderTransliteration');
         const translation = document.getElementById('reminderTranslation');
@@ -1551,28 +1553,40 @@ class AdhkarReminder {
         if (trans) trans.textContent = adhkar.transliteration;
         if (translation) translation.textContent = adhkar.translation;
         popup.classList.add('show');
+        if (backdrop) backdrop.classList.add('show');
+        document.addEventListener('keydown', this._keyHandler);
         var audioSrc = adhkar.audio_url || adhkar.audioFile || 'Sounds/Subhanallah.m4a';
         var silent = silentMode && (silentMode.isActive || (silentMode.isScheduled && (function(){ var n=new Date();var m=n.getHours()*60+n.getMinutes();var sp=silentMode.scheduledStart.split(':').map(Number);var ep=silentMode.scheduledEnd.split(':').map(Number);var sm=sp[0]*60+sp[1];var em=ep[0]*60+ep[1];if(sm<=em)return m>=sm&&m<em;return m>=sm||m<em;})()));
         if (!silent) {
             var audio = document.getElementById('reminderAudio');
-            if (audio) { audio.src = audioSrc; audio.play().catch(function(){}); }
+            if (audio) {
+                audio.src = audioSrc;
+                audio.onended = function() { audio.currentTime = 0; };
+                audio.play().catch(function(){});
+            }
         }
     }
 
     stopAudio() {
         var audio = document.getElementById('reminderAudio');
-        if (audio) { audio.pause(); audio.currentTime = 0; }
+        if (audio) { audio.pause(); audio.currentTime = 0; audio.onended = null; audio.src = ''; }
     }
 
     snooze() {
         this.stopAudio();
-        document.getElementById('adhkarReminderPopup')?.classList.remove('show');
+        this._hidePopup();
         setTimeout(() => this.show(), 5 * 60 * 1000);
     }
 
     dismiss() {
         this.stopAudio();
+        this._hidePopup();
+    }
+
+    _hidePopup() {
         document.getElementById('adhkarReminderPopup')?.classList.remove('show');
+        document.getElementById('adhkarReminderBackdrop')?.classList.remove('show');
+        document.removeEventListener('keydown', this._keyHandler);
     }
 
     toggle() {

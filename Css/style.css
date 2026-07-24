@@ -215,6 +215,11 @@ body.silent-mode .silent-indicator { display: flex; }
 .toast-notification.show { transform: translateX(0); }
 
 /* ===== ADHKAR REMINDER ===== */
+.adhkar-reminder-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+    z-index: 10000; display: none; backdrop-filter: blur(4px);
+}
+.adhkar-reminder-backdrop.show { display: block; }
 .adhkar-reminder-popup {
     position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
     background: linear-gradient(135deg, #1e3c5c, #0f2a3f);
@@ -223,11 +228,21 @@ body.silent-mode .silent-indicator { display: flex; }
     text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); min-width: 280px;
 }
 .adhkar-reminder-popup.show { display: block; animation: popIn 0.3s ease; }
+.adhkar-reminder-close {
+    position: absolute; top: 10px; right: 10px;
+    width: 30px; height: 30px; border-radius: 50%;
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+    color: var(--text-muted); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem; transition: all 0.3s ease;
+}
+.adhkar-reminder-close:hover { background: var(--error); color: #fff; border-color: var(--error); }
 .reminder-actions { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
 .reminder-btn {
     background: var(--secondary); border: none; color: var(--primary-dark);
     padding: 10px 20px; border-radius: var(--radius-md); cursor: pointer;
     font-weight: bold; transition: all 0.3s ease;
+    display: flex; align-items: center; gap: 0.4rem;
 }
 .reminder-btn:hover { transform: scale(1.05); box-shadow: 0 5px 15px rgba(212,175,55,0.3); }
 
