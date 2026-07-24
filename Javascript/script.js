@@ -71,10 +71,11 @@ const translations = {
         loading: "Ikurura...", playlist: "Urutonde rw'Inyigisho",
         todayPrayerTimes: "Ibihe by'Isengesho",
         allCategories: "Byose",
-        books: "Amatabo", searchBook: "Shakisha itabo...", noBooks: "Nta bitabo byabonetse", noVideos: "Nta amashusho yabonetse",
+        books: "Ibitabo", searchBook: "Shakisha itabo...", noBooks: "Nta bitabo byabonetse", noVideos: "Nta amashusho yabonetse",
         noTracks: "Nta nyigisho zibonetse", noSurahs: "Nta surahi zibonetse",
         adhkarReminders: "Adhkar zo Kwibutsa",
-        scheduledSilent: "Guceceka bitewe n'ibihe"
+        scheduledSilent: "Guceceka bitewe n'ibihe",
+        read: "Soma"
     },
     en: {
         welcomeTitle: "Understand Islam",
@@ -115,7 +116,8 @@ const translations = {
         books: "Books", searchBook: "Search books...", noBooks: "No books found", noVideos: "No videos found",
         noTracks: "No tracks found", noSurahs: "No surahs found",
         adhkarReminders: "Adhkar Reminders",
-        scheduledSilent: "Scheduled Silent"
+        scheduledSilent: "Scheduled Silent",
+        read: "Read"
     },
     ar: {
         welcomeTitle: "افهم الإسلام",
@@ -156,7 +158,8 @@ const translations = {
         books: "الكتب", searchBook: "ابحث عن كتاب...", noBooks: "لم يتم العثور على كتب", noVideos: "لم يتم العثور على فيديوهات",
         noTracks: "لم يتم العثور على مقاطع", noSurahs: "لم يتم العثور على سور",
         adhkarReminders: "تذكير الأذكار",
-        scheduledSilent: "الصامت المجدول"
+        scheduledSilent: "الصامت المجدول",
+        read: "اقرأ"
     }
 };
 
@@ -520,36 +523,133 @@ function renderBooks() {
     const container = document.getElementById('booksContainer');
     if (!container) return;
     const booksToRender = booksData.length > 0 ? booksData : (typeof fallbackBooks !== 'undefined' ? fallbackBooks : []);
+    const emptyEl = document.getElementById('booksEmpty');
+    const lang = document.body.getAttribute('data-language') || 'rw';
+    const t = (key) => (translations[lang] && translations[lang][key]) || key;
+
     if (booksToRender.length === 0) {
-        container.innerHTML = '<div class="empty-state"><i class="fas fa-book"></i><p data-i18n="noBooks">No books found</p></div>';
+        container.innerHTML = '';
+        if (emptyEl) emptyEl.style.display = '';
         return;
     }
-    const lang = document.body.getAttribute('data-language') || 'rw';
+    if (emptyEl) emptyEl.style.display = 'none';
+
     container.innerHTML = booksToRender.map(function(book) {
         const title = lang === 'ar' ? (book.titleAr || book.title) : lang === 'en' ? (book.titleEn || book.title) : book.title;
         const author = lang === 'ar' ? (book.authorAr || book.author) : lang === 'en' ? (book.authorEn || book.author) : book.author;
         const cover = book.image || 'Images/logo2.png';
-        const actionBtn = book.pdfUrl ? '<a href="' + book.pdfUrl + '" target="_blank" class="btn-download" onclick="event.stopPropagation()"><i class="fas fa-download"></i></a>' : '';
-        return '<div class="book-card">' +
-            '<div class="book-cover"><img src="' + cover + '" alt="' + title + '" loading="lazy" onerror="this.src=\'Images/logo2.png\'">' +
-            (book.type === 'pdf' ? '<div class="book-badge"><i class="fas fa-file-pdf"></i> PDF</div>' : '') +
+        const cat = (book.category || '').toLowerCase();
+        const typeClass = book.type === 'pdf' ? 'pdf' : 'text';
+        const typeLabel = book.type === 'pdf' ? 'PDF' : 'TEXT';
+        return '<div class="book-card" onclick="openBook(' + book.id + ')" style="cursor:pointer">' +
+            '<div class="book-cover">' +
+                '<img src="' + cover + '" alt="' + title + '" loading="lazy" onerror="this.src=\'Images/logo2.png\'">' +
+                '<div class="book-cover-overlay"></div>' +
+                '<div class="book-cover-spine"></div>' +
+                '<span class="book-type-badge ' + typeClass + '">' + typeLabel + '</span>' +
+                (cat ? '<span class="book-category-badge">' + cat + '</span>' : '') +
             '</div>' +
             '<div class="book-info">' +
-            '<h4 class="book-title">' + title + '</h4>' +
-            (author ? '<p class="book-author"><i class="fas fa-user"></i> ' + author + '</p>' : '') +
-            (book.description ? '<p class="book-desc">' + book.description.substring(0, 100) + (book.description.length > 100 ? '...' : '') + '</p>' : '') +
-            '<div class="book-actions">' + actionBtn + '</div>' +
+                '<h4 class="book-title">' + title + '</h4>' +
+                (author ? '<div class="book-author"><i class="fas fa-user"></i> ' + author + '</div>' : '') +
+                '<button class="book-read-btn" onclick="event.stopPropagation(); openBook(' + book.id + ')">' +
+                    '<i class="fas fa-book-open"></i> ' + t('read') +
+                '</button>' +
             '</div></div>';
     }).join('');
 }
 
 function filterBooks() {
     const query = (document.getElementById('booksSearch')?.value || '').toLowerCase();
+    const clearBtn = document.getElementById('booksSearchClear');
+    if (clearBtn) clearBtn.style.display = query ? '' : 'none';
     const cards = document.querySelectorAll('#booksContainer .book-card');
+    const emptyEl = document.getElementById('booksEmpty');
+    let visible = 0;
     cards.forEach(function(card) {
         const text = card.textContent.toLowerCase();
-        card.style.display = text.includes(query) ? '' : 'none';
+        const show = text.includes(query);
+        card.style.display = show ? '' : 'none';
+        if (show) visible++;
     });
+    if (emptyEl) emptyEl.style.display = visible === 0 ? '' : 'none';
+}
+
+function clearBooksSearch() {
+    const input = document.getElementById('booksSearch');
+    if (input) input.value = '';
+    const clearBtn = document.getElementById('booksSearchClear');
+    if (clearBtn) clearBtn.style.display = 'none';
+    renderBooks();
+}
+
+function filterBooksByCategory(category, btn) {
+    document.querySelectorAll('.book-filter-chip').forEach(function(c) { c.classList.remove('active'); });
+    if (btn) btn.classList.add('active');
+    var cards = document.querySelectorAll('#booksContainer .book-card');
+    var emptyEl = document.getElementById('booksEmpty');
+    var visible = 0;
+    cards.forEach(function(card) {
+        if (category === 'all') {
+            card.style.display = '';
+            visible++;
+        } else {
+            var cat = card.querySelector('.book-category-badge');
+            var catText = cat ? cat.textContent.toLowerCase() : '';
+            var show = catText === category;
+            card.style.display = show ? '' : 'none';
+            if (show) visible++;
+        }
+    });
+    if (emptyEl) emptyEl.style.display = visible === 0 ? '' : 'none';
+}
+
+function openBook(bookId) {
+    var allBooks = booksData.length > 0 ? booksData : (typeof fallbackBooks !== 'undefined' ? fallbackBooks : []);
+    var book = allBooks.find(function(b) { return b.id == bookId; });
+    if (!book) return;
+
+    var lang = document.body.getAttribute('data-language') || 'rw';
+    var title = lang === 'ar' ? (book.titleAr || book.title) : lang === 'en' ? (book.titleEn || book.title) : book.title;
+    var author = lang === 'ar' ? (book.authorAr || book.author) : lang === 'en' ? (book.authorEn || book.author) : book.author;
+
+    var modal = document.getElementById('bookReaderModal');
+    var titleEl = document.getElementById('bookReaderTitle');
+    var body = document.getElementById('bookReaderBody');
+    if (!modal || !titleEl || !body) return;
+
+    titleEl.textContent = title;
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+
+    if (book.type === 'pdf' && book.pdfUrl) {
+        body.innerHTML = '<iframe src="' + book.pdfUrl + '" title="' + title + '" style="width:100%;height:100%;border:none"></iframe>';
+    } else {
+        var content = book.content || book.description || 'Iki gitabo kirimo ubumenyi bw\'Islam bufatika.';
+        body.innerHTML = '<div class="book-reader-text">' +
+            '<h1>' + title + '</h1>' +
+            '<div class="book-meta">' +
+                '<span><i class="fas fa-user"></i> ' + author + '</span>' +
+                (book.category ? '<span><i class="fas fa-tag"></i> ' + book.category + '</span>' : '') +
+            '</div>' +
+            '<p>' + content + '</p>' +
+            '<p style="text-align:center;color:var(--secondary);margin-top:2rem;font-style:italic">May Allah increase us in knowledge and benefit us with what we learn.</p>' +
+        '</div>';
+    }
+}
+
+function closeBookReader() {
+    var modal = document.getElementById('bookReaderModal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+        var body = document.getElementById('bookReaderBody');
+        if (body) body.innerHTML = '';
+    }
+}
+
+function closeDocumentReader() {
+    closeBookReader();
 }
 
 function playVideo(id) {
