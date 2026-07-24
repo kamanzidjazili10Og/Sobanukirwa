@@ -341,7 +341,7 @@ const translations = {
         quranDesc: "Soma untege amatwi",
         audioLessons: "Inyigisho za Audio",
         audioDesc: "Amasomo ya audio",
-        books: "Ibisomwa",
+        books: "Ibitabo",
         booksDesc: "Soma ibitabo",
         videos: "Amashusho",
         videosDesc: "Reba amashusho",
