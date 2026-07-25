@@ -78,7 +78,7 @@ const LANG = {
         searchAdhkar: 'Search adhkar...', noAdhkar: 'No adhkar found', count: 'Count',
         searchBooks: 'Search books...', noBooks: 'No books found', cover: 'Cover',
         videoSaved: 'Video saved successfully', videoDeleted: 'Video deleted',
-        adhkarSaved: 'Adhkar saved successfully', adhkarDeleted: 'Adhkar deleted',
+        adhkarSaved: 'Adhkar saved successfully', adhkarDeleted: 'Adhkar deleted', adhkarAlreadyExists: 'This adhkar already exists (duplicate)',
         bookSaved: 'Book saved successfully', bookDeleted: 'Book deleted',
         confirmDeleteVideo: 'Delete this video?', confirmDeleteAdhkar: 'Delete this adhkar?',
         confirmDeleteBook: 'Delete this book?',
@@ -117,7 +117,7 @@ const LANG = {
         searchAdhkar: 'Shaka adhkar...', noAdhkar: 'Nta adhkar ibonetse', count: 'Umubare',
         searchBooks: 'Shaka ibitabo...', noBooks: 'Nta bitabo bibonetse', cover: 'Igifuniko',
         videoSaved: 'Amashusho yabitswe neza', videoDeleted: 'Amashusho yakurwaho',
-        adhkarSaved: 'Adhkar yabitswe neza', adhkarDeleted: 'Adhkar yakurwaho',
+        adhkarSaved: 'Adhkar yabitswe neza', adhkarDeleted: 'Adhkar yakurwaho', adhkarAlreadyExists: 'Iyi adhkar isanzwe iriho (duplicate)',
         bookSaved: 'Igitabo cyabitswe neza', bookDeleted: 'Igitabo cyakurwaho',
         confirmDeleteVideo: 'Usiba aya mashusho?', confirmDeleteAdhkar: 'Usiba adhkar?',
         confirmDeleteBook: 'Usiba iki gitabo?',
@@ -156,7 +156,7 @@ const LANG = {
         searchAdhkar: 'بحث عن ذكر...', noAdhkar: 'لا توجد أذكار', count: 'العدد',
         searchBooks: 'بحث عن كتاب...', noBooks: 'لا توجد كتب', cover: 'الغلاف',
         videoSaved: 'تم حفظ الفيديو بنجاح', videoDeleted: 'تم حذف الفيديو',
-        adhkarSaved: 'تم حفظ الذكر بنجاح', adhkarDeleted: 'تم حذف الذكر',
+        adhkarSaved: 'تم حفظ الذكر بنجاح', adhkarDeleted: 'تم حذف الذكر', adhkarAlreadyExists: 'هذا الذكر موجود بالفعل (مكرر)',
         bookSaved: 'تم حفظ الكتاب بنجاح', bookDeleted: 'تم حذف الكتاب',
         confirmDeleteVideo: 'حذف هذا الفيديو؟', confirmDeleteAdhkar: 'حذف هذا الذكر؟',
         confirmDeleteBook: 'حذف هذا الكتاب؟',
@@ -687,11 +687,25 @@ async function showAdhkarForm(id) {
         saveBtn.disabled = true;
         saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + t('saving');
         var audioFile = document.getElementById('af_audio').files[0];
+        var arabicVal = document.getElementById('af_arabic').value.trim();
+        var transVal = document.getElementById('af_trans').value.trim();
         try {
+            if (!id) {
+                var existing = await api(API_BASE + '/adhkar');
+                var dup = existing.find(function(a) {
+                    return (a.arabic_text || '').trim() === arabicVal;
+                });
+                if (dup) {
+                    showToast(t('adhkarAlreadyExists') || 'This adhkar already exists (duplicate)', 'error');
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = '<i class="fas fa-save"></i> ' + t('save');
+                    return;
+                }
+            }
             if (audioFile) {
                 var fd = new FormData();
-                fd.append('arabic_text', document.getElementById('af_arabic').value);
-                fd.append('transliteration', document.getElementById('af_trans').value);
+                fd.append('arabic_text', arabicVal);
+                fd.append('transliteration', transVal);
                 fd.append('translation_rw', document.getElementById('af_rw').value);
                 fd.append('translation_en', document.getElementById('af_en').value);
                 fd.append('count_target', parseInt(document.getElementById('af_count').value) || 33);
@@ -702,8 +716,8 @@ async function showAdhkarForm(id) {
                 await api(API_BASE + '/adhkar' + (id ? '/' + id : ''), { method: id ? 'PUT' : 'POST', body: fd });
             } else {
                 var body = {
-                    arabic_text: document.getElementById('af_arabic').value,
-                    transliteration: document.getElementById('af_trans').value,
+                    arabic_text: arabicVal,
+                    transliteration: transVal,
                     translation_rw: document.getElementById('af_rw').value,
                     translation_en: document.getElementById('af_en').value,
                     count_target: parseInt(document.getElementById('af_count').value) || 33,
@@ -715,7 +729,13 @@ async function showAdhkarForm(id) {
             }
             closeModal(); loadAdhkar();
             showToast(t('adhkarSaved'), 'success');
-        } catch (err) { showToast('Error: ' + err.message, 'error'); } finally {
+        } catch (err) {
+            if (err.message && (err.message.includes('409') || err.message.includes('already exists') || err.message.includes('Duplicate'))) {
+                showToast(t('adhkarAlreadyExists') || 'This adhkar already exists (duplicate)', 'error');
+            } else {
+                showToast('Error: ' + err.message, 'error');
+            }
+        } finally {
             saveBtn.disabled = false;
             saveBtn.innerHTML = '<i class="fas fa-save"></i> ' + t('save');
         }

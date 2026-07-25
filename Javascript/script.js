@@ -187,6 +187,7 @@ class AudioManager {
                 el.pause();
             }
         });
+        if (typeof stopAllAdhkarAudio === 'function') stopAllAdhkarAudio();
         isPlaying = false;
         this.updatePlayPauseButton();
     }
@@ -1680,8 +1681,31 @@ function toggleSettings() {
 }
 
 function toggleAdhkar() {
-    document.getElementById('adhkarPanel')?.classList.toggle('active');
-    renderAdhkarCards();
+    var panel = document.getElementById('adhkarPanel');
+    if (!panel) return;
+    var wasActive = panel.classList.contains('active');
+    panel.classList.toggle('active');
+    if (wasActive) {
+        stopAllAdhkarAudio();
+    } else {
+        renderAdhkarCards();
+    }
+}
+
+function stopAllAdhkarAudio() {
+    if (typeof adhkarReminder !== 'undefined' && adhkarReminder && typeof adhkarReminder.stopAudio === 'function') {
+        adhkarReminder.stopAudio();
+    }
+    stopDhikrAudio();
+}
+
+function stopDhikrAudio() {
+    if (currentDhikrAudio) {
+        currentDhikrAudio.pause();
+        currentDhikrAudio.currentTime = 0;
+        currentDhikrAudio.src = '';
+        currentDhikrAudio = null;
+    }
 }
 
 function updateAdhkarBadge() {
@@ -1714,24 +1738,24 @@ function renderAdhkarCards() {
     }).join('');
 }
 
-let dhikrSound = null;
+var currentDhikrAudio = null;
+
 function playDhikrSound() {
     try {
-        if (!dhikrSound) {
-            dhikrSound = new Audio('Sounds/Subhanallah.m4a');
-            dhikrSound.preload = 'auto';
-        }
-        const clone = dhikrSound.cloneNode();
-        clone.volume = 0.6;
-        clone.play().catch(function() {});
+        stopDhikrAudio();
+        currentDhikrAudio = new Audio('Sounds/Subhanallah.m4a');
+        currentDhikrAudio.volume = 0.6;
+        currentDhikrAudio.preload = 'auto';
+        currentDhikrAudio.play().catch(function() {});
     } catch(e) {}
 }
 
 function playCompletionSound() {
     try {
-        const audio = new Audio('Sounds/Subhanallah.m4a');
-        audio.volume = 0.8;
-        audio.play().catch(function() {});
+        stopDhikrAudio();
+        currentDhikrAudio = new Audio('Sounds/Subhanallah.m4a');
+        currentDhikrAudio.volume = 0.8;
+        currentDhikrAudio.play().catch(function() {});
     } catch(e) {}
 }
 
