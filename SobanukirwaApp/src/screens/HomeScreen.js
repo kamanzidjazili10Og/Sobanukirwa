@@ -7,7 +7,7 @@ import { fetchPrayerTimes, fetchHijriDate, fetchAdhkar } from '../services/api';
 import SilentBanner from '../components/SilentBanner';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { Home, BookOpen, Headphones, PlayCircle, Library, Settings, Globe, ChevronRight, Clock, Compass, Hand, Star, Heart, Copy, Share2, Users } from 'lucide-react-native';
+import { Home, BookOpen, Headphones, Library, Settings, Globe, ChevronRight, Clock, Compass, Hand, Star, Heart, Copy, Share2 } from 'lucide-react-native';
 import { copyToClipboard, shareText } from '../utils/clipboard';
 const { width } = Dimensions.get('window');
 const isSmallScreen = width < 480;
@@ -39,8 +39,6 @@ const FEATURE_CARDS = [
   { key: 'quran', iconComponent: BookOpen, labelRw: "Qor'an", labelEn: 'Quran', labelAr: 'القرآن', descRw: 'Soma untege amatwi', descEn: 'Read & Listen', descAr: 'اقرأ واستمع', screen: 'Quran' },
   { key: 'audio', iconComponent: Headphones, labelRw: 'Inyigisho', labelEn: 'Audio', labelAr: 'صوتي', descRw: 'Amasomo ya audio', descEn: 'Audio lessons', descAr: 'دروس صوتية', screen: 'Audio' },
   { key: 'books', iconComponent: Library, labelRw: 'Ibitabo', labelEn: 'Books', labelAr: 'كتب', descRw: 'Ibitabo by\'ubumenyi', descEn: 'Islamic books', descAr: 'كتب إسلامية', screen: 'Books' },
-  { key: 'videos', iconComponent: PlayCircle, labelRw: 'Amashusho', labelEn: 'Videos', labelAr: 'فيديو', descRw: 'Amashusho y\'inyigisho', descEn: 'Teaching videos', descAr: 'فيديوهات تعليمية', screen: 'Videos' },
-  { key: 'artists', iconComponent: Users, labelRw: 'Abahanzi', labelEn: 'Artists', labelAr: 'فنانون', descRw: 'Abahanzi n\'inyigisho', descEn: 'Artists & audio', descAr: 'فنانون وصوتيات', screen: 'Artists' },
 ];
 
 const C = {
