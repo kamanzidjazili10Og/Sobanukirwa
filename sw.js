@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sobanukirwa-v6';
+const CACHE_NAME = 'sobanukirwa-v7';
 const API_CACHE = 'sobanukirwa-api-v1';
 const MEDIA_CACHE = 'sobanukirwa-media-v1';
 
@@ -6,10 +6,10 @@ const STATIC_ASSETS = [
   './',
   './index.html',
   './manifest.json',
-  './Css/style.css',
-  './Javascript/data.js',
-  './Javascript/api.js',
-  './Javascript/script.js',
+  './Css/style.css?v=7',
+  './Javascript/data.js?v=7',
+  './Javascript/api.js?v=7',
+  './Javascript/script.js?v=7',
   './Sounds/Adhan1.mpeg',
   './Sounds/Adhan2.mpeg',
   './Sounds/Mansour_Adhan.mpeg',
@@ -101,4 +101,10 @@ self.addEventListener('activate', event => {
     })
   );
   self.clients.claim();
+});
+
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
