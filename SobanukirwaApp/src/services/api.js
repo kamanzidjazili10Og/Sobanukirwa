@@ -174,7 +174,7 @@ const fallbackVideos = [
   { id: 2, title: "Inyigisho ku Kwihangana", videoUrl: "/uploads/videos/sample-2.mp4", thumbnail: "Images/logo2.png", author: 'Sheikh Mutabaruka', durationStr: '32:00', description: 'Inyigisho zerekerana no kwihangana.' },
   { id: 3, title: "Gusobanukirwa Icyo Kwemera Ari cyo", videoUrl: "/uploads/videos/sample-3.mp4", thumbnail: "Images/logo2.png", author: 'Sheikh Gahutu', durationStr: '28:00', description: 'Ubusobanuro bwa Imani.' },
   { id: 4, title: "Uburyo bwo Gusenga", videoUrl: "/uploads/videos/sample-4.mp4", thumbnail: "Images/logo2.png", author: 'Sheikh Djamidu', durationStr: '38:00', description: 'Inama zerekerana no gusenga.' },
-  { id: 5, title: "Urukundo mu Buvandimwe", videoUrl: "/uploads/videos/sample-5.mp4", thumbnail: "Images/logo2.png", author: 'Sheikh Uwamungu', durationStr: '25:00', description: 'Urukundo n\'ubuvandimwe mu Isilamu.' },
+  { id: 5, title: "Kubaha Ababyeyi", videoUrl: "/uploads/videos/sample-5.mp4", thumbnail: "Images/logo2.png", author: 'Sheikh Mugabo', durationStr: '30:00', description: 'Ubuheburyo bw\'ubuhizi.' },
   { id: 6, title: "Kubaha Ababyeyi", videoUrl: "/uploads/videos/sample-6.mp4", thumbnail: "Images/logo2.png", author: 'Sheikh Mugabo', durationStr: '30:00', description: 'Ubuheburyo bw\'ubuhizi.' },
   { id: 7, title: "Ingaruka z'Ubuyobe", videoUrl: "/uploads/videos/sample-7.mp4", thumbnail: "Images/logo2.png", author: 'Sheikh Habyarimana', durationStr: '27:00', description: 'Ingaruka z\'ubusambanyi.' },
   { id: 8, title: "Uburenganzira bw'Umugore mu Isilamu", videoUrl: "/uploads/videos/sample-8.mp4", thumbnail: "Images/logo2.png", author: 'Sheikh Uwimana', durationStr: '35:00', description: 'Uburenganzira bwa so.' },

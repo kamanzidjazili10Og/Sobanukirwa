@@ -57,16 +57,14 @@ const FALLBACK = {
     { title: "Inabi Wifuriza Abandi Irakugarukira", titleEn: "Evil Wished Upon Others Returns", titleAr: "الشر الذي تتمناه للغير يعود عليك", audioUrl: "audio/Tauhid/Isomo rya Tauhid.aac", category: "Akhlaq", artist: "Sheikh Uwamungu", duration: "25:30" },
     { title: "Aya magambo akomeye", titleEn: "Important Words", titleAr: "كلمات مهمة", audioUrl: "audio/Tauhid/Isomo rya Tauhid part2.m4a", category: "Akhlaq", artist: "Sheikh Uwamungu", duration: "31:48" },
     { title: "Haranira ko ubuzima bugoye", titleEn: "Strive Though Life is Hard", titleAr: "اجتهد ولو كانت الحياة صعبة", audioUrl: "audio/Tauhid/Isomo rya Tauhid part3.m4a", category: "Akhlaq", artist: "Sheikh Uwamungu", duration: "27:14" },
-    { title: "Khutbah ku wa Gatanu", titleEn: "Friday Khutbah", titleAr: "خطبة الجمعة", audioUrl: "audio/Khutubah/sample_khutbah.mp3", category: "Khutubah", artist: "Sheikh Mutabaruka", duration: "15:00" },
-    { title: "Urukundo mu Buvandimwe", titleEn: "Love and Brotherhood", titleAr: "الحب في الأخوة", audioUrl: "Videos/5.mp4", category: "Social", artist: "Various", duration: "00:17" },
-    { title: "Kwemera Imana", titleEn: "Belief in God", titleAr: "الإيمان بالله", audioUrl: "audio/Tauhid/Kwemera ndetse no kuzirikana  Allah.m4a", category: "Tauhid", artist: "Sheikh Uqash", duration: "00:30" }
+    { title: "Khutbah ku wa Gatanu", titleEn: "Friday Khutbah", titleAr: "خطبة الجمعة", audioUrl: "audio/Khutubah/sample_khutbah.mp3", category: "Khutubah", artist: "Sheikh Mutabaruka", duration: "15:00" }
   ],
   videos: [
     { title: "Amateka y'intumwa y'imana Muhamad (S.A.W)", titleEn: "The Story of Prophet Muhammad (PBUH)", titleAr: "قصة النبي محمد (ص)", videoUrl: "Videos/1.mp4", thumbnail: "Images/ok9.jpg" },
     { title: "Inyigisho ku Kwihangana", titleEn: "Lesson on Patience", titleAr: "درس في الصبر", videoUrl: "Videos/2.mp4", thumbnail: "Images/ok10.jpg" },
     { title: "Gusobanukirwa Icyo Kwemera Ari cyo", titleEn: "Understanding Faith", titleAr: "فهم الإيمان", videoUrl: "Videos/3.mp4", thumbnail: "Images/ok11.jpg" },
     { title: "Uburyo bwo Gusenga", titleEn: "The Method of Prayer", titleAr: "كيفية الصلاة", videoUrl: "Videos/4.mp4", thumbnail: "Images/ok12.jpg" },
-    { title: "Urukundo mu Buvandimwe", titleEn: "Love and Brotherhood", titleAr: "الحب في الأخوة", videoUrl: "Videos/5.mp4", thumbnail: "Images/ok13.jpg" },
+    { title: "Inyigisho - Part 5", videoUrl: "Videos/5.mp4", thumbnail: "Images/logo2.png" },
     { title: "Inyigisho - Part 6", videoUrl: "Videos/6.mp4", thumbnail: "Images/logo2.png" },
     { title: "Inyigisho - Part 7", videoUrl: "Videos/7.mp4", thumbnail: "Images/logo2.png" },
     { title: "Inyigisho - Part 8", videoUrl: "Videos/8.mp4", thumbnail: "Images/logo2.png" },
