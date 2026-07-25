@@ -1545,7 +1545,7 @@ function closeAdhanNotification() {
 class AdhkarReminder {
     constructor() {
         this.isEnabled = localStorage.getItem('adhkarReminder') !== 'false';
-        this.interval = parseInt(localStorage.getItem('reminderInterval') || '30');
+        this.interval = parseInt(localStorage.getItem('reminderInterval') || '10');
         this.timer = null;
         this.adhkarIndex = 0;
         this._keyHandler = (e) => { if (e.key === 'Escape') this.dismiss(); };
@@ -2010,7 +2010,11 @@ function initApp() {
             }
             if (adhkarList.length === 0 && typeof fallbackAdhkar !== 'undefined') {
                 adhkarList.length = 0;
-                fallbackAdhkar.forEach(function(a) { adhkarList.push({...a}); });
+                const seen = new Set();
+                fallbackAdhkar.forEach(function(a) {
+                    const key = a.arabic || a.transliteration;
+                    if (!seen.has(key)) { seen.add(key); adhkarList.push({...a}); }
+                });
                 if (typeof renderAdhkarCards === 'function') renderAdhkarCards();
             }
             if (surahs.length === 0 && typeof fallbackSurahs !== 'undefined') {
@@ -2049,7 +2053,11 @@ function initApp() {
             }
             adhkarList.length = 0;
             if (typeof fallbackAdhkar !== 'undefined') {
-                fallbackAdhkar.forEach(function(a) { adhkarList.push({...a}); });
+                const seen = new Set();
+                fallbackAdhkar.forEach(function(a) {
+                    const key = a.arabic || a.transliteration;
+                    if (!seen.has(key)) { seen.add(key); adhkarList.push({...a}); }
+                });
             }
             surahs.length = 0;
             if (typeof fallbackSurahs !== 'undefined') {

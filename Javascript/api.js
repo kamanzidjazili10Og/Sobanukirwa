@@ -78,16 +78,21 @@ async function loadDataFromAPI() {
     if (apiAdhkar && apiAdhkar.length > 0) {
         hasAPIData = true;
         adhkarList.length = 0;
+        const seen = new Set();
         apiAdhkar.forEach(a => {
-            adhkarList.push({
-                id: a.id,
-                arabic: a.arabic_text,
-                transliteration: a.transliteration,
-                translation: a.translation_en || a.translation_rw,
-                count: a.count_target,
-                category: a.category || 'general',
-                audio_url: a.audio_url || null
-            });
+            const key = a.arabic_text || a.transliteration;
+            if (!seen.has(key)) {
+                seen.add(key);
+                adhkarList.push({
+                    id: a.id,
+                    arabic: a.arabic_text,
+                    transliteration: a.transliteration,
+                    translation: a.translation_en || a.translation_rw,
+                    count: a.count_target,
+                    category: a.category || 'general',
+                    audio_url: a.audio_url || null
+                });
+            }
         });
     }
 

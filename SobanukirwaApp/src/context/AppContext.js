@@ -61,9 +61,9 @@ export function AppProvider({ children }) {
   const [adhanEnabled, setAdhanEnabled] = useState(true);
   const [adhanVolume, setAdhanVolume] = useState(80);
   const [adhanReciter, setAdhanReciter] = useState('Adhan1');
-  const [reminderEnabled, setReminderEnabled] = useState(false);
+  const [reminderEnabled, setReminderEnabled] = useState(true);
   const [reminderInterval, setReminderInterval] = useState(10);
-  const [adhkarReminder, setAdhkarReminder] = useState(false);
+  const [adhkarReminder, setAdhkarReminder] = useState(true);
   const [silentMode, setSilentMode] = useState(false);
   const [smartSilent, setSmartSilent] = useState(false);
   const [scheduledSilent, setScheduledSilent] = useState(false);

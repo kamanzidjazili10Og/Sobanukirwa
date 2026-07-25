@@ -166,7 +166,12 @@ function initFallbackData() {
     categoryEn: categoryNames[t.category]?.en || t.category
   }));
   fallbackSurahs.forEach(s => surahs.push({...s}));
-  fallbackAdhkar.forEach(a => adhkarList.push({...a}));
+  fallbackAdhkar.forEach(a => {
+    const key = a.arabic || a.transliteration;
+    if (!adhkarList.some(x => (x.arabic || x.transliteration) === key)) {
+      adhkarList.push({...a});
+    }
+  });
   fallbackVideos.forEach(v => videosData.push({...v}));
   fallbackBooks.forEach(b => booksData.push({...b}));
   if (typeof renderTracks === 'function') renderTracks();
