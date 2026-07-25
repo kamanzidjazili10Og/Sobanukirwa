@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ImageBackground } from 'react-native';
+import { View, Text, StyleSheet, ImageBackground, Dimensions } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -40,6 +40,8 @@ const TAB_ICONS = {
 
 function HomeTabs() {
   const { t } = useApp();
+  const { width } = Dimensions.get('window');
+  const isSmallScreen = width < 480;
 
   return (
     <Tab.Navigator
@@ -51,9 +53,9 @@ function HomeTabs() {
           backgroundColor: 'rgba(6, 48, 44, 0.92)',
           borderTopColor: 'rgba(255,255,255,0.1)',
           borderTopWidth: 1,
-          height: 65,
-          paddingBottom: 8,
-          paddingTop: 6,
+          height: isSmallScreen ? 52 : 65,
+          paddingBottom: isSmallScreen ? 4 : 8,
+          paddingTop: isSmallScreen ? 6 : 6,
           elevation: 8,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: -2 },
@@ -69,9 +71,9 @@ function HomeTabs() {
         tabBarHideOnKeyboard: true,
         tabBarIcon: ({ color, size, focused }) => {
           const icons = TAB_ICONS[route.name] || { active: 'ellipse', inactive: 'ellipse-outline' };
-          return <Ionicons name={focused ? icons.active : icons.inactive} size={size} color={color} />;
+          return <Ionicons name={focused ? icons.active : icons.inactive} size={isSmallScreen ? 22 : size} color={color} />;
         },
-        tabBarLabel: t(
+        tabBarLabel: isSmallScreen ? undefined : t(
           route.name === 'Home' ? 'Ahabanza' : route.name === 'Prayer' ? 'Isengesho' : route.name === 'Quran' ? 'Qor\'an' : route.name === 'Audio' ? 'Inyigisho' : route.name === 'Books' ? 'Ibitabo' : route.name === 'Videos' ? 'Amashusho' : 'Ibyerekeye',
           route.name === 'Home' ? 'Home' : route.name === 'Prayer' ? 'Prayer' : route.name === 'Quran' ? 'Quran' : route.name === 'Audio' ? 'Audio' : route.name === 'Books' ? 'Books' : route.name === 'Videos' ? 'Videos' : 'About',
           route.name === 'Home' ? 'الرئيسية' : route.name === 'Prayer' ? 'الصلاة' : route.name === 'Quran' ? 'القرآن' : route.name === 'Audio' ? 'الدروس' : route.name === 'Books' ? 'الكتب' : route.name === 'Videos' ? 'الفيديو' : 'حول'

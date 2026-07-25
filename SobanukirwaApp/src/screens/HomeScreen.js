@@ -10,6 +10,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Home, BookOpen, Headphones, PlayCircle, Library, Settings, Globe, ChevronRight, Clock, Compass, Hand, Star, Heart, Copy, Share2, Users } from 'lucide-react-native';
 import { copyToClipboard, shareText } from '../utils/clipboard';
 const { width } = Dimensions.get('window');
+const isSmallScreen = width < 480;
 
 const QURAN_VERSES = [
   { verse: 'إِنَّ اللَّهَ لَا يُضِيعُ أَجْرَ الْمُحْسِنِينَ', translation_rw: 'Rwose Allah ntabwo arangiza igihembo cy\'abakoze neza.', translation: 'Indeed, Allah does not allow to be lost the reward of those who do good.', surah: 'Yusuf: 120' },
@@ -421,20 +422,22 @@ export default function HomeScreen({ navigation }) {
             return (
               <TouchableOpacity
                 key={card.key}
-                style={styles.featureCard}
+                style={[styles.featureCard, isSmallScreen && styles.featureCardSmall]}
                 onPress={() => navigateToFeature(card.screen)}
                 activeOpacity={0.7}
               >
                 <View style={styles.featureGoldLine} />
-                <View style={styles.featureIconWrap}>
-                  <IconComp size={24} color={C.primary} />
+                <View style={[styles.featureIconWrap, isSmallScreen && styles.featureIconWrapSmall]}>
+                  <IconComp size={isSmallScreen ? 22 : 24} color={C.primary} />
                 </View>
-                <Text style={styles.featureLabel}>
+                <Text style={[styles.featureLabel, isSmallScreen && styles.featureLabelSmall]}>
                   {t(card.labelRw, card.labelEn, card.labelAr)}
                 </Text>
-                <Text style={styles.featureDesc}>
-                  {t(card.descRw, card.descEn, card.descAr)}
-                </Text>
+                {!isSmallScreen && (
+                  <Text style={styles.featureDesc}>
+                    {t(card.descRw, card.descEn, card.descAr)}
+                  </Text>
+                )}
               </TouchableOpacity>
             );
           })}
@@ -545,8 +548,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.2)', alignItems: 'center', gap: 6, overflow: 'hidden',
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)',
   },
+  featureCardSmall: {
+    paddingVertical: 14, paddingHorizontal: 10, gap: 4,
+  },
   featureGoldLine: { position: 'absolute', top: 0, left: 0, right: 0, height: 3, backgroundColor: '#F59E0B' },
   featureIconWrap: { width: 48, height: 48, borderRadius: 14, backgroundColor: 'rgba(15,118,110,0.2)', alignItems: 'center', justifyContent: 'center', marginTop: 4 },
+  featureIconWrapSmall: { width: 42, height: 42, borderRadius: 12, marginTop: 2 },
   featureLabel: { fontSize: 13, fontWeight: '600', color: '#FFFFFF', textAlign: 'center' },
+  featureLabelSmall: { fontSize: 11, marginBottom: 2 },
   featureDesc: { fontSize: 10, color: 'rgba(255,255,255,0.7)', textAlign: 'center', lineHeight: 14 },
 });

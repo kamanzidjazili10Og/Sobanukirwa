@@ -1654,11 +1654,18 @@ main { flex: 1; position: relative; overflow: hidden; margin-bottom: 60px; }
     .lang-btn span:not(.fa-globe) { display: none; }
     .prayer-summary-widget { margin: 0 -0.2rem 1rem; border-radius: var(--radius-md); }
     .featured-grid { gap: 0.5rem; }
-    .bottom-nav { height: 56px; }
-    main { margin-bottom: 56px; }
-    .audio-player-section { bottom: 56px; }
-    .install-prompt { bottom: 70px; }
-    .toast-notification { bottom: 70px; }
+    .feature-desc { display: none; }
+    .feature-card { padding: 0.9rem 0.6rem; }
+    .feature-icon { font-size: 1.7rem; margin-bottom: 0.3rem; }
+    .feature-title { font-size: 0.8rem; margin-bottom: 0; }
+    .nav-label { display: none; }
+    .nav-item { padding: 6px 0; gap: 0; }
+    .nav-item i { font-size: 1.35rem; }
+    .bottom-nav { height: 52px; }
+    main { margin-bottom: 52px; }
+    .audio-player-section { bottom: 52px; }
+    .install-prompt { bottom: 65px; }
+    .toast-notification { bottom: 65px; }
     .about-apps-grid { grid-template-columns: 1fr; }
     .about-features-grid { grid-template-columns: repeat(3, 1fr); }
     .about-logo-circle { width: 80px; height: 80px; }
