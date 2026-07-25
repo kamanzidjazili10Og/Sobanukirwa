@@ -179,5 +179,4 @@ function initFallbackData() {
   if (typeof renderVideos === 'function') renderVideos();
   if (typeof renderBooks === 'function') renderBooks();
   if (typeof renderAdhkarCards === 'function') renderAdhkarCards();
-  if (typeof renderFeaturedAudio === 'function') renderFeaturedAudio();
 }

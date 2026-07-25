@@ -152,5 +152,4 @@ async function loadDataFromAPI() {
     if (typeof renderQuran === 'function') renderQuran();
     if (typeof renderVideos === 'function') renderVideos();
     if (typeof renderBooks === 'function') renderBooks();
-    if (typeof renderFeaturedAudio === 'function') renderFeaturedAudio();
 }

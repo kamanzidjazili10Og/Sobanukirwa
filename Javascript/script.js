@@ -1877,37 +1877,6 @@ function applyLanguage(lang) {
     localStorage.setItem('language', lang);
 }
 
-function renderFeaturedAudio() {
-    const container = document.getElementById('featuredAudioContainer');
-    if (!container) return;
-
-    const audioToRender = tracksData.length > 0 ? tracksData : (typeof fallbackTracks !== 'undefined' ? fallbackTracks : []);
-    
-    const featured = audioToRender.filter(t => t.image).slice(0, 4);
-
-    if (featured.length === 0) {
-        container.innerHTML = '<div class="empty-state"><p>No featured audio available.</p></div>';
-        return;
-    }
-
-    container.innerHTML = '<div class="featured-audio-grid">' + featured.map(track => {
-        const title = getTrackTitle(track);
-        const artistName = getArtistName(track);
-        return `
-            <div class="audio-card-mini" onclick="playTrack(null, ${track.id})">
-                <div class="audio-card-mini-thumb">
-                    <img src="${track.image || 'Images/logo2.png'}" alt="${title}" loading="lazy">
-                    <div class="audio-play-overlay"><i class="fas fa-play"></i></div>
-                </div>
-                <div class="audio-card-mini-info">
-                    <h4 class="audio-title-mini">${title}</h4>
-                    <p class="audio-artist-mini">${artistName}</p>
-                </div>
-            </div>
-        `;
-    }).join('') + '</div>';
-}
-
 function displayVerseOfTheDay() {
     const lang = document.body.getAttribute('data-language') || 'rw';
     const verseWidget = document.getElementById('verseOfTheDayWidget');
@@ -2035,7 +2004,6 @@ function initApp() {
             }
             updatePrayerSummary();
             displayVerseOfTheDay();
-            renderFeaturedAudio();
             updateAdhkarTimer();
             setupAudioListeners();
         }, 500);
@@ -2079,7 +2047,6 @@ function initApp() {
             if (typeof renderAdhkarCards === 'function') renderAdhkarCards();
             updatePrayerSummary();
             displayVerseOfTheDay();
-            renderFeaturedAudio();
             updateAdhkarTimer();
             setupAudioListeners();
         }, 500);
