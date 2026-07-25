@@ -78,9 +78,11 @@ export default function QiblaScreen({ navigation }) {
         Vibration.vibrate(200);
         playQiblaSound();
       }
+      if (subRef.current?.remove) { subRef.current.remove(); subRef.current = null; }
     } else if (!aligned && wasAligned) {
       setWasAligned(false);
       foundOpacity.value = withTiming(0, { duration: 300 });
+      startMagnetometer();
     }
 
     const intensity = interpolate(absDiff, [0, 30, 90], [1, 0.5, 0.2], Extrapolate.CLAMP);

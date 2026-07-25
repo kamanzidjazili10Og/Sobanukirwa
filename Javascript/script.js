@@ -1141,6 +1141,16 @@ function switchSection(sectionId) {
 // ===== QIBLA =====
 let compassActive = false;
 let qiblaState = { qiblaAngle: 0, heading: 0, wasAligned: false, lastPlayTime: 0 };
+let qiblaSound = null;
+
+function playQiblaFoundSound() {
+    if (!qiblaSound) {
+        qiblaSound = new Audio('audio/Subhanallah.m4a');
+        qiblaSound.volume = 0.5;
+    }
+    qiblaSound.currentTime = 0;
+    qiblaSound.play().catch(function() {});
+}
 
 function initQibla() {
     buildCompassTicks();
@@ -1313,11 +1323,17 @@ function handleOrientation(event) {
         if (Date.now() - qiblaState.lastPlayTime > 8000) {
             qiblaState.lastPlayTime = Date.now();
             if (navigator.vibrate) navigator.vibrate(200);
+            playQiblaFoundSound();
+        }
+        if (compassActive) {
+            window.removeEventListener('deviceorientation', handleOrientation);
+            compassActive = false;
         }
     } else if (!aligned && qiblaState.wasAligned) {
         qiblaState.wasAligned = false;
         if (glowRing) glowRing.classList.remove('aligned');
         if (foundBadge) foundBadge.classList.remove('visible');
+        if (!compassActive) startCompass();
     }
 }
 
