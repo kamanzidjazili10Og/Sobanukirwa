@@ -8,7 +8,17 @@ router.get('/', async (req, res) => {
     const [rows] = await pool.query(
       'SELECT a.*, COUNT(t.id) as total_tracks FROM artists a LEFT JOIN tracks t ON a.id = t.artist_id AND t.is_active = 1 WHERE a.is_active = 1 GROUP BY a.id ORDER BY a.name'
     );
-    res.json(rows);
+
+    const seen = {};
+    const deduped = [];
+    for (const row of rows) {
+      const key = (row.name || '').toLowerCase().trim();
+      if (key && seen[key]) continue;
+      if (key) seen[key] = true;
+      deduped.push(row);
+    }
+
+    res.json(deduped);
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
@@ -30,7 +40,7 @@ router.post('/', upload.single('image'), async (req, res) => {
     const imageUrl = req.file ? `/uploads/images/${req.file.filename}` : null;
 
     const [existing] = await pool.query(
-      'SELECT id FROM artists WHERE name = ? AND is_active = 1 LIMIT 1',
+      'SELECT id FROM artists WHERE LOWER(name) = LOWER(?) AND is_active = 1 LIMIT 1',
       [name]
     );
     if (existing.length > 0) {

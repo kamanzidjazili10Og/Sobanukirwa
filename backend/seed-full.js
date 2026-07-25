@@ -43,17 +43,17 @@ const FALLBACK = {
     { title: "Usuulu thalathat - Isomo rya Munani", titleEn: "Usul al-Thalathah - Lesson 8", titleAr: "الأصول الثلاثة - الدرس الثامن", audioUrl: "audio/Al Usuulu Thalathat/Usuulu thatalathat isomo rya Munani.m4a", category: "Tauhid", artist: "Sheikh Djamidu", duration: "33:15" },
     { title: "Usuulu thalathat - Isomo rya Cyenda", titleEn: "Usul al-Thalathah - Lesson 9", titleAr: "الأصول الثلاثة - الدرس التاسع", audioUrl: "audio/Al Usuulu Thalathat/Usuulu thalathat isomo rya Cyenda.m4a", category: "Tauhid", artist: "Sheikh Djamidu", duration: "39:48" },
     { title: "Usuulu thalathat - Isomo rya Cumi", titleEn: "Usul al-Thalathah - Lesson 10", titleAr: "الأصول الثلاثة - الدرس العاشر", audioUrl: "audio/Al Usuulu Thalathat/Usuulu thalathat isomo rya cumi.m4a", category: "Tauhid", artist: "Sheikh Djamidu", duration: "43:02" },
-    { title: "Amateka y'intumwa y'imana Muhamad (S.A.W) part 1", titleEn: "Story of Prophet Muhammad (S.A.W) part 1", titleAr: "قصة النبي محمد - الجزء الأول", audioUrl: "audio/Sirah/Amateka y'intumwa y'imana Muhamad (S.A.W) part.aac", category: "Sirah", artist: "Sheikh Mutabaruka", duration: "34:12" },
-    { title: "Amateka y'intumwa y'imana Muhamad (S.A.W) part 2", titleEn: "Story of Prophet Muhammad (S.A.W) part 2", titleAr: "قصة النبي محمد - الجزء الثاني", audioUrl: "audio/Sirah/Amateka y'intumwa y'imana Muhamad (S.A.W) part-2.aac", category: "Sirah", artist: "Sheikh Mutabaruka", duration: "28:45" },
-    { title: "Amateka y'intumwa y'imana Muhamad (S.A.W) part 4", titleEn: "Story of Prophet Muhammad (S.A.W) part 4", titleAr: "قصة النبي محمد - الجزء الرابع", audioUrl: "audio/Sirah/Amateka y'intumwa y'imana Muhamad (S.A.W) part - 4.aac", category: "Sirah", artist: "Sheikh Mutabaruka", duration: "31:30" },
-    { title: "Athikar zikorwa mugitondo na nimugoroba", titleEn: "Morning and Evening Adhkar", titleAr: "أذكار الصباح والمساء", audioUrl: "audio/Sirah/Amateka y'intumwa y'imana Muhamad (S.A.W) part -6.aac", category: "Adhkar", artist: "Sheikh Mutabaruka", duration: "22:40" },
-    { title: "Athikar zikorwa umuntu ajyiye kuryama", titleEn: "Bedtime Adhkar", titleAr: "أذكار النوم", audioUrl: "audio/Sirah/Amateka y'intumwa y'imana Muhamad (S.A.W) part - 8.aac", category: "Adhkar", artist: "Sheikh Mutabaruka", duration: "18:55" },
+    { title: "Amateka y'intumwa y'imana Muhamad (S.A.W) part 1", titleEn: "Story of Prophet Muhammad (S.A.W) part 1", titleAr: "قصة النبي محمد - الجزء الأول", audioUrl: "audio/Sirah/Amateka y'intumwa y'imana Muhamad (S.A.W) part.aac", category: "Sirah", artist: "Sheikh Mutabaruka Uthman", duration: "34:12" },
+    { title: "Amateka y'intumwa y'imana Muhamad (S.A.W) part 2", titleEn: "Story of Prophet Muhammad (S.A.W) part 2", titleAr: "قصة النبي محمد - الجزء الثاني", audioUrl: "audio/Sirah/Amateka y'intumwa y'imana Muhamad (S.A.W) part-2.aac", category: "Sirah", artist: "Sheikh Mutabaruka Uthman", duration: "28:45" },
+    { title: "Amateka y'intumwa y'imana Muhamad (S.A.W) part 4", titleEn: "Story of Prophet Muhammad (S.A.W) part 4", titleAr: "قصة النبي محمد - الجزء الرابع", audioUrl: "audio/Sirah/Amateka y'intumwa y'imana Muhamad (S.A.W) part - 4.aac", category: "Sirah", artist: "Sheikh Mutabaruka Uthman", duration: "31:30" },
+    { title: "Athikar zikorwa mugitondo na nimugoroba", titleEn: "Morning and Evening Adhkar", titleAr: "أذكار الصباح والمساء", audioUrl: "audio/Sirah/Amateka y'intumwa y'imana Muhamad (S.A.W) part -6.aac", category: "Adhkar", artist: "Sheikh Mutabaruka Uthman", duration: "22:40" },
+    { title: "Athikar zikorwa umuntu ajyiye kuryama", titleEn: "Bedtime Adhkar", titleAr: "أذكار النوم", audioUrl: "audio/Sirah/Amateka y'intumwa y'imana Muhamad (S.A.W) part - 8.aac", category: "Adhkar", artist: "Sheikh Mutabaruka Uthman", duration: "18:55" },
     { title: "Icyamatse mu gusobanutsirwa amazina ya Allah", titleEn: "Understanding Allah's Names", titleAr: "شرح أسماء الله", audioUrl: "audio/Tauhid/Isomo rya Tauhid.aac", category: "Tauhid", artist: "Sheikh Muhamad Sulaiman", duration: "47:22" },
     { title: "Izina ALLAHU", titleEn: "The Name Allah", titleAr: "اسم الله", audioUrl: "audio/Tauhid/Isomo rya Tauhid part2.m4a", category: "Tauhid", artist: "Sheikh Muhamad Sulaiman", duration: "38:15" },
     { title: "Inabi Wifuriza Abandi Irakugarukira", titleEn: "Evil Wished Upon Others Returns", titleAr: "الشر الذي تتمناه للغير يعود عليك", audioUrl: "audio/Tauhid/Isomo rya Tauhid.aac", category: "Akhlaq", artist: "Sheikh Uwamungu", duration: "25:30" },
     { title: "Aya magambo akomeye", titleEn: "Important Words", titleAr: "كلمات مهمة", audioUrl: "audio/Tauhid/Isomo rya Tauhid part2.m4a", category: "Akhlaq", artist: "Sheikh Uwamungu", duration: "31:48" },
     { title: "Haranira ko ubuzima bugoye", titleEn: "Strive Though Life is Hard", titleAr: "اجتهد ولو كانت الحياة صعبة", audioUrl: "audio/Tauhid/Isomo rya Tauhid part3.m4a", category: "Akhlaq", artist: "Sheikh Uwamungu", duration: "27:14" },
-    { title: "Khutbah ku wa Gatanu", titleEn: "Friday Khutbah", titleAr: "خطبة الجمعة", audioUrl: "audio/Khutubah/sample_khutbah.mp3", category: "Khutubah", artist: "Sheikh Mutabaruka", duration: "15:00" }
+    { title: "Khutbah ku wa Gatanu", titleEn: "Friday Khutbah", titleAr: "خطبة الجمعة", audioUrl: "audio/Khutubah/sample_khutbah.mp3", category: "Khutubah", artist: "Sheikh Mutabaruka Uthman", duration: "15:00" }
   ],
   videos: [
     { title: "Amateka y'intumwa y'imana Muhamad (S.A.W)", titleEn: "The Story of Prophet Muhammad (PBUH)", titleAr: "قصة النبي محمد (ص)", videoUrl: "Videos/1.mp4", thumbnail: "Images/ok9.jpg" },
@@ -95,9 +95,14 @@ const FALLBACK = {
     { arabic: "رَضِيتُ بِاللَّهِ رَبًّا وَبِالْإِسْلَامِ دِينًا وَبِمُحَمَّدٍ نَبِيًّا", transliteration: "Radeetu billahi rabban wa bil-islami deenan wa bi-Muhammadin nabiyya", translationRw: "Nyishimiye Allah kuba Nyagasani, Islam kuba idini, Muhamad kuba intumwa", translationEn: "I am pleased with Allah as my Lord, Islam as my religion, and Muhammad as my Prophet", count: 3, category: "evening", audioFile: "audio/Subhanallah Alhamdulillah Wa La ilaha IlAllah (Dhikr).m4a" }
   ],
   artists: [
+    { name: "Sheikh Uqash", nameEn: "Sheikh Uqash", nameAr: "الشيخ عقاش" },
+    { name: "Sheikh Mutabaruka Uthman", nameEn: "Sheikh Mutabaruka", nameAr: "الشيخ موتاباروكا" },
+    { name: "Sheikh Muhamad Sulaiman", nameEn: "Sheikh Muhamad Sulaiman", nameAr: "الشيخ محمد سليمان" },
+    { name: "Sheikh Gahutu", nameEn: "Sheikh Gahutu", nameAr: "الشيخ غاهوتو" },
+    { name: "Sheikh Djamidu", nameEn: "Sheikh Djamidu", nameAr: "الشيخ جميدو" },
+    { name: "Sheikh Uwamungu", nameEn: "Sheikh Uwamungu", nameAr: "الشيخ أومونغو" },
     { name: "Ahmed Al-Ajmi", nameEn: "Ahmed Al-Ajmi", nameAr: "أحمد العجمي" },
-    { name: "Sobanukirwa", nameEn: "Sobanukirwa", nameAr: "سبنوكيروا" },
-    { name: "Various", nameEn: "Various", nameAr: "مختلف" }
+    { name: "Sobanukirwa", nameEn: "Sobanukirwa", nameAr: "سبنوكيروا" }
   ],
   categories: [
     { name: "Quran", nameEn: "Quran", nameAr: "القرآن", slug: "quran" },
@@ -106,7 +111,7 @@ const FALLBACK = {
 };
 
 async function getOrCreateArtist(name, nameEn, nameAr) {
-  const [rows] = await pool.query('SELECT id FROM artists WHERE name = ?', [name]);
+  const [rows] = await pool.query('SELECT id FROM artists WHERE LOWER(name) = LOWER(?) AND is_active = 1', [name]);
   if (rows.length > 0) return rows[0].id;
   const [result] = await pool.query(
     'INSERT INTO artists (name, name_en, name_ar, is_active) VALUES (?, ?, ?, 1)',
@@ -116,9 +121,8 @@ async function getOrCreateArtist(name, nameEn, nameAr) {
 }
 
 async function getOrCreateCategory(name, nameEn, nameAr, slug) {
-  let [rows] = await pool.query('SELECT id FROM categories WHERE slug = ?', [slug]);
+  let [rows] = await pool.query('SELECT id FROM categories WHERE LOWER(slug) = LOWER(?) AND is_active = 1', [slug]);
   if (rows.length > 0) {
-    // Reactivate if inactive
     await pool.query('UPDATE categories SET is_active = 1 WHERE id = ?', [rows[0].id]);
     return rows[0].id;
   }
@@ -130,12 +134,12 @@ async function getOrCreateCategory(name, nameEn, nameAr, slug) {
 }
 
 async function getArtistId(name) {
-  const [rows] = await pool.query('SELECT id FROM artists WHERE name = ? AND is_active = 1', [name]);
+  const [rows] = await pool.query('SELECT id FROM artists WHERE LOWER(name) = LOWER(?) AND is_active = 1', [name]);
   return rows.length > 0 ? rows[0].id : null;
 }
 
 async function getCategoryId(name) {
-  const [rows] = await pool.query('SELECT id FROM categories WHERE name = ? AND is_active = 1', [name]);
+  const [rows] = await pool.query('SELECT id FROM categories WHERE LOWER(name) = LOWER(?) AND is_active = 1', [name]);
   return rows.length > 0 ? rows[0].id : null;
 }
 
@@ -175,6 +179,14 @@ async function seed() {
     const catId = catMap[t.category.toLowerCase()] || null;
     if (!artistId) {
       console.log(`  WARNING: Artist "${t.artist}" not found for track "${t.title}"`);
+      continue;
+    }
+    const [existingTrack] = await pool.query(
+      'SELECT id FROM tracks WHERE title = ? AND artist_id = ? AND is_active = 1 LIMIT 1',
+      [t.title, artistId]
+    );
+    if (existingTrack.length > 0) {
+      console.log(`  Skipping duplicate track: "${t.title}" by artist_id=${artistId}`);
       continue;
     }
     await pool.query(

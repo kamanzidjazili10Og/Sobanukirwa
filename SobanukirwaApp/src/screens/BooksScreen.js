@@ -108,6 +108,9 @@ export default function BooksScreen() {
           </View>
         ) : filtered.map((item) => {
           const isPdf = item.fileType === 'pdf';
+          const isDocx = item.fileType === 'docx';
+          const typeLabel = isPdf ? 'PDF' : isDocx ? 'DOCX' : 'TEXT';
+          const badgeStyle = isPdf ? styles.badgePdf : isDocx ? styles.badgeDocx : styles.badgeText;
           const imgUrl = item.imageUrl ? getMediaUrl(item.imageUrl) : null;
           const itemTitle = item.titleEn || item.title || '';
           const itemAuthor = item.authorEn || item.author || '';
@@ -127,8 +130,8 @@ export default function BooksScreen() {
                   </View>
                 )}
                 <View style={styles.coverOverlay} />
-                <View style={[styles.typeBadge, isPdf ? styles.badgePdf : styles.badgeText]}>
-                  <Text style={styles.typeBadgeText}>{isPdf ? 'PDF' : 'TEXT'}</Text>
+                <View style={[styles.typeBadge, badgeStyle]}>
+                  <Text style={styles.typeBadgeText}>{typeLabel}</Text>
                 </View>
               </View>
               <View style={styles.info}>
@@ -166,7 +169,7 @@ export default function BooksScreen() {
             </TouchableOpacity>
           </View>
           <View style={styles.readerBody}>
-            {selectedBook && selectedBook.fileType === 'pdf' && selectedBook.fileUrl ? (
+            {selectedBook && (selectedBook.fileType === 'pdf' || selectedBook.fileType === 'docx') && selectedBook.fileUrl ? (
               <View style={styles.loadingOverlay}>
                 <BookMarked size={64} color={COLORS.secondary} />
                 <Text style={styles.loadingTitle}>{selectedBook.titleEn || selectedBook.title}</Text>
@@ -177,7 +180,9 @@ export default function BooksScreen() {
                 >
                   <BookOpen size={18} color="#FFFFFF" />
                   <Text style={styles.pdfOpenBtnText}>
-                    {t('Fungura PDF', 'Open PDF', 'فتح PDF')}
+                    {selectedBook.fileType === 'docx'
+                      ? t('Fungura DOCX', 'Open DOCX', 'فتح DOCX')
+                      : t('Fungura PDF', 'Open PDF', 'فتح PDF')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -244,6 +249,7 @@ const styles = StyleSheet.create({
   coverOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.05)' },
   typeBadge: { position: 'absolute', top: 8, left: 8, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
   badgePdf: { backgroundColor: COLORS.error },
+  badgeDocx: { backgroundColor: '#2980B9' },
   badgeText: { backgroundColor: COLORS.secondary },
   typeBadgeText: { color: '#fff', fontSize: 9, fontWeight: '700', letterSpacing: 0.5 },
 

@@ -3,44 +3,22 @@ const pool = require('../config/db');
 const upload = require('../middleware/upload');
 const router = express.Router();
 
-const SAMPLE_BOOKS = [
-  { title: 'Quran mu Rurimi rw\'Ikinyarwanda', title_en: 'Quran in Kinyarwanda', author: 'Sheikh Uqash', category: 'Tauhid', file_type: 'pdf', file_url: null, image_url: null },
-  { title: 'Ibyo kwizera n\'ibikorwa by\'Isilamu', title_en: 'Faith and Deeds in Islam', author: 'Dr. Uwimana', category: 'Akhlaq', file_type: 'text', file_url: null, image_url: null },
-  { title: 'Amateka y\'Abahanuzi', title_en: 'Stories of the Prophets', author: 'Sheikh Nsengimana', category: 'Sirah', file_type: 'pdf', file_url: null, image_url: null },
-  { title: 'Inyigisho z\'Imyemerere', title_en: 'Lessons of Faith', author: 'Sheikh Gahutu', category: 'Tauhid', file_type: 'text', file_url: null, image_url: null },
-  { title: 'Uburyo bwo Gukora Swala', title_en: 'How to Perform Salah', author: 'Sheikh Djamidu', category: 'Fiqih', file_type: 'docx', file_url: null, image_url: null },
-  { title: 'Kwihangana n\'Ibyiringiro', title_en: 'Patience and Hope', author: 'Sheikh Mutabaruka', category: 'Khutubah', file_type: 'pdf', file_url: null, image_url: null },
-];
-
-async function seedSampleBooks() {
-  try {
-    const [existing] = await pool.query('SELECT COUNT(*) as count FROM books WHERE is_active = 1');
-    if (existing[0].count > 0) return;
-    let inserted = 0;
-    for (const b of SAMPLE_BOOKS) {
-      await pool.query(
-        'INSERT INTO books (title, title_en, author, category, file_type, file_url, image_url) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [b.title, b.title_en, b.author, b.category, b.file_type, b.file_url || '', b.image_url || null]
-      );
-      inserted++;
-    }
-    console.log('Seeded ' + inserted + ' sample books');
-  } catch (err) {
-    console.error('Auto-seed books failed:', err.message);
-  }
-}
-
 router.get('/', async (req, res) => {
   try {
     const [rows] = await pool.query(
       'SELECT * FROM books WHERE is_active = 1 ORDER BY created_at DESC'
     );
-    if (rows.length === 0) {
-      await seedSampleBooks();
-      const [newRows] = await pool.query('SELECT * FROM books WHERE is_active = 1 ORDER BY created_at DESC');
-      return res.json(newRows);
+
+    const seen = {};
+    const deduped = [];
+    for (const row of rows) {
+      const key = (row.title || '').toLowerCase().trim();
+      if (seen[key]) continue;
+      seen[key] = true;
+      deduped.push(row);
     }
-    res.json(rows);
+
+    res.json(deduped);
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }

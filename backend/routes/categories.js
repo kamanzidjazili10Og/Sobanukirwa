@@ -2,35 +2,6 @@ const express = require('express');
 const pool = require('../config/db');
 const router = express.Router();
 
-const DEFAULT_CATEGORIES = [
-  { name: 'Tauhid', name_ar: 'التوحيد', name_en: 'Tawheed', slug: 'tauhid', sort_order: 1 },
-  { name: 'Fiqih', name_ar: 'الفقه', name_en: 'Fiqh', slug: 'fiqih', sort_order: 2 },
-  { name: 'Sirah', name_ar: 'السيرة', name_en: 'Seerah', slug: 'sirah', sort_order: 3 },
-  { name: 'Khutubah', name_ar: 'الخطب', name_en: 'Khutbah', slug: 'khutubah', sort_order: 4 },
-  { name: 'Akhlaq', name_ar: 'الأخلاق', name_en: 'Akhlaq', slug: 'akhlaq', sort_order: 5 },
-  { name: 'Adhkar', name_ar: 'الأذكار', name_en: 'Adhkar', slug: 'adhkar', sort_order: 6 },
-];
-
-async function seedDefaultCategories() {
-  try {
-    const [existing] = await pool.query('SELECT COUNT(*) as count FROM categories WHERE is_active = 1');
-    if (existing[0].count > 0) return false;
-    let inserted = 0;
-    for (const c of DEFAULT_CATEGORIES) {
-      await pool.query(
-        'INSERT INTO categories (name, name_ar, name_en, slug, sort_order) VALUES (?, ?, ?, ?, ?)',
-        [c.name, c.name_ar, c.name_en, c.slug, c.sort_order]
-      );
-      inserted++;
-    }
-    console.log('Seeded ' + inserted + ' default categories');
-    return true;
-  } catch (err) {
-    console.error('Auto-seed categories failed:', err.message);
-    return false;
-  }
-}
-
 router.get('/', async (req, res) => {
   try {
     const [rows] = await pool.query(
@@ -42,22 +13,16 @@ router.get('/', async (req, res) => {
        ORDER BY c.sort_order ASC, c.name`
     );
 
-    if (rows.length === 0) {
-      const seeded = await seedDefaultCategories();
-      if (seeded) {
-        const [newRows] = await pool.query(
-          `SELECT c.*, COUNT(t.id) as tracks_count
-           FROM categories c
-           LEFT JOIN tracks t ON c.id = t.category_id AND t.is_active = 1
-           WHERE c.is_active = 1
-           GROUP BY c.id
-           ORDER BY c.sort_order ASC, c.name`
-        );
-        return res.json(newRows);
-      }
+    const seen = {};
+    const deduped = [];
+    for (const row of rows) {
+      const key = (row.slug || '').toLowerCase().trim();
+      if (seen[key]) continue;
+      seen[key] = true;
+      deduped.push(row);
     }
 
-    res.json(rows);
+    res.json(deduped);
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }

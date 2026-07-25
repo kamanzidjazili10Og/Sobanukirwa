@@ -540,8 +540,8 @@ function renderBooks() {
         const author = lang === 'ar' ? (book.authorAr || book.author) : lang === 'en' ? (book.authorEn || book.author) : book.author;
         const cover = book.image || 'Images/logo2.png';
         const cat = (book.category || '').toLowerCase();
-        const typeClass = book.type === 'pdf' ? 'pdf' : 'text';
-        const typeLabel = book.type === 'pdf' ? 'PDF' : 'TEXT';
+        const typeClass = book.type === 'pdf' ? 'pdf' : book.type === 'docx' ? 'docx' : 'text';
+        const typeLabel = book.type === 'pdf' ? 'PDF' : book.type === 'docx' ? 'DOCX' : 'TEXT';
         return '<div class="book-card" onclick="openBook(' + book.id + ')" style="cursor:pointer">' +
             '<div class="book-cover">' +
                 '<img src="' + cover + '" alt="' + title + '" loading="lazy" onerror="this.src=\'Images/logo2.png\'">' +
@@ -626,6 +626,9 @@ function openBook(bookId) {
 
     if (book.type === 'pdf' && book.pdfUrl) {
         body.innerHTML = '<iframe src="' + book.pdfUrl + '" title="' + title + '" style="width:100%;height:100%;border:none"></iframe>';
+    } else if (book.type === 'docx' && book.pdfUrl) {
+        var viewerUrl = 'https://view.officeapps.live.com/op/embed.aspx?src=' + encodeURIComponent(book.pdfUrl);
+        body.innerHTML = '<iframe src="' + viewerUrl + '" title="' + title + '" style="width:100%;height:100%;border:none"></iframe>';
     } else {
         var content = book.content || book.description || 'Iki gitabo kirimo ubumenyi bw\'Islam bufatika.';
         body.innerHTML = '<div class="book-reader-text">' +

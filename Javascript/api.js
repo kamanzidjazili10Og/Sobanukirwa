@@ -137,7 +137,7 @@ async function loadDataFromAPI() {
                 authorEn: b.author_en || b.author || '',
                 authorAr: b.author_ar || b.author || '',
                 image: imageUrl,
-                pdfUrl: b.file_type === 'pdf' ? fileUrl : '',
+                pdfUrl: (b.file_type === 'pdf' || b.file_type === 'docx') ? fileUrl : '',
                 content: b.file_type === 'text' ? (b.description || '') : '',
                 category: b.category || '',
                 type: b.file_type || 'pdf',

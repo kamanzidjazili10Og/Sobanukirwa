@@ -11,7 +11,17 @@ router.get('/', async (req, res) => {
     if (category) { sql += ' AND category = ?'; params.push(category); }
     sql += ' ORDER BY sort_order ASC, id ASC';
     const [rows] = await pool.query(sql, params);
-    res.json(rows);
+
+    const seen = {};
+    const deduped = [];
+    for (const row of rows) {
+      const key = (row.arabic_text || '').trim();
+      if (seen[key]) continue;
+      seen[key] = true;
+      deduped.push(row);
+    }
+
+    res.json(deduped);
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }

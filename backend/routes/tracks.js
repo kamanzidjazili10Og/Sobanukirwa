@@ -3,7 +3,6 @@ const pool = require('../config/db');
 const upload = require('../middleware/upload');
 const router = express.Router();
 
-// Ensure duration_str column exists
 async function ensureColumns() {
   try {
     const [cols] = await pool.query("SHOW COLUMNS FROM tracks LIKE 'duration_str'");
@@ -17,46 +16,6 @@ async function ensureColumns() {
   } catch (e) { /* ignore */ }
 }
 ensureColumns();
-
-const SAMPLE_TRACKS = [
-  { title: 'Al-Fatiha', artistQuery: 'sheikh uqash', categorySlug: 'tauhid', audio_url: 'https://server7.mp3quran.net/ahmed/001.mp3', duration_str: '01:30' },
-  { title: 'Ayat Al-Kursi', artistQuery: 'sheikh uqash', categorySlug: 'tauhid', audio_url: 'https://server7.mp3quran.net/ahmed/002.mp3', duration_str: '01:45' },
-  { title: 'Surah Ar-Rahman', artistQuery: 'mutabaruka', categorySlug: 'tauhid', audio_url: 'https://server7.mp3quran.net/ahmed/055.mp3', duration_str: '08:30' },
-  { title: 'Surah Al-Waqiah', artistQuery: 'mutabaruka', categorySlug: 'tauhid', audio_url: 'https://server7.mp3quran.net/ahmed/056.mp3', duration_str: '03:15' },
-  { title: 'Surah Al-Mulk', artistQuery: 'muhamad sulaiman', categorySlug: 'tauhid', audio_url: 'https://server7.mp3quran.net/ahmed/067.mp3', duration_str: '07:00' },
-  { title: 'Surah Ya-Sin', artistQuery: 'muhamad sulaiman', categorySlug: 'tauhid', audio_url: 'https://server7.mp3quran.net/ahmed/036.mp3', duration_str: '12:00' },
-  { title: 'Morning Adhkar', artistQuery: 'gahutu', categorySlug: 'adhkar', audio_url: 'https://server7.mp3quran.net/ahmed/001.mp3', duration_str: '15:00' },
-  { title: 'Evening Adhkar', artistQuery: 'djamidu', categorySlug: 'adhkar', audio_url: 'https://server7.mp3quran.net/ahmed/001.mp3', duration_str: '12:00' },
-  { title: 'Tauhid Lesson 1', artistQuery: 'uqash', categorySlug: 'tauhid', audio_url: 'https://server7.mp3quran.net/ahmed/001.mp3', duration_str: '45:00' },
-  { title: 'Sirah of Prophet', artistQuery: 'gahutu', categorySlug: 'sirah', audio_url: 'https://server7.mp3quran.net/ahmed/002.mp3', duration_str: '32:00' },
-  { title: 'Akhlaq for Muslims', artistQuery: 'uwamungu', categorySlug: 'akhlaq', audio_url: 'https://server7.mp3quran.net/ahmed/003.mp3', duration_str: '28:00' },
-  { title: 'Khutbah: Taqwa', artistQuery: 'mutabaruka', categorySlug: 'khutubah', audio_url: 'https://server7.mp3quran.net/ahmed/004.mp3', duration_str: '22:00' },
-];
-
-async function seedSampleTracks() {
-  try {
-    const [existing] = await pool.query('SELECT COUNT(*) as count FROM tracks WHERE is_active = 1');
-    if (existing[0].count > 0) return false;
-    const [artists] = await pool.query('SELECT id, LOWER(name) as name FROM artists');
-    const [cats] = await pool.query('SELECT id, slug, LOWER(name) as name FROM categories');
-    if (artists.length === 0) return false;
-    let inserted = 0;
-    for (const t of SAMPLE_TRACKS) {
-      const artist = artists.find(a => a.name.includes(t.artistQuery));
-      const cat = cats.find(c => c.slug === t.categorySlug || c.name.includes(t.categorySlug));
-      await pool.query(
-        'INSERT INTO tracks (artist_id, category_id, title, audio_url, duration_str, description) VALUES (?, ?, ?, ?, ?, ?)',
-        [artist ? artist.id : artists[0].id, cat ? cat.id : null, t.title, t.audio_url, t.duration_str, t.title + ' - Sample track for admin preview']
-      );
-      inserted++;
-    }
-    console.log('Seeded ' + inserted + ' sample tracks');
-    return true;
-  } catch (err) {
-    console.error('Auto-seed tracks failed:', err.message);
-    return false;
-  }
-}
 
 router.get('/', async (req, res) => {
   try {
@@ -77,15 +36,16 @@ router.get('/', async (req, res) => {
 
     const [rows] = await pool.query(sql, params);
 
-    if (rows.length === 0 && !artist_id && !category_id && !search) {
-      const seeded = await seedSampleTracks();
-      if (seeded) {
-        const [newRows] = await pool.query(sql, params);
-        return res.json(newRows);
-      }
+    const seen = {};
+    const deduped = [];
+    for (const row of rows) {
+      const key = `${(row.title || '').toLowerCase().trim()}|${row.artist_id || ''}`;
+      if (seen[key]) continue;
+      seen[key] = true;
+      deduped.push(row);
     }
 
-    res.json(rows);
+    res.json(deduped);
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }

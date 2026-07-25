@@ -13,55 +13,22 @@ async function ensureColumns() {
 }
 ensureColumns();
 
-const SAMPLE_VIDEOS = [
-  { title: 'Amateka y\'intumwa y\'imana Muhamad (S.A.W)', author: 'Sheikh Uqash', video_url: '/uploads/videos/sample-1.mp4', duration_str: '45:00', title_en: 'The Story of Prophet Muhammad (PBUH)', description: 'Amateka y\'Intumwa Muhamad (SAW) y\'umuvandimwe wacu.' },
-  { title: 'Inyigisho ku Kwihangana', author: 'Sheikh Mutabaruka', video_url: '/uploads/videos/sample-2.mp4', duration_str: '32:00', title_en: 'Lesson on Patience', description: 'Inyigisho zibanzirizwa ku kwihangana mu buzima bw\'imisi yose.' },
-  { title: 'Gusobanukirwa Icyo Kwemera Ari cyo', author: 'Sheikh Gahutu', video_url: '/uploads/videos/sample-3.mp4', duration_str: '28:00', title_en: 'Understanding What Faith Is', description: 'Ubusobanuro bwa Imani n\'uburyo bwayo.' },
-  { title: 'Uburyo bwo Gusenga', author: 'Sheikh Djamidu', video_url: '/uploads/videos/sample-4.mp4', duration_str: '38:00', title_en: 'How to Pray', description: 'Inama zerekerana n\'uburyo bwo gusenga neza.' },
-  { title: 'Kubaha Ababyeyi', author: 'Sheikh Mugabo', video_url: '/uploads/videos/sample-5.mp4', duration_str: '30:00', title_en: 'Respecting Parents', description: 'Ubuhe buryo bw\'ubuhizi n\'ubukwe bwa vyakuru.' },
-  { title: 'Ingaruka z\'Ubuyobe', author: 'Sheikh Habyarimana', video_url: '/uploads/videos/sample-7.mp4', duration_str: '27:00', title_en: 'Consequences of Sin', description: 'Ingaruka z\'ubusambanyi n\'ubuyobe mu buzima.' },
-  { title: 'Uburenganzira bw\'Umugore mu Isilamu', author: 'Sheikh Uwimana', video_url: '/uploads/videos/sample-8.mp4', duration_str: '35:00', title_en: 'Women\'s Rights in Islam', description: 'Uburenganzira bwa so mu Isilamu.' },
-  { title: 'Akamaro k\'Ishuri', author: 'Sheikh Niyonzima', video_url: '/uploads/videos/sample-9.mp4', duration_str: '22:00', title_en: 'Importance of Knowledge', description: 'Akamaro k\'ubumenyi mu buzima bw\'umuntu.' },
-  { title: 'Kugirana Imyifatire Myiza', author: 'Sheikh Tuyisenge', video_url: '/uploads/videos/sample-10.mp4', duration_str: '29:00', title_en: 'Having Good Character', description: 'Uburyo bwo gutega imyifatire myiza mu buzima.' },
-  { title: 'Urupfu n\'Ubuzima nyuma y\'Urupfu', author: 'Sheikh Munyaneza', video_url: '/uploads/videos/sample-11.mp4', duration_str: '40:00', title_en: 'Death and the Afterlife', description: 'Ijambo rerekerana urupfu n\'ubuzima busigaye.' },
-  { title: 'Ubumwe n\'Urukundo mu Bamisilamu', author: 'Sheikh Nsabimana', video_url: '/uploads/videos/sample-12.mp4', duration_str: '33:00', title_en: 'Unity and Love Among Muslims', description: 'Akamaro k\'ubumwe n\'urukundo mu bamisilamu.' },
-];
-
-async function seedSampleVideos() {
-  try {
-    const [existing] = await pool.query('SELECT COUNT(*) as count FROM videos WHERE is_active = 1');
-    if (existing[0].count > 0) return false;
-    let inserted = 0;
-    for (const v of SAMPLE_VIDEOS) {
-      await pool.query(
-        'INSERT INTO videos (title, title_en, author, description, video_url, thumbnail_url, duration_str) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [v.title, v.title_en || null, v.author || null, v.description || null, v.video_url, v.thumbnail_url || null, v.duration_str || null]
-      );
-      inserted++;
-    }
-    console.log('Seeded ' + inserted + ' sample videos');
-    return true;
-  } catch (err) {
-    console.error('Auto-seed videos failed:', err.message);
-    return false;
-  }
-}
-
 router.get('/', async (req, res) => {
   try {
     const [rows] = await pool.query(
       'SELECT * FROM videos WHERE is_active = 1 ORDER BY created_at DESC'
     );
 
-    if (rows.length === 0) {
-      const seeded = await seedSampleVideos();
-      if (seeded) {
-        const [newRows] = await pool.query('SELECT * FROM videos WHERE is_active = 1 ORDER BY created_at DESC');
-        return res.json(newRows);
-      }
+    const seen = {};
+    const deduped = [];
+    for (const row of rows) {
+      const key = (row.title || '').toLowerCase().trim();
+      if (seen[key]) continue;
+      seen[key] = true;
+      deduped.push(row);
     }
 
-    res.json(rows);
+    res.json(deduped);
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
