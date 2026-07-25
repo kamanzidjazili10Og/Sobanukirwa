@@ -545,6 +545,7 @@ function renderBooks() {
             '<div class="book-cover">' +
                 '<img src="' + cover + '" alt="' + title + '" loading="lazy" onerror="this.src=\'Images/logo2.png\'">' +
                 '<div class="book-cover-overlay"></div>' +
+                '<div class="book-cover-glow"></div>' +
                 '<div class="book-cover-spine"></div>' +
                 '<span class="book-type-badge ' + typeClass + '">' + typeLabel + '</span>' +
                 (cat ? '<span class="book-category-badge">' + cat + '</span>' : '') +
