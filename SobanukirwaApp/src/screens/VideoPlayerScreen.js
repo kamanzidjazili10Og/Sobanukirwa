@@ -14,15 +14,16 @@ try {
 
 export default function VideoPlayerScreen({ route, navigation }) {
   const { video } = route.params;
-  const { t, COLORS, stopAllMedia } = useApp();
+  const { t, COLORS, stopAllMedia, getVideoLocalUri, isOffline } = useApp();
   const videoRef = useRef(null);
   const [status, setStatus] = useState({});
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [retryCount, setRetryCount] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [resolvedUri, setResolvedUri] = useState(null);
 
-  const videoUrl = video?.videoUrl?.startsWith('http')
+  const remoteUrl = video?.videoUrl?.startsWith('http')
     ? video.videoUrl
     : getMediaUrl(video?.videoUrl);
 
@@ -34,6 +35,7 @@ export default function VideoPlayerScreen({ route, navigation }) {
     if (Platform.OS !== 'web') {
       try { StatusBar.setHidden(true); } catch(e) {}
     }
+    resolveVideoSource();
     return () => {
       if (videoRef.current) {
         try { videoRef.current.stopAsync(); } catch(e) {}
@@ -43,7 +45,22 @@ export default function VideoPlayerScreen({ route, navigation }) {
         try { StatusBar.setHidden(false); } catch(e) {}
       }
     };
-  }, []);
+  }, [retryCount]);
+
+  const resolveVideoSource = async () => {
+    setLoading(true);
+    setError(false);
+    try {
+      const localUri = await getVideoLocalUri(remoteUrl);
+      if (localUri) {
+        setResolvedUri(localUri);
+        return;
+      }
+    } catch (e) {}
+    setResolvedUri(remoteUrl);
+  };
+
+  const videoUrl = resolvedUri || remoteUrl;
 
   const handleRetry = () => {
     setError(false);
@@ -52,7 +69,7 @@ export default function VideoPlayerScreen({ route, navigation }) {
   };
 
   const openInBrowser = () => {
-    Linking.openURL(videoUrl).catch(() => {});
+    Linking.openURL(remoteUrl).catch(() => {});
   };
 
   const handleGoBack = async () => {
@@ -133,7 +150,12 @@ export default function VideoPlayerScreen({ route, navigation }) {
               {loading && (
                 <View style={styles.loadingWrap}>
                   <ActivityIndicator size="large" color="#F59E0B" />
-                  <Text style={styles.loadingText}>{t('Gutegura video...', 'Loading video...', 'جاري تحميل الفيديو...')}</Text>
+                  <Text style={styles.loadingText}>
+                    {isOffline
+                      ? t('Gutegura video yo mu bikoresho...', 'Loading cached video...', 'جاري تحميل الفيديو المخزن...')
+                      : t('Gutegura video...', 'Loading video...', 'جاري تحميل الفيديو...')
+                    }
+                  </Text>
                 </View>
               )}
               {renderVideo()}
@@ -143,16 +165,22 @@ export default function VideoPlayerScreen({ route, navigation }) {
               <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
               <Text style={[styles.errorTitle, { color: '#FFFFFF' }]}>{videoTitle}</Text>
               <Text style={styles.errorText}>{t('Video ntirashoboye gukina', 'Unable to play video', 'تعذر تشغيل الفيديو')}</Text>
-              <Text style={styles.errorUrl} numberOfLines={2}>{videoUrl}</Text>
+              {isOffline && (
+                <Text style={[styles.errorUrl, { color: '#F59E0B' }]}>
+                  {t('Uri ku bwamba - ongera ugerageze iyo warahishe', 'You are offline - retry when connected', 'أنت غير متصل - أعد المحاولة عند الاتصال')}
+                </Text>
+              )}
               <View style={styles.errorBtns}>
                 <TouchableOpacity style={styles.retryBtn} onPress={handleRetry}>
                   <Ionicons name="refresh" size={18} color="#F59E0B" />
                   <Text style={styles.retryText}>{t('Ongera ugerageze', 'Retry', 'إعادة المحاولة')}</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.browserBtn} onPress={openInBrowser}>
-                  <Ionicons name="open-outline" size={18} color="#3498db" />
-                  <Text style={styles.browserText}>{t('Fungura mu browser', 'Open in browser', 'فتح في المتصفح')}</Text>
-                </TouchableOpacity>
+                {!isOffline && (
+                  <TouchableOpacity style={styles.browserBtn} onPress={openInBrowser}>
+                    <Ionicons name="open-outline" size={18} color="#3498db" />
+                    <Text style={styles.browserText}>{t('Fungura mu browser', 'Open in browser', 'فتح في المتصفح')}</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
           )}

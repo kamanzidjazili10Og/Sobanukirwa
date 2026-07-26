@@ -532,6 +532,9 @@ html[dir="rtl"] .lang-switcher { direction: ltr; }
     box-shadow: var(--shadow-lg);
     animation: slideUp 0.25s ease;
 }
+.modal-content.book-viewer {
+    max-width: 900px;
+}
 .modal-content h3 {
     color: var(--secondary);
     margin-bottom: 22px;

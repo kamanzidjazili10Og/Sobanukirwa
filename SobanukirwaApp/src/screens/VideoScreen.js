@@ -1,10 +1,10 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, ImageBackground, TextInput, RefreshControl, Dimensions, SectionList } from 'react-native';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, ImageBackground, TextInput, RefreshControl, Dimensions, SectionList, ActivityIndicator, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useApp } from '../context/AppContext';
 import { getMediaUrl } from '../services/api';
-import { Film, Play, Search, PlayCircle, User, X } from 'lucide-react-native';
+import { Film, Play, Search, PlayCircle, User, X, Download, CheckCircle, CloudOff } from 'lucide-react-native';
 
 const COLORS = {
   primary: '#0F766E',
@@ -24,6 +24,45 @@ const COLORS = {
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 52) / 2;
 
+function CacheButton({ videoUrl, cachedVideos, videoDownloads, cacheVideo, uncacheVideo, t, isOffline }) {
+  const isCached = cachedVideos[videoUrl] || false;
+  const dl = videoDownloads[videoUrl];
+  const isDownloading = dl?.downloading || false;
+  const progress = dl?.progress || 0;
+
+  if (isDownloading) {
+    return (
+      <View style={styles.cacheProgressWrap}>
+        <ActivityIndicator size="small" color="#F59E0B" />
+        <Text style={styles.cacheProgressText}>{Math.round(progress * 100)}%</Text>
+      </View>
+    );
+  }
+
+  if (isCached) {
+    return (
+      <TouchableOpacity
+        style={styles.cachedBadge}
+        onPress={() => uncacheVideo(videoUrl)}
+      >
+        <CheckCircle size={12} color="#10B981" />
+        <Text style={styles.cachedText}>{t('Birabitswe', 'Cached', 'مخزن')}</Text>
+      </TouchableOpacity>
+    );
+  }
+
+  if (isOffline) return null;
+
+  return (
+    <TouchableOpacity
+      style={styles.cacheBtn}
+      onPress={() => cacheVideo(videoUrl)}
+    >
+      <Download size={12} color="#F59E0B" />
+    </TouchableOpacity>
+  );
+}
+
 function ThumbImage({ uri, title, style }) {
   const [failed, setFailed] = useState(false);
   if (failed || !uri) {
@@ -38,8 +77,16 @@ function ThumbImage({ uri, title, style }) {
 }
 
 export default function VideoScreen({ navigation }) {
-  const { videos, t, refreshing, refreshData } = useApp();
+  const { videos, t, refreshing, refreshData, cachedVideos, videoDownloads, cacheVideo, uncacheVideo, checkVideoCache, isOffline } = useApp();
   const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    if (videos && videos.length > 0) {
+      videos.forEach(v => {
+        if (v.videoUrl) checkVideoCache(v.videoUrl);
+      });
+    }
+  }, [videos]);
 
   useFocusEffect(
     useCallback(() => {
@@ -116,6 +163,12 @@ export default function VideoScreen({ navigation }) {
                 <PlayCircle size={20} color={COLORS.primary} />
               </View>
             </View>
+            {isOffline && (
+              <View style={styles.offlineBar}>
+                <CloudOff size={14} color="#F59E0B" />
+                <Text style={styles.offlineText}>{t('Uri ku bwamba - amashusho yo mu bikoresho gusa', 'Offline - cached videos only', 'غير متصل - فيديوهات مخزنة فقط')}</Text>
+              </View>
+            )}
           </View>
 
           <View style={styles.searchWrap}>
@@ -178,11 +231,20 @@ export default function VideoScreen({ navigation }) {
                         <Text style={styles.listAuthor} numberOfLines={1}>{item.author}</Text>
                       </View>
                     ) : null}
-                    {item.durationStr ? (
-                      <View style={styles.listAuthorRow}>
+                    <View style={styles.listBottomRow}>
+                      {item.durationStr ? (
                         <Text style={styles.listDuration}>{item.durationStr}</Text>
-                      </View>
-                    ) : null}
+                      ) : <View />}
+                      <CacheButton
+                        videoUrl={item.videoUrl}
+                        cachedVideos={cachedVideos}
+                        videoDownloads={videoDownloads}
+                        cacheVideo={cacheVideo}
+                        uncacheVideo={uncacheVideo}
+                        t={t}
+                        isOffline={isOffline}
+                      />
+                    </View>
                   </View>
                 </TouchableOpacity>
               );
@@ -218,6 +280,12 @@ export default function VideoScreen({ navigation }) {
               <PlayCircle size={20} color={COLORS.primary} />
             </View>
           </View>
+          {isOffline && (
+            <View style={styles.offlineBar}>
+              <CloudOff size={14} color="#F59E0B" />
+              <Text style={styles.offlineText}>{t('Uri ku bwamba - amashusho yo mu bikoresho gusa', 'Offline - cached videos only', 'غير متصل - فيديوهات مخزنة فقط')}</Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.searchWrap}>
@@ -278,11 +346,20 @@ export default function VideoScreen({ navigation }) {
                       <Text style={styles.authorText} numberOfLines={1}>{video.author}</Text>
                     </View>
                   ) : null}
-                  {video.durationStr ? (
-                    <View style={styles.authorRow}>
+                  <View style={styles.gridBottomRow}>
+                    {video.durationStr ? (
                       <Text style={styles.authorText}>{video.durationStr}</Text>
-                    </View>
-                  ) : null}
+                    ) : <View />}
+                    <CacheButton
+                      videoUrl={video.videoUrl}
+                      cachedVideos={cachedVideos}
+                      videoDownloads={videoDownloads}
+                      cacheVideo={cacheVideo}
+                      uncacheVideo={uncacheVideo}
+                      t={t}
+                      isOffline={isOffline}
+                    />
+                  </View>
                 </View>
               </TouchableOpacity>
             );
@@ -310,6 +387,12 @@ const styles = StyleSheet.create({
     width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center',
     backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)',
   },
+  offlineBar: {
+    flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8,
+    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10,
+    backgroundColor: 'rgba(245,158,11,0.12)', borderWidth: 1, borderColor: 'rgba(245,158,11,0.25)',
+  },
+  offlineText: { fontSize: 11, color: '#F59E0B', fontWeight: '500' },
   searchWrap: { paddingHorizontal: 20, marginBottom: 10 },
   searchBar: {
     flexDirection: 'row', alignItems: 'center', borderRadius: 14, borderWidth: 1,
@@ -373,4 +456,22 @@ const styles = StyleSheet.create({
   listAuthorRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
   listAuthor: { fontSize: 11, color: 'rgba(255,255,255,0.5)' },
   listDuration: { fontSize: 11, color: 'rgba(245,158,11,0.7)', fontWeight: '500' },
+  listBottomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
+  cacheBtn: {
+    width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(245,158,11,0.15)', borderWidth: 1, borderColor: 'rgba(245,158,11,0.3)',
+  },
+  cachedBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 3,
+    paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8,
+    backgroundColor: 'rgba(16,185,129,0.15)', borderWidth: 1, borderColor: 'rgba(16,185,129,0.3)',
+  },
+  cachedText: { fontSize: 9, color: '#10B981', fontWeight: '600' },
+  cacheProgressWrap: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8,
+    backgroundColor: 'rgba(245,158,11,0.15)',
+  },
+  cacheProgressText: { fontSize: 9, color: '#F59E0B', fontWeight: '600' },
+  gridBottomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
 });

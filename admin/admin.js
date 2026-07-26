@@ -261,8 +261,10 @@ function showModal(html) {
 function closeModal() {
     var pv = document.getElementById('af_preview');
     if (pv) { pv.pause(); pv.src = ''; }
+    var mc = document.getElementById('modalContent');
+    mc.classList.remove('book-viewer');
     document.getElementById('modalOverlay').style.display = 'none';
-    document.getElementById('modalContent').innerHTML = '';
+    mc.innerHTML = '';
 }
 
 function refreshCurrentPage() {
@@ -858,7 +860,7 @@ async function loadBooks() {
             for (var i = 0; i < books.length; i++) {
                 var b = books[i];
                 var cover = getMediaUrl(b.image_url) || '../Images/logo2.png';
-                var viewBtn = b.file_url ? '<button class="action-btn view" onclick="window.open(\'' + getMediaUrl(b.file_url) + '\')" title="' + t('view') + '"><i class="fas fa-eye"></i></button>' : '';
+                var viewBtn = b.file_url ? '<button class="action-btn view" onclick="viewBook(' + b.id + ')" title="' + t('view') + '"><i class="fas fa-eye"></i></button>' : '';
                 html += '<tr data-search="' + esc((b.title + ' ' + (b.author || '') + ' ' + (b.category || '')).toLowerCase()) + '"><td><img src="' + cover + '" class="img-preview" onerror="this.src=\'../Images/logo2.png\'"></td>' +
                     '<td><strong>' + esc(b.title) + '</strong></td>' +
                     '<td>' + (b.author || '<span class="td-muted">--</span>') + '</td>' +
@@ -937,6 +939,44 @@ async function deleteBook(id) {
     if (!confirm(t('confirmDeleteBook'))) return;
     try { await api(API_BASE + '/books/' + id, { method: 'DELETE' }); loadBooks(); showToast(t('bookDeleted'), 'success'); }
     catch (err) { showToast('Error: ' + err.message, 'error'); }
+}
+
+async function viewBook(id) {
+    try {
+        var book = await api(API_BASE + '/books/' + id);
+        if (!book) return;
+        var fileUrl = book.file_url ? getMediaUrl(book.file_url) : '';
+        var title = esc(book.title || 'Book');
+        var author = esc(book.author || '');
+        var category = esc(book.category || '');
+        var description = esc(book.description || '');
+        var fileType = (book.file_type || 'pdf').toLowerCase();
+        var bodyHtml = '';
+
+        if (fileType === 'pdf' && fileUrl) {
+            var gviewUrl = 'https://docs.google.com/gview?url=' + encodeURIComponent(fileUrl) + '&embedded=true';
+            bodyHtml = '<div style="width:100%;height:70vh;border:none"><iframe src="' + gviewUrl + '" style="width:100%;height:100%;border:none;border-radius:8px" allowfullscreen></iframe></div>';
+        } else if (fileType === 'docx' && fileUrl) {
+            var viewerUrl = 'https://view.officeapps.live.com/op/embed.aspx?src=' + encodeURIComponent(fileUrl);
+            bodyHtml = '<div style="width:100%;height:70vh;border:none"><iframe src="' + viewerUrl + '" style="width:100%;height:100%;border:none;border-radius:8px" allowfullscreen></iframe></div>';
+        } else {
+            var content = description || 'No content available for this book.';
+            bodyHtml = '<div style="padding:2rem;line-height:1.8;color:#e0e0e0">' +
+                '<h2 style="color:#d4af37;margin-bottom:1rem">' + title + '</h2>' +
+                (author ? '<p style="color:#a8c1d9;margin-bottom:0.5rem"><i class="fas fa-user"></i> ' + author + '</p>' : '') +
+                (category ? '<p style="color:#a8c1d9;margin-bottom:1rem"><i class="fas fa-tag"></i> ' + category + '</p>' : '') +
+                '<hr style="border-color:rgba(255,255,255,0.1);margin:1rem 0">' +
+                '<div style="white-space:pre-wrap;white-space:pre-line">' + content + '</div>' +
+                '</div>';
+        }
+
+        showModal(
+            '<h3><i class="fas fa-book-open"></i> ' + title + '</h3>' +
+            '<div style="margin-top:1rem">' + bodyHtml + '</div>' +
+            '<div class="modal-actions" style="margin-top:1rem"><button type="button" class="btn-secondary" onclick="closeModal()"><i class="fas fa-times"></i> ' + t('cancel') + '</button></div>'
+        );
+        document.getElementById('modalContent').classList.add('book-viewer');
+    } catch (err) { showToast('Error: ' + err.message, 'error'); }
 }
 
 // ===== CATEGORIES =====

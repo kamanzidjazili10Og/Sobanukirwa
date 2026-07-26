@@ -57,7 +57,7 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  if (url.pathname.startsWith('/uploads/')) {
+  if (url.pathname.startsWith('/uploads/') || /^\/?Videos\//i.test(url.pathname)) {
     event.respondWith(
       caches.open(MEDIA_CACHE).then(cache => {
         return cache.match(event.request).then(cached => {

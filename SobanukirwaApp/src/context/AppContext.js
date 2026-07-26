@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 import { fetchTracks, fetchCategories, fetchSurahs, fetchVideos, fetchBooks, fetchAdhkar } from '../services/api';
 import { startAutoSync, processPendingOps, getPendingCount, onSyncStatusChange } from '../services/SyncQueue';
+import { initVideoCache, isVideoCached, downloadVideo, removeCachedVideo, getCachedVideoPath, clearAllCachedVideos } from '../services/VideoCache';
 
 const AppContext = createContext();
 
@@ -73,6 +74,8 @@ export function AppProvider({ children }) {
   const [adminLoggedIn, setAdminLoggedIn] = useState(false);
   const [pendingSyncCount, setPendingSyncCount] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [cachedVideos, setCachedVideos] = useState({});
+  const [videoDownloads, setVideoDownloads] = useState({});
 
   const pauseAudioRef = useRef(null);
   const pauseVideoRef = useRef(null);
@@ -81,6 +84,55 @@ export function AppProvider({ children }) {
   const registerPauseAudio = useCallback((fn) => { pauseAudioRef.current = fn; }, []);
   const registerPauseVideo = useCallback((fn) => { pauseVideoRef.current = fn; }, []);
   const registerStopAdhan = useCallback((fn) => { stopAdhanRef.current = fn; }, []);
+
+  const checkVideoCache = useCallback(async (videoUrl) => {
+    if (!videoUrl) return false;
+    try {
+      const cached = await isVideoCached(videoUrl);
+      setCachedVideos(prev => ({ ...prev, [videoUrl]: cached }));
+      return cached;
+    } catch { return false; }
+  }, []);
+
+  const cacheVideo = useCallback(async (videoUrl, onProgress) => {
+    if (!videoUrl) return null;
+    try {
+      setVideoDownloads(prev => ({ ...prev, [videoUrl]: { progress: 0, downloading: true } }));
+      const localUri = await downloadVideo(videoUrl, (pct) => {
+        setVideoDownloads(prev => ({ ...prev, [videoUrl]: { progress: pct, downloading: true } }));
+      });
+      if (localUri) {
+        setCachedVideos(prev => ({ ...prev, [videoUrl]: true }));
+        setVideoDownloads(prev => ({ ...prev, [videoUrl]: { progress: 1, downloading: false } }));
+        return localUri;
+      }
+      setVideoDownloads(prev => ({ ...prev, [videoUrl]: { progress: 0, downloading: false, error: true } }));
+      return null;
+    } catch {
+      setVideoDownloads(prev => ({ ...prev, [videoUrl]: { progress: 0, downloading: false, error: true } }));
+      return null;
+    }
+  }, []);
+
+  const uncacheVideo = useCallback(async (videoUrl) => {
+    await removeCachedVideo(videoUrl);
+    setCachedVideos(prev => ({ ...prev, [videoUrl]: false }));
+  }, []);
+
+  const getVideoLocalUri = useCallback(async (videoUrl) => {
+    return await getCachedVideoPath(videoUrl);
+  }, []);
+
+  const initAllVideoCaches = useCallback(async (videoList) => {
+    await initVideoCache();
+    const status = {};
+    for (const v of videoList) {
+      if (v.videoUrl) {
+        try { status[v.videoUrl] = await isVideoCached(v.videoUrl); } catch { status[v.videoUrl] = false; }
+      }
+    }
+    setCachedVideos(status);
+  }, []);
 
   const stopAllMedia = useCallback(() => {
     if (pauseAudioRef.current) pauseAudioRef.current();
@@ -131,6 +183,7 @@ export function AppProvider({ children }) {
 
   useEffect(() => {
     loadPersistedState();
+    initVideoCache().catch(() => {});
     const unsub = NetInfo.addEventListener(state => {
       setIsOffline(!state.isConnected || !state.isInternetReachable);
     });
@@ -291,6 +344,7 @@ export function AppProvider({ children }) {
       setBooks(b);
       setAdhkar(a);
       await saveCacheData({ tracks: t, categories: c, surahs: s, videos: v, books: b, adhkar: a });
+      initAllVideoCaches(v).catch(() => {});
     } catch (e) {
       const cached = await loadCacheData();
       if (cached.surahs.length > 0 || cached.tracks.length > 0 || cached.books.length > 0) {
@@ -300,6 +354,7 @@ export function AppProvider({ children }) {
         setVideos(cached.videos);
         setBooks(cached.books);
         setAdhkar(cached.adhkar);
+        initAllVideoCaches(cached.videos).catch(() => {});
       } else {
         setError('network');
       }
@@ -321,6 +376,7 @@ export function AppProvider({ children }) {
       setBooks(b);
       setAdhkar(a);
       await saveCacheData({ tracks: t, categories: c, surahs: s, videos: v, books: b, adhkar: a });
+      initAllVideoCaches(v).catch(() => {});
     } catch (e) {
       const cached = await loadCacheData();
       if (cached.surahs.length > 0 || cached.tracks.length > 0 || cached.books.length > 0) {
@@ -330,6 +386,7 @@ export function AppProvider({ children }) {
         setVideos(cached.videos);
         setBooks(cached.books);
         setAdhkar(cached.adhkar);
+        initAllVideoCaches(cached.videos).catch(() => {});
       }
     }
     setRefreshing(false);
@@ -369,6 +426,7 @@ export function AppProvider({ children }) {
       adminLoggedIn, setAdminLoggedIn,
       clearCache, getCacheInfo,
       isOffline,
+      cachedVideos, videoDownloads, cacheVideo, uncacheVideo, getVideoLocalUri, checkVideoCache,
       pendingSyncCount, isSyncing, processPendingOps,
     }}>
       {children}
