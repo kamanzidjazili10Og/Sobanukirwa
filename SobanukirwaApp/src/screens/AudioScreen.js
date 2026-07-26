@@ -1,10 +1,10 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, TextInput, RefreshControl, Image, ImageBackground } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, TextInput, RefreshControl, Image, ImageBackground, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useApp } from '../context/AppContext';
 import { getMediaUrl } from '../services/api';
-import { Headphones, Play, Search, Music, ChevronLeft, X } from 'lucide-react-native';
+import { Headphones, Play, Search, Music, ChevronLeft, X, Download, Check } from 'lucide-react-native';
 
 const COLORS = {
   primary: '#0F766E',
@@ -22,9 +22,11 @@ const COLORS = {
 };
 
 export default function AudioScreen({ navigation }) {
-  const { tracks, categories, t, refreshing, refreshData } = useApp();
+  const { tracks, categories, t, refreshing, refreshData, cachedAudios, cacheAudio, isOffline } = useApp();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [search, setSearch] = useState('');
+  const [downloadingAll, setDownloadingAll] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState({ downloaded: 0, total: 0 });
 
   useFocusEffect(
     useCallback(() => {
@@ -44,6 +46,27 @@ export default function AudioScreen({ navigation }) {
         (tr.artist_name || tr.artist || '').toLowerCase().includes(search.toLowerCase())
       )
     : filteredTracks;
+
+  async function handleDownloadAll() {
+    if (downloadingAll || isOffline) return;
+    setDownloadingAll(true);
+    const tracksToDownload = searchedTracks.filter(tr => {
+      const url = tr.audio_url || tr.audioUrl;
+      const fullUrl = url ? getMediaUrl(url) : null;
+      return fullUrl && !cachedAudios[fullUrl];
+    });
+    setDownloadProgress({ downloaded: 0, total: tracksToDownload.length });
+    for (let i = 0; i < tracksToDownload.length; i++) {
+      const tr = tracksToDownload[i];
+      const url = tr.audio_url || tr.audioUrl;
+      const fullUrl = url ? getMediaUrl(url) : null;
+      if (fullUrl) {
+        await cacheAudio(fullUrl);
+      }
+      setDownloadProgress({ downloaded: i + 1, total: tracksToDownload.length });
+    }
+    setDownloadingAll(false);
+  }
 
   return (
     <ImageBackground source={require('../../assets/bg-audio.jpg')} style={styles.bgImage} resizeMode="cover">
@@ -69,6 +92,28 @@ export default function AudioScreen({ navigation }) {
               <Text style={styles.heroSub}>
                 {searchedTracks.length} {t('inyigisho', 'lessons', 'درس')} • {t('Izihe', 'Listen', 'استمع')}
               </Text>
+              {!isOffline && searchedTracks.some(tr => {
+                const url = tr.audio_url || tr.audioUrl;
+                const fullUrl = url ? getMediaUrl(url) : null;
+                return fullUrl && !cachedAudios[fullUrl];
+              }) && (
+                <TouchableOpacity
+                  style={[styles.downloadAllBtn, downloadingAll && styles.downloadAllBtnDisabled]}
+                  onPress={handleDownloadAll}
+                  disabled={downloadingAll || isOffline}
+                >
+                  {downloadingAll ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <Download size={14} color="#FFFFFF" />
+                  )}
+                  <Text style={styles.downloadAllBtnText}>
+                    {downloadingAll
+                      ? `${downloadProgress.downloaded}/${downloadProgress.total}`
+                      : t('Kurura Vyose', 'Download All', 'تحميل الكل')}
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
           </View>
 
@@ -168,7 +213,16 @@ export default function AudioScreen({ navigation }) {
 
                   {/* Play Button */}
                   <View style={styles.trackPlayBtn}>
-                    <Play size={18} color={COLORS.primary} fill={COLORS.primary} />
+                    {(() => {
+                      const tUrl = track.audio_url || track.audioUrl;
+                      const fullUrl = tUrl ? getMediaUrl(tUrl) : null;
+                      const isCached = fullUrl && cachedAudios[fullUrl];
+                      return isCached ? (
+                        <Check size={18} color="#10B981" />
+                      ) : (
+                        <Play size={18} color={COLORS.primary} fill={COLORS.primary} />
+                      );
+                    })()}
                   </View>
                 </TouchableOpacity>
               );
@@ -203,6 +257,13 @@ const styles = StyleSheet.create({
   },
   heroTitle: { fontSize: 22, fontWeight: '800', letterSpacing: 0.5, color: '#FFFFFF' },
   heroSub: { fontSize: 12, marginTop: 4, fontWeight: '500', color: 'rgba(255,255,255,0.7)' },
+  downloadAllBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    marginTop: 12, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12,
+    backgroundColor: 'rgba(20,184,166,0.3)', borderWidth: 1, borderColor: '#14B8A6',
+  },
+  downloadAllBtnDisabled: { opacity: 0.5 },
+  downloadAllBtnText: { fontSize: 12, fontWeight: '600', color: '#5EEAD4' },
 
   /* Categories */
   categoryScroll: { gap: 8, paddingHorizontal: 16, paddingVertical: 10 },

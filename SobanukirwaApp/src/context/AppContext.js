@@ -2,9 +2,12 @@ import React, { createContext, useContext, useState, useEffect, useRef, useCallb
 import { AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
-import { fetchTracks, fetchCategories, fetchSurahs, fetchVideos, fetchBooks, fetchAdhkar } from '../services/api';
-import { startAutoSync, processPendingOps, getPendingCount, onSyncStatusChange } from '../services/SyncQueue';
+import { fetchTracks, fetchCategories, fetchSurahs, fetchVideos, fetchBooks, fetchAdhkar, getMediaUrl } from '../services/api';
+import { startAutoSync, processPendingOps, getPendingCount, onSyncStatusChange, addPendingOp } from '../services/SyncQueue';
 import { initVideoCache, isVideoCached, downloadVideo, removeCachedVideo, getCachedVideoPath, clearAllCachedVideos } from '../services/VideoCache';
+import { initAudioCache, isAudioCached, downloadAudio, removeCachedAudio, getCachedAudioPath, clearAllCachedAudio, getCachedAudioCount, getAudioCacheSize, downloadAllTracks, getAudioCacheInfo } from '../services/AudioCache';
+import { initBookCache, isBookCached, downloadBook, removeCachedBook, getCachedBookPath, clearAllCachedBooks, getCachedBookCount, getBookCacheSize, getBookCacheInfo, formatFileSize } from '../services/BookCache';
+import { startBidirectionalSync, addLocalChange, getSyncStatus, pullServerData, syncLocalChangesToServer, onSyncEvent } from '../services/OfflineSync';
 
 const AppContext = createContext();
 
@@ -76,6 +79,12 @@ export function AppProvider({ children }) {
   const [isSyncing, setIsSyncing] = useState(false);
   const [cachedVideos, setCachedVideos] = useState({});
   const [videoDownloads, setVideoDownloads] = useState({});
+  const [cachedAudios, setCachedAudios] = useState({});
+  const [audioDownloads, setAudioDownloads] = useState({});
+  const [cachedBooks, setCachedBooks] = useState({});
+  const [bookDownloads, setBookDownloads] = useState({});
+  const [syncStatus, setSyncStatus] = useState({ pendingChanges: 0, lastSyncTime: null });
+  const [offlineReady, setOfflineReady] = useState(false);
 
   const pauseAudioRef = useRef(null);
   const pauseVideoRef = useRef(null);
@@ -85,6 +94,13 @@ export function AppProvider({ children }) {
   const registerPauseVideo = useCallback((fn) => { pauseVideoRef.current = fn; }, []);
   const registerStopAdhan = useCallback((fn) => { stopAdhanRef.current = fn; }, []);
 
+  const stopAllMedia = useCallback(() => {
+    if (pauseAudioRef.current) pauseAudioRef.current();
+    if (pauseVideoRef.current) pauseVideoRef.current();
+    if (stopAdhanRef.current) stopAdhanRef.current();
+  }, []);
+
+  // Video cache
   const checkVideoCache = useCallback(async (videoUrl) => {
     if (!videoUrl) return false;
     try {
@@ -134,10 +150,134 @@ export function AppProvider({ children }) {
     setCachedVideos(status);
   }, []);
 
-  const stopAllMedia = useCallback(() => {
-    if (pauseAudioRef.current) pauseAudioRef.current();
-    if (pauseVideoRef.current) pauseVideoRef.current();
-    if (stopAdhanRef.current) stopAdhanRef.current();
+  // Audio cache
+  const checkAudioCache = useCallback(async (audioUrl) => {
+    if (!audioUrl) return false;
+    try {
+      const cached = await isAudioCached(audioUrl);
+      setCachedAudios(prev => ({ ...prev, [audioUrl]: cached }));
+      return cached;
+    } catch { return false; }
+  }, []);
+
+  const cacheAudio = useCallback(async (audioUrl, onProgress) => {
+    if (!audioUrl) return null;
+    try {
+      setAudioDownloads(prev => ({ ...prev, [audioUrl]: { progress: 0, downloading: true } }));
+      const localUri = await downloadAudio(audioUrl, (pct) => {
+        setAudioDownloads(prev => ({ ...prev, [audioUrl]: { progress: pct, downloading: true } }));
+      });
+      if (localUri) {
+        setCachedAudios(prev => ({ ...prev, [audioUrl]: true }));
+        setAudioDownloads(prev => ({ ...prev, [audioUrl]: { progress: 1, downloading: false } }));
+        return localUri;
+      }
+      setAudioDownloads(prev => ({ ...prev, [audioUrl]: { progress: 0, downloading: false, error: true } }));
+      return null;
+    } catch {
+      setAudioDownloads(prev => ({ ...prev, [audioUrl]: { progress: 0, downloading: false, error: true } }));
+      return null;
+    }
+  }, []);
+
+  const uncacheAudio = useCallback(async (audioUrl) => {
+    await removeCachedAudio(audioUrl);
+    setCachedAudios(prev => ({ ...prev, [audioUrl]: false }));
+  }, []);
+
+  const getAudioLocalUri = useCallback(async (audioUrl) => {
+    return await getCachedAudioPath(audioUrl);
+  }, []);
+
+  const initAllAudioCaches = useCallback(async (trackList) => {
+    await initAudioCache();
+    const status = {};
+    for (const t of trackList) {
+      const url = t.audioUrl || t.audio_url;
+      if (url) {
+        try { status[url] = await isAudioCached(url); } catch { status[url] = false; }
+      }
+    }
+    setCachedAudios(status);
+  }, []);
+
+  const cacheAllAudios = useCallback(async (trackList, onProgress) => {
+    await initAudioCache();
+    let downloaded = 0;
+    const total = trackList.filter(t => t.audioUrl || t.audio_url).length;
+    for (const t of trackList) {
+      const url = t.audioUrl || t.audio_url;
+      if (url && !(await isAudioCached(url))) {
+        await downloadAudio(url, () => {});
+      }
+      downloaded++;
+      if (onProgress) onProgress(downloaded, total);
+      if (url) {
+        setCachedAudios(prev => ({ ...prev, [url]: true }));
+      }
+    }
+    return downloaded;
+  }, []);
+
+  // Book cache
+  const checkBookCache = useCallback(async (bookUrl) => {
+    if (!bookUrl) return false;
+    try {
+      const cached = await isBookCached(bookUrl);
+      setCachedBooks(prev => ({ ...prev, [bookUrl]: cached }));
+      return cached;
+    } catch { return false; }
+  }, []);
+
+  const cacheBook = useCallback(async (bookUrl, onProgress) => {
+    if (!bookUrl) return null;
+    try {
+      setBookDownloads(prev => ({ ...prev, [bookUrl]: { progress: 0, downloading: true } }));
+      const localUri = await downloadBook(bookUrl, (pct) => {
+        setBookDownloads(prev => ({ ...prev, [bookUrl]: { progress: pct, downloading: true } }));
+      });
+      if (localUri) {
+        setCachedBooks(prev => ({ ...prev, [bookUrl]: true }));
+        setBookDownloads(prev => ({ ...prev, [bookUrl]: { progress: 1, downloading: false } }));
+        return localUri;
+      }
+      setBookDownloads(prev => ({ ...prev, [bookUrl]: { progress: 0, downloading: false, error: true } }));
+      return null;
+    } catch {
+      setBookDownloads(prev => ({ ...prev, [bookUrl]: { progress: 0, downloading: false, error: true } }));
+      return null;
+    }
+  }, []);
+
+  const uncacheBook = useCallback(async (bookUrl) => {
+    await removeCachedBook(bookUrl);
+    setCachedBooks(prev => ({ ...prev, [bookUrl]: false }));
+  }, []);
+
+  const getBookLocalUri = useCallback(async (bookUrl) => {
+    return await getCachedBookPath(bookUrl);
+  }, []);
+
+  const initAllBookCaches = useCallback(async (bookList) => {
+    await initBookCache();
+    const status = {};
+    for (const b of bookList) {
+      if (b.fileUrl) {
+        const fullUrl = getMediaUrl(b.fileUrl);
+        try { status[fullUrl] = await isBookCached(fullUrl); } catch { status[fullUrl] = false; }
+      }
+    }
+    setCachedBooks(status);
+  }, []);
+
+  // Offline sync
+  const recordLocalChange = useCallback(async (change) => {
+    return await addLocalChange(change);
+  }, []);
+
+  const refreshSyncStatus = useCallback(async () => {
+    const status = await getSyncStatus();
+    setSyncStatus(status);
   }, []);
 
   function isScheduledSilentActive() {
@@ -153,7 +293,6 @@ export function AppProvider({ children }) {
   }
 
   const isEffectivelySilent = silentMode || isScheduledSilentActive();
-
   const wasEffectivelySilentRef = useRef(isEffectivelySilent);
 
   useEffect(() => {
@@ -184,23 +323,41 @@ export function AppProvider({ children }) {
   useEffect(() => {
     loadPersistedState();
     initVideoCache().catch(() => {});
+    initAudioCache().catch(() => {});
+    initBookCache().catch(() => {});
+
     const unsub = NetInfo.addEventListener(state => {
-      setIsOffline(!state.isConnected || !state.isInternetReachable);
+      const offline = !state.isConnected || !state.isInternetReachable;
+      setIsOffline(offline);
+      if (!offline) {
+        setTimeout(() => {
+          syncLocalChangesToServer('https://sobanukirwa-production.up.railway.app/api').catch(() => {});
+          refreshSyncStatus();
+        }, 2000);
+      }
     });
 
     const stopSync = startAutoSync(60000);
+    const stopBidirectional = startBidirectionalSync(120000);
 
     const unsubSync = onSyncStatusChange((status) => {
       setPendingSyncCount(status.pending || 0);
       setIsSyncing(status.syncing || false);
     });
 
+    const unsubSyncEvent = onSyncEvent((event) => {
+      refreshSyncStatus();
+    });
+
     getPendingCount().then(count => setPendingSyncCount(count));
+    refreshSyncStatus();
 
     return () => {
       unsub();
       stopSync();
+      stopBidirectional();
       unsubSync();
+      unsubSyncEvent();
     };
   }, []);
 
@@ -309,6 +466,18 @@ export function AppProvider({ children }) {
     } catch (e) {}
   }
 
+  async function clearAllCaches() {
+    try {
+      await clearCache();
+      await clearAllCachedAudio();
+      await clearAllCachedVideos();
+      await clearAllCachedBooks();
+      setCachedAudios({});
+      setCachedVideos({});
+      setCachedBooks({});
+    } catch (e) {}
+  }
+
   async function getCacheInfo() {
     try {
       const [cacheTime, tracksCount, categoriesCount, surahsCount, videosCount, booksCount, adhkarCount] = await Promise.all([
@@ -320,13 +489,17 @@ export function AppProvider({ children }) {
         AsyncStorage.getItem(CACHE_KEYS.books).then(d => d ? JSON.parse(d).length : 0),
         AsyncStorage.getItem(CACHE_KEYS.adhkar).then(d => d ? JSON.parse(d).length : 0),
       ]);
+      const audioInfo = await getAudioCacheInfo().catch(() => ({ count: 0, size: 0 }));
+      const bookInfo = await getBookCacheInfo().catch(() => ({ count: 0, size: 0 }));
       return {
         lastUpdated: cacheTime ? new Date(parseInt(cacheTime)) : null,
         itemCounts: { tracks: tracksCount, categories: categoriesCount, surahs: surahsCount, videos: videosCount, books: booksCount, adhkar: adhkarCount },
         totalItems: tracksCount + categoriesCount + surahsCount + videosCount + booksCount + adhkarCount,
+        audioCache: audioInfo,
+        bookCache: bookInfo,
       };
     } catch (e) {
-      return { lastUpdated: null, itemCounts: { tracks: 0, categories: 0, surahs: 0, videos: 0, books: 0, adhkar: 0 }, totalItems: 0 };
+      return { lastUpdated: null, itemCounts: { tracks: 0, categories: 0, surahs: 0, videos: 0, books: 0, adhkar: 0 }, totalItems: 0, audioCache: { count: 0, size: 0 }, bookCache: { count: 0, size: 0 } };
     }
   }
 
@@ -345,6 +518,9 @@ export function AppProvider({ children }) {
       setAdhkar(a);
       await saveCacheData({ tracks: t, categories: c, surahs: s, videos: v, books: b, adhkar: a });
       initAllVideoCaches(v).catch(() => {});
+      initAllAudioCaches(t).catch(() => {});
+      initAllBookCaches(b).catch(() => {});
+      setOfflineReady(true);
     } catch (e) {
       const cached = await loadCacheData();
       if (cached.surahs.length > 0 || cached.tracks.length > 0 || cached.books.length > 0) {
@@ -355,6 +531,9 @@ export function AppProvider({ children }) {
         setBooks(cached.books);
         setAdhkar(cached.adhkar);
         initAllVideoCaches(cached.videos).catch(() => {});
+        initAllAudioCaches(cached.tracks).catch(() => {});
+        initAllBookCaches(cached.books).catch(() => {});
+        setOfflineReady(true);
       } else {
         setError('network');
       }
@@ -377,6 +556,8 @@ export function AppProvider({ children }) {
       setAdhkar(a);
       await saveCacheData({ tracks: t, categories: c, surahs: s, videos: v, books: b, adhkar: a });
       initAllVideoCaches(v).catch(() => {});
+      initAllAudioCaches(t).catch(() => {});
+      initAllBookCaches(b).catch(() => {});
     } catch (e) {
       const cached = await loadCacheData();
       if (cached.surahs.length > 0 || cached.tracks.length > 0 || cached.books.length > 0) {
@@ -387,6 +568,8 @@ export function AppProvider({ children }) {
         setBooks(cached.books);
         setAdhkar(cached.adhkar);
         initAllVideoCaches(cached.videos).catch(() => {});
+        initAllAudioCaches(cached.tracks).catch(() => {});
+        initAllBookCaches(cached.books).catch(() => {});
       }
     }
     setRefreshing(false);
@@ -396,7 +579,10 @@ export function AppProvider({ children }) {
 
   useEffect(() => {
     const sub = AppState.addEventListener('change', (nextState) => {
-      if (nextState === 'active') refreshData();
+      if (nextState === 'active') {
+        refreshData();
+        refreshSyncStatus();
+      }
     });
     return () => sub.remove();
   }, [refreshData]);
@@ -424,10 +610,14 @@ export function AppProvider({ children }) {
       silentPrayers, setSilentPrayers,
       isEffectivelySilent, isScheduledSilentActive,
       adminLoggedIn, setAdminLoggedIn,
-      clearCache, getCacheInfo,
-      isOffline,
+      clearCache, clearAllCaches, getCacheInfo,
+      isOffline, offlineReady,
       cachedVideos, videoDownloads, cacheVideo, uncacheVideo, getVideoLocalUri, checkVideoCache,
+      cachedAudios, audioDownloads, cacheAudio, uncacheAudio, getAudioLocalUri, checkAudioCache, cacheAllAudios,
+      cachedBooks, bookDownloads, cacheBook, uncacheBook, getBookLocalUri, checkBookCache,
       pendingSyncCount, isSyncing, processPendingOps,
+      syncStatus, recordLocalChange, refreshSyncStatus,
+      formatFileSize,
     }}>
       {children}
     </AppContext.Provider>

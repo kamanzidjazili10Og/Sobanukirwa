@@ -2,9 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Switch, Animated, ImageBackground } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Settings, Globe, Bell, Volume2, Moon, Shield, ChevronLeft, ChevronRight, Check, HardDrive, Star, Headphones, Video, BookOpen, Book } from 'lucide-react-native';
+import { Settings, Globe, Bell, Volume2, Moon, Shield, ChevronLeft, ChevronRight, Check, HardDrive, Star, Headphones, Video, BookOpen, Book, Download, Upload, RefreshCw, Wifi, WifiOff } from 'lucide-react-native';
 import { useApp } from '../context/AppContext';
 import SilentBanner from '../components/SilentBanner';
+import { formatFileSize } from '../services/BookCache';
 
 const RECITER_OPTIONS = [
   { key: 'Adhan1', label: 'Adhan 1 (Makkah)', labelRw: 'Adhan 1 (Makka)' },
@@ -47,7 +48,8 @@ function SectionCard({ children, delay = 0 }) {
 }
 
 export default function SettingsScreen({ navigation }) {
-  const [cacheInfo, setCacheInfo] = useState({ lastUpdated: null, itemCounts: {}, totalItems: 0 });
+  const [cacheInfo, setCacheInfo] = useState({ lastUpdated: null, itemCounts: {}, totalItems: 0, audioCache: { count: 0, size: 0 }, bookCache: { count: 0, size: 0 } });
+  const [syncInfo, setSyncInfo] = useState({ pendingChanges: 0, lastSyncTime: null });
   const headerFade = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -60,10 +62,18 @@ export default function SettingsScreen({ navigation }) {
       const info = await getCacheInfo();
       setCacheInfo(info);
     }
+    if (refreshSyncStatus) {
+      await refreshSyncStatus();
+      const status = await getSyncStatus();
+      setSyncInfo(status);
+    }
   }
 
   async function handleClearCache() {
-    if (clearCache) {
+    if (clearAllCaches) {
+      await clearAllCaches();
+      loadCacheInfo();
+    } else if (clearCache) {
       await clearCache();
       loadCacheInfo();
     }
@@ -77,7 +87,8 @@ export default function SettingsScreen({ navigation }) {
     scheduledSilent, setScheduledSilent, silentFrom, setSilentFrom, silentTo, setSilentTo,
     silentPrayers, setSilentPrayers,
     saveSetting, adhkarReminder, setAdhkarReminder,
-    isEffectivelySilent, clearCache, getCacheInfo,
+    isEffectivelySilent, clearCache, clearAllCaches, getCacheInfo,
+    isOffline, syncStatus, refreshSyncStatus, formatFileSize,
   } = useApp();
 
   function handleReciterChange(key) {
@@ -549,9 +560,137 @@ export default function SettingsScreen({ navigation }) {
               )}
               <TouchableOpacity style={styles.clearCacheBtn} onPress={handleClearCache} activeOpacity={0.7}>
                 <Text style={styles.clearCacheBtnText}>
-                  {t('Siba Ubukungu', 'Clear Cache', 'مسح التخزين المؤقت')}
+                  {t('Siba Ubukungu', 'Clear All Cache', 'مسح التخزين المؤقت')}
                 </Text>
               </TouchableOpacity>
+            </SectionCard>
+
+            {/* Audio Cache */}
+            <SectionCard delay={440}>
+              <View style={styles.sectionHeader}>
+                <View style={styles.sectionHeaderLeft}>
+                  <View style={[styles.sectionIconWrap, { backgroundColor: 'rgba(94,234,212,0.15)' }]}>
+                    <Headphones size={18} color="#5EEAD4" />
+                  </View>
+                  <View>
+                    <Text style={styles.sectionTitle}>
+                      {t('Amadosiye y\'Amajwi', 'Audio Cache', 'تخزين الصوت')}
+                    </Text>
+                    <Text style={styles.sectionSub}>{t('Amajwi yabitswe offline', 'Cached audio for offline', 'صوت مخزون بدون إنترنت')}</Text>
+                  </View>
+                </View>
+              </View>
+              <View style={styles.sectionDivider} />
+              <View style={styles.settingItem}>
+                <View style={styles.settingItemLeft}>
+                  <Headphones size={16} color="rgba(255,255,255,0.6)" />
+                  <Text style={styles.settingLabel}>
+                    {t('Amajwi yabitswe', 'Cached Audio', 'الصوت المخزون')}
+                  </Text>
+                </View>
+                <Text style={styles.settingValue}>{cacheInfo.audioCache?.count || 0}</Text>
+              </View>
+              {(cacheInfo.audioCache?.size || 0) > 0 && (
+                <View style={styles.settingItem}>
+                  <View style={styles.settingItemLeft}>
+                    <Text style={[styles.settingLabel, { paddingLeft: 26 }]}>
+                      {t('Ingano', 'Size', 'الحجم')}
+                    </Text>
+                  </View>
+                  <Text style={[styles.settingValue, { fontSize: 11, color: 'rgba(255,255,255,0.5)' }]}>
+                    {formatFileSize(cacheInfo.audioCache.size)}
+                  </Text>
+                </View>
+              )}
+            </SectionCard>
+
+            {/* Book Cache */}
+            <SectionCard delay={480}>
+              <View style={styles.sectionHeader}>
+                <View style={styles.sectionHeaderLeft}>
+                  <View style={[styles.sectionIconWrap, { backgroundColor: 'rgba(245,158,11,0.15)' }]}>
+                    <BookOpen size={18} color="#F59E0B" />
+                  </View>
+                  <View>
+                    <Text style={styles.sectionTitle}>
+                      {t('Amadosiye y\'Ibitabo', 'Book Cache', 'تخزين الكتب')}
+                    </Text>
+                    <Text style={styles.sectionSub}>{t('Ibitabo vyabitswe offline', 'Cached books for offline', 'كتب مخزونة بدون إنترنت')}</Text>
+                  </View>
+                </View>
+              </View>
+              <View style={styles.sectionDivider} />
+              <View style={styles.settingItem}>
+                <View style={styles.settingItemLeft}>
+                  <BookOpen size={16} color="rgba(255,255,255,0.6)" />
+                  <Text style={styles.settingLabel}>
+                    {t('Ibitabo vyabitswe', 'Cached Books', 'الكتب المخزنة')}
+                  </Text>
+                </View>
+                <Text style={styles.settingValue}>{cacheInfo.bookCache?.count || 0}</Text>
+              </View>
+              {(cacheInfo.bookCache?.size || 0) > 0 && (
+                <View style={styles.settingItem}>
+                  <View style={styles.settingItemLeft}>
+                    <Text style={[styles.settingLabel, { paddingLeft: 26 }]}>
+                      {t('Ingano', 'Size', 'الحجم')}
+                    </Text>
+                  </View>
+                  <Text style={[styles.settingValue, { fontSize: 11, color: 'rgba(255,255,255,0.5)' }]}>
+                    {formatFileSize(cacheInfo.bookCache.size)}
+                  </Text>
+                </View>
+              )}
+            </SectionCard>
+
+            {/* Sync Status */}
+            <SectionCard delay={520}>
+              <View style={styles.sectionHeader}>
+                <View style={styles.sectionHeaderLeft}>
+                  <View style={[styles.sectionIconWrap, { backgroundColor: 'rgba(16,185,129,0.15)' }]}>
+                    <RefreshCw size={18} color="#10B981" />
+                  </View>
+                  <View>
+                    <Text style={styles.sectionTitle}>
+                      {t('Guhuza data', 'Data Sync', 'مزامنة البيانات')}
+                    </Text>
+                    <Text style={styles.sectionSub}>{t('Guhuza na website', 'Sync with website', 'مزامنة مع الموقع')}</Text>
+                  </View>
+                </View>
+              </View>
+              <View style={styles.sectionDivider} />
+              <View style={styles.settingItem}>
+                <View style={styles.settingItemLeft}>
+                  {isOffline ? <WifiOff size={16} color="#F59E0B" /> : <Wifi size={16} color="#10B981" />}
+                  <Text style={styles.settingLabel}>
+                    {t('Ibihuriro', 'Connection', 'الاتصال')}
+                  </Text>
+                </View>
+                <Text style={[styles.settingValue, { color: isOffline ? '#F59E0B' : '#10B981' }]}>
+                  {isOffline ? t('Offline', 'Offline', 'غير متصل') : t('Online', 'Online', 'متصل')}
+                </Text>
+              </View>
+              <View style={styles.settingItem}>
+                <View style={styles.settingItemLeft}>
+                  <Upload size={16} color="rgba(255,255,255,0.6)" />
+                  <Text style={styles.settingLabel}>
+                    {t('Ibyo guhuza', 'Pending Sync', 'بانتظار المزامنة')}
+                  </Text>
+                </View>
+                <Text style={styles.settingValue}>{syncInfo.pendingChanges || 0}</Text>
+              </View>
+              {syncInfo.lastSyncTime && (
+                <View style={styles.settingItem}>
+                  <View style={styles.settingItemLeft}>
+                    <Text style={[styles.settingLabel, { paddingLeft: 26 }]}>
+                      {t('Igihe yavuguruwe', 'Last Sync', 'آخر مزامنة')}
+                    </Text>
+                  </View>
+                  <Text style={[styles.settingValue, { fontSize: 11, color: 'rgba(255,255,255,0.5)' }]}>
+                    {syncInfo.lastSyncTime.toLocaleDateString()} {syncInfo.lastSyncTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </Text>
+                </View>
+              )}
             </SectionCard>
 
             {/* Admin Access */}

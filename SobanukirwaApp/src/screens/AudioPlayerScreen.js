@@ -25,7 +25,7 @@ const C = {
 
 export default function AudioPlayerScreen({ route, navigation }) {
   const { category, tracks: passedTracks, startIndex = 0 } = route.params;
-  const { t, stopAllMedia, registerPauseAudio } = useApp();
+  const { t, stopAllMedia, registerPauseAudio, cachedAudios, getAudioLocalUri, isOffline } = useApp();
   const soundRef = useRef(null);
   const [currentIndex, setCurrentIndex] = useState(startIndex);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -82,8 +82,15 @@ export default function AudioPlayerScreen({ route, navigation }) {
       const rawUrl = currentTrack.audio_url || currentTrack.audioUrl || '';
       const audioUrl = getMediaUrl(rawUrl) || rawUrl;
       if (!audioUrl) return;
+      let finalUrl = audioUrl;
+      const localUri = await getAudioLocalUri(audioUrl);
+      if (localUri) {
+        finalUrl = localUri;
+      } else if (isOffline) {
+        return;
+      }
       const { sound } = await Audio.Sound.createAsync(
-        { uri: audioUrl },
+        { uri: finalUrl },
         { shouldPlay: true, volume }
       );
       soundRef.current = sound;
@@ -286,6 +293,14 @@ export default function AudioPlayerScreen({ route, navigation }) {
                   <View style={[styles.npBar, { backgroundColor: '#5EEAD4' }]} />
                 </View>
               )}
+              {(() => {
+                const tUrl = track.audio_url || track.audioUrl;
+                const fullUrl = tUrl ? getMediaUrl(tUrl) : null;
+                const isCached = fullUrl && cachedAudios[fullUrl];
+                return isCached ? (
+                  <View style={styles.cachedDot} />
+                ) : null;
+              })()}
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -349,4 +364,5 @@ const styles = StyleSheet.create({
   plNowPlaying: { flexDirection: 'row', alignItems: 'flex-end', gap: 2, height: 16 },
   npBar: { width: 3, height: 16, borderRadius: 1.5 },
   npBar2: { width: 3, height: 10, borderRadius: 1.5 },
+  cachedDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#10B981', marginLeft: 4 },
 });

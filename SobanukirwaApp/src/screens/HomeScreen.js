@@ -109,7 +109,7 @@ export default function HomeScreen({ navigation }) {
     try {
       const data = await fetchAdhkar();
       if (data && data.length > 0) {
-        setAdhkarList(data.slice(0, 6).map(a => ({
+        const mapped = data.slice(0, 6).map(a => ({
           id: a.id,
           arabic: a.arabic_text,
           transliteration: a.transliteration,
@@ -117,10 +117,17 @@ export default function HomeScreen({ navigation }) {
           count_target: a.count_target || 100,
           category: a.category || 'general',
           audio_url: a.audio_url || null,
-        })));
+        }));
+        setAdhkarList(mapped);
+        AsyncStorage.setItem('cached_adhkar_home', JSON.stringify(mapped));
       }
     } catch (e) {
-      setAdhkarList(FALLBACK_ADHKAR);
+      const cached = await AsyncStorage.getItem('cached_adhkar_home');
+      if (cached) {
+        setAdhkarList(JSON.parse(cached));
+      } else {
+        setAdhkarList(FALLBACK_ADHKAR);
+      }
     }
   }
 
@@ -130,8 +137,16 @@ export default function HomeScreen({ navigation }) {
       if (data && data.timings) {
         setPrayerTimes(data.timings);
         calculateNextPrayer(data.timings);
+        AsyncStorage.setItem('cached_prayer_times', JSON.stringify({ timings: data.timings, date: new Date().toDateString() }));
       }
-    } catch (e) {}
+    } catch (e) {
+      const cached = await AsyncStorage.getItem('cached_prayer_times');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        setPrayerTimes(parsed.timings);
+        calculateNextPrayer(parsed.timings);
+      }
+    }
   }
 
   function calculateNextPrayer(times) {
