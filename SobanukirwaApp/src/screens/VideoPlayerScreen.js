@@ -14,7 +14,7 @@ try {
 
 export default function VideoPlayerScreen({ route, navigation }) {
   const { video } = route.params;
-  const { t, COLORS, stopAllMedia, getVideoLocalUri, isOffline } = useApp();
+  const { t, stopAllMedia, getVideoLocalUri, isOffline, cachedVideos, checkVideoCache } = useApp();
   const videoRef = useRef(null);
   const [status, setStatus] = useState({});
   const [error, setError] = useState(false);
@@ -22,6 +22,8 @@ export default function VideoPlayerScreen({ route, navigation }) {
   const [retryCount, setRetryCount] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [resolvedUri, setResolvedUri] = useState(null);
+  const [isCached, setIsCached] = useState(false);
+  const [checkingCache, setCheckingCache] = useState(true);
 
   const remoteUrl = video?.videoUrl?.startsWith('http')
     ? video.videoUrl
@@ -50,13 +52,23 @@ export default function VideoPlayerScreen({ route, navigation }) {
   const resolveVideoSource = async () => {
     setLoading(true);
     setError(false);
+    setCheckingCache(true);
     try {
+      const cached = cachedVideos[remoteUrl] || false;
+      setIsCached(cached);
       const localUri = await getVideoLocalUri(remoteUrl);
+      setCheckingCache(false);
       if (localUri) {
         setResolvedUri(localUri);
         return;
       }
     } catch (e) {}
+    setCheckingCache(false);
+    if (isOffline) {
+      setError(true);
+      setLoading(false);
+      return;
+    }
     setResolvedUri(remoteUrl);
   };
 
@@ -108,6 +120,10 @@ export default function VideoPlayerScreen({ route, navigation }) {
           onPlaybackStatusUpdate={(s) => {
             setStatus(s);
             if (s.isLoaded) setLoading(false);
+            if (s.error) {
+              setError(true);
+              setLoading(false);
+            }
           }}
           onError={() => {
             setError(true);
@@ -145,36 +161,43 @@ export default function VideoPlayerScreen({ route, navigation }) {
         </View>
 
         <View style={[styles.videoContainer, { height: playerHeight }]}>
-          {!error ? (
-            <>
-              {loading && (
-                <View style={styles.loadingWrap}>
-                  <ActivityIndicator size="large" color="#F59E0B" />
-                  <Text style={styles.loadingText}>
-                    {isOffline
-                      ? t('Gutegura video yo mu bikoresho...', 'Loading cached video...', 'جاري تحميل الفيديو المخزن...')
-                      : t('Gutegura video...', 'Loading video...', 'جاري تحميل الفيديو...')
-                    }
-                  </Text>
-                </View>
-              )}
-              {renderVideo()}
-            </>
-          ) : (
+          {error ? (
             <View style={styles.errorContainer}>
               <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
               <Text style={[styles.errorTitle, { color: '#FFFFFF' }]}>{videoTitle}</Text>
-              <Text style={styles.errorText}>{t('Video ntirashoboye gukina', 'Unable to play video', 'تعذر تشغيل الفيديو')}</Text>
-              {isOffline && (
-                <Text style={[styles.errorUrl, { color: '#F59E0B' }]}>
-                  {t('Uri ku bwamba - ongera ugerageze iyo warahishe', 'You are offline - retry when connected', 'أنت غير متصل - أعد المحاولة عند الاتصال')}
-                </Text>
+              {isOffline && !isCached ? (
+                <>
+                  <View style={styles.offlineNotCachedIcon}>
+                    <Ionicons name="cloud-offline-outline" size={32} color="#F59E0B" />
+                  </View>
+                  <Text style={[styles.errorText, { color: '#F59E0B' }]}>
+                    {t('Video ntirabonetse mu bikoresho', 'Video not cached for offline use', 'الفيديو غير مخزن للاستخدام بدون إنترنت')}
+                  </Text>
+                  <Text style={[styles.errorUrl, { color: 'rgba(255,255,255,0.5)' }]}>
+                    {t(
+                      'Kurura video ubwo uri在线, kugira ngo urashe kukurikira offline',
+                      'Download this video when online to watch offline',
+                      'قم بتنزيل هذا الفيديو عند الاتصال لمشاهدته بدون إنترنت'
+                    )}
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.errorText}>{t('Video ntirashoboye gukina', 'Unable to play video', 'تعذر تشغيل الفيديو')}</Text>
+                  {isOffline && (
+                    <Text style={[styles.errorUrl, { color: '#F59E0B' }]}>
+                      {t('Uri ku bwamba - ongera ugerageze iyo warahishe', 'You are offline - retry when connected', 'أنت غير متصل - أعد المحاولة عند الاتصال')}
+                    </Text>
+                  )}
+                </>
               )}
               <View style={styles.errorBtns}>
-                <TouchableOpacity style={styles.retryBtn} onPress={handleRetry}>
-                  <Ionicons name="refresh" size={18} color="#F59E0B" />
-                  <Text style={styles.retryText}>{t('Ongera ugerageze', 'Retry', 'إعادة المحاولة')}</Text>
-                </TouchableOpacity>
+                {(!isOffline || isCached) && (
+                  <TouchableOpacity style={styles.retryBtn} onPress={handleRetry}>
+                    <Ionicons name="refresh" size={18} color="#F59E0B" />
+                    <Text style={styles.retryText}>{t('Ongera ugerageze', 'Retry', 'إعادة المحاولة')}</Text>
+                  </TouchableOpacity>
+                )}
                 {!isOffline && (
                   <TouchableOpacity style={styles.browserBtn} onPress={openInBrowser}>
                     <Ionicons name="open-outline" size={18} color="#3498db" />
@@ -183,11 +206,36 @@ export default function VideoPlayerScreen({ route, navigation }) {
                 )}
               </View>
             </View>
+          ) : (
+            <>
+              {(loading || checkingCache) && (
+                <View style={styles.loadingWrap}>
+                  <ActivityIndicator size="large" color="#F59E0B" />
+                  <Text style={styles.loadingText}>
+                    {checkingCache
+                      ? t('Kubona video...', 'Preparing video...', 'جاري تجهيز الفيديو...')
+                      : isOffline
+                        ? t('Gutegura video yo mu bikoresho...', 'Loading cached video...', 'جاري تحميل الفيديو المخزن...')
+                        : t('Gutegura video...', 'Loading video...', 'جاري تحميل الفيديو...')
+                    }
+                  </Text>
+                </View>
+              )}
+              {renderVideo()}
+            </>
           )}
         </View>
 
         <ScrollView style={styles.infoPanel}>
-          <Text style={styles.title}>{videoTitle}</Text>
+          <View style={styles.titleRow}>
+            <Text style={styles.title}>{videoTitle}</Text>
+            {isCached && (
+              <View style={styles.offlineReadyBadge}>
+                <Ionicons name="checkmark-circle" size={14} color="#10B981" />
+                <Text style={styles.offlineReadyText}>{t('Offline', 'Offline', 'محفوظ')}</Text>
+              </View>
+            )}
+          </View>
           <View style={styles.metaRow}>
             {videoAuthor ? (
               <View style={styles.metaItem}>
@@ -207,6 +255,12 @@ export default function VideoPlayerScreen({ route, navigation }) {
                 <Text style={styles.metaText}>{videoViews} {t('ireba', 'views', 'مشاهدة')}</Text>
               </View>
             ) : null}
+            {isOffline && (
+              <View style={[styles.metaItem, styles.offlineMeta]}>
+                <Ionicons name="cloud-offline-outline" size={14} color="#F59E0B" />
+                <Text style={[styles.metaText, { color: '#F59E0B' }]}>{t('Offline', 'Offline', 'غير متصل')}</Text>
+              </View>
+            )}
           </View>
           {videoDescription ? (
             <View style={styles.descSection}>
@@ -235,9 +289,20 @@ const styles = StyleSheet.create({
   topBarTitle: { flex: 1, fontSize: 16, fontWeight: '600', color: '#FFFFFF', textAlign: 'center', marginHorizontal: 8 },
   videoContainer: { width: '100%', position: 'relative', backgroundColor: '#000' },
   infoPanel: { flex: 1, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40 },
-  title: { fontSize: 20, fontWeight: '700', color: '#FFFFFF', lineHeight: 28 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+  title: { fontSize: 20, fontWeight: '700', color: '#FFFFFF', lineHeight: 28, flex: 1 },
+  offlineReadyBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8,
+    backgroundColor: 'rgba(16,185,129,0.15)',
+  },
+  offlineReadyText: { fontSize: 10, fontWeight: '700', color: '#10B981' },
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, marginTop: 10 },
   metaItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  offlineMeta: {
+    paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8,
+    backgroundColor: 'rgba(245,158,11,0.15)',
+  },
   metaText: { fontSize: 13, color: 'rgba(255,255,255,0.6)' },
   descSection: { marginTop: 16, padding: 14, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.05)' },
   descLabel: { fontSize: 13, fontWeight: '700', color: '#F59E0B', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 },
@@ -247,7 +312,8 @@ const styles = StyleSheet.create({
   errorContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 20 },
   errorTitle: { fontSize: 16, fontWeight: '700', textAlign: 'center' },
   errorText: { color: '#ccc', fontSize: 15, textAlign: 'center' },
-  errorUrl: { color: '#666', fontSize: 11, textAlign: 'center', fontStyle: 'italic' },
+  errorUrl: { color: '#666', fontSize: 11, textAlign: 'center', fontStyle: 'italic', paddingHorizontal: 20 },
+  offlineNotCachedIcon: { marginVertical: 8 },
   errorBtns: { flexDirection: 'row', gap: 12, marginTop: 8 },
   retryBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(245,158,11,0.2)', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(245,158,11,0.4)' },
   retryText: { color: '#F59E0B', fontSize: 14, fontWeight: '600' },
