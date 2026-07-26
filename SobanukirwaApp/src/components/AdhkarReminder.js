@@ -44,7 +44,7 @@ export function snoozeAdhkarReminder(adhkar, onShow, delayMs) {
   }, delay);
 }
 
-export function AdhkarReminderModal({ visible, adhkar, language, onSnooze, onDismiss }) {
+export function AdhkarReminderModal({ visible, adhkar, language, silentMode, onSnooze, onDismiss }) {
   const snoozeTimerRef = useRef(null);
 
   useEffect(() => {

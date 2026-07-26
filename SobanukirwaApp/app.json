@@ -45,9 +45,7 @@
       "expo-notifications",
       "expo-asset",
       "expo-font",
-      "expo-clipboard",
       "expo-document-picker",
-      "@react-native-community/netinfo",
       [
         "expo-location",
         {

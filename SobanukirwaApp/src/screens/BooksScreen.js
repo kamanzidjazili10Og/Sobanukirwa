@@ -306,74 +306,80 @@ export default function BooksScreen() {
       </ScrollView>
 
       <Modal visible={readerVisible} animationType="slide" onRequestClose={closeBookReader}>
-        <SafeAreaView style={styles.readerContainer}>
-          <View style={styles.readerHeader}>
-            <View style={styles.readerHeaderLeft}>
-              <TypeIcon size={18} color={typeColor} />
-              <Text style={styles.readerTitle} numberOfLines={1}>
-                {selectedBook ? (selectedBook.titleEn || selectedBook.title || '') : ''}
-              </Text>
-              {selectedBook?.fileType && (
-                <View style={[styles.readerTypeBadge, { backgroundColor: typeColor + '30' }]}>
-                  <Text style={[styles.readerTypeText, { color: typeColor }]}>
-                    {selectedBook.fileType.toUpperCase()}
+        {(() => {
+          const selIcon = selectedBook ? getTypeIcon(selectedBook.fileType) : BookOpen;
+          const selColor = selectedBook ? getTypeColor(selectedBook.fileType) : COLORS.secondary;
+          return (
+            <SafeAreaView style={styles.readerContainer}>
+              <View style={styles.readerHeader}>
+                <View style={styles.readerHeaderLeft}>
+                  <selIcon size={18} color={selColor} />
+                  <Text style={styles.readerTitle} numberOfLines={1}>
+                    {selectedBook ? (selectedBook.titleEn || selectedBook.title || '') : ''}
                   </Text>
+                  {selectedBook?.fileType && (
+                    <View style={[styles.readerTypeBadge, { backgroundColor: selColor + '30' }]}>
+                      <Text style={[styles.readerTypeText, { color: selColor }]}>
+                        {selectedBook.fileType.toUpperCase()}
+                      </Text>
+                    </View>
+                  )}
                 </View>
-              )}
-            </View>
-            <TouchableOpacity onPress={closeBookReader} style={styles.readerCloseBtn}>
-              <Text style={styles.readerCloseBtnText}>×</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.readerBody}>
-            {selectedBook && (selectedBook.fileType === 'pdf' || selectedBook.fileType === 'docx') && (selectedBook.localUri || selectedBook.fileUrl) ? (
-              <View style={styles.pdfContainer}>
-                <View style={styles.pdfIconWrap}>
-                  <BookMarked size={64} color={typeColor} />
-                </View>
-                <Text style={styles.pdfTitle}>{selectedBook.titleEn || selectedBook.title}</Text>
-                <Text style={styles.pdfAuthor}>{selectedBook.authorEn || selectedBook.author || ''}</Text>
-                <Text style={styles.pdfType}>{selectedBook.fileType.toUpperCase()}</Text>
-                {selectedBook.localUri ? (
-                  <View style={styles.offlineReadyBadge}>
-                    <Check size={16} color="#10B981" />
-                    <Text style={styles.offlineReadyText}>{t('Birabonetse offline', 'Available offline', 'متاح بدون إنترنت')}</Text>
-                  </View>
-                ) : null}
-                <TouchableOpacity
-                  style={[styles.pdfOpenBtn, { backgroundColor: typeColor }]}
-                  onPress={() => {
-                    const url = selectedBook.localUri || getMediaUrl(selectedBook.fileUrl);
-                    Linking.openURL(url);
-                  }}
-                >
-                  <BookOpen size={18} color="#FFFFFF" />
-                  <Text style={styles.pdfOpenBtnText}>
-                    {selectedBook.fileType === 'docx'
-                      ? t('Fungura DOCX', 'Open DOCX', 'فتح DOCX')
-                      : t('Fungura PDF', 'Open PDF', 'فتح PDF')}
-                  </Text>
+                <TouchableOpacity onPress={closeBookReader} style={styles.readerCloseBtn}>
+                  <Text style={styles.readerCloseBtnText}>×</Text>
                 </TouchableOpacity>
               </View>
-            ) : selectedBook ? (
-              <ScrollView contentContainerStyle={styles.textReaderContent}>
-                <Text style={styles.textReaderTitle}>{selectedBook.titleEn || selectedBook.title || ''}</Text>
-                <View style={styles.textReaderMeta}>
-                  <Hash size={14} color={COLORS.secondary} />
-                  <Text style={styles.textReaderAuthor}>{selectedBook.authorEn || selectedBook.author || ''}</Text>
-                </View>
-                {selectedBook.category ? (
-                  <View style={styles.textReaderCategory}>
-                    <Text style={styles.textReaderCategoryText}>{selectedBook.category}</Text>
+              <View style={styles.readerBody}>
+                {selectedBook && (selectedBook.fileType === 'pdf' || selectedBook.fileType === 'docx') && (selectedBook.localUri || selectedBook.fileUrl) ? (
+                  <View style={styles.pdfContainer}>
+                    <View style={styles.pdfIconWrap}>
+                      <BookMarked size={64} color={selColor} />
+                    </View>
+                    <Text style={styles.pdfTitle}>{selectedBook.titleEn || selectedBook.title}</Text>
+                    <Text style={styles.pdfAuthor}>{selectedBook.authorEn || selectedBook.author || ''}</Text>
+                    <Text style={styles.pdfType}>{selectedBook.fileType.toUpperCase()}</Text>
+                    {selectedBook.localUri ? (
+                      <View style={styles.offlineReadyBadge}>
+                        <Check size={16} color="#10B981" />
+                        <Text style={styles.offlineReadyText}>{t('Birabonetse offline', 'Available offline', 'متاح بدون إنترنت')}</Text>
+                      </View>
+                    ) : null}
+                    <TouchableOpacity
+                      style={[styles.pdfOpenBtn, { backgroundColor: selColor }]}
+                      onPress={() => {
+                        const url = selectedBook.localUri || getMediaUrl(selectedBook.fileUrl);
+                        Linking.openURL(url);
+                      }}
+                    >
+                      <BookOpen size={18} color="#FFFFFF" />
+                      <Text style={styles.pdfOpenBtnText}>
+                        {selectedBook.fileType === 'docx'
+                          ? t('Fungura DOCX', 'Open DOCX', 'فتح DOCX')
+                          : t('Fungura PDF', 'Open PDF', 'فتح PDF')}
+                      </Text>
+                    </TouchableOpacity>
                   </View>
+                ) : selectedBook ? (
+                  <ScrollView contentContainerStyle={styles.textReaderContent}>
+                    <Text style={styles.textReaderTitle}>{selectedBook.titleEn || selectedBook.title || ''}</Text>
+                    <View style={styles.textReaderMeta}>
+                      <Hash size={14} color={COLORS.secondary} />
+                      <Text style={styles.textReaderAuthor}>{selectedBook.authorEn || selectedBook.author || ''}</Text>
+                    </View>
+                    {selectedBook.category ? (
+                      <View style={styles.textReaderCategory}>
+                        <Text style={styles.textReaderCategoryText}>{selectedBook.category}</Text>
+                      </View>
+                    ) : null}
+                    <Text style={styles.textReaderBody}>
+                      {selectedBook.description || 'This book contains beneficial Islamic knowledge.\n\nMay Allah increase us in knowledge and benefit us with what we learn.'}
+                    </Text>
+                  </ScrollView>
                 ) : null}
-                <Text style={styles.textReaderBody}>
-                  {selectedBook.description || 'This book contains beneficial Islamic knowledge.\n\nMay Allah increase us in knowledge and benefit us with what we learn.'}
-                </Text>
-              </ScrollView>
-            ) : null}
-          </View>
-        </SafeAreaView>
+              </View>
+            </SafeAreaView>
+          );
+        })()}
       </Modal>
     </SafeAreaView>
     </ImageBackground>

@@ -44,7 +44,7 @@ function angleDiff(a, b) {
   return d > 180 ? d - 360 : d;
 }
 
-const QIBLA_SOUND = require('../../../audio/Subhanallah.m4a');
+const QIBLA_SOUND = require('../../assets/Subhanallah.m4a');
 
 export default function QiblaScreen({ navigation }) {
   const { t, language } = useApp();
