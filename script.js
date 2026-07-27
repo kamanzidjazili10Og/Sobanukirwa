@@ -2232,8 +2232,14 @@ function openBook(bookId) {
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';
     
-    if (book.type === 'pdf') {
-        body.innerHTML = `<iframe src="${book.pdfUrl}" title="${title}"></iframe>`;
+    if (book.type === 'pdf' && book.pdfUrl) {
+        var fullUrl = book.pdfUrl.startsWith('http') ? book.pdfUrl : window.location.origin + '/' + book.pdfUrl;
+        var gviewUrl = 'https://docs.google.com/gview?url=' + encodeURIComponent(fullUrl) + '&embedded=true';
+        body.innerHTML = '<iframe src="' + gviewUrl + '" title="' + title + '" style="width:100%;height:100%;border:none" allowfullscreen></iframe>';
+    } else if (book.type === 'docx' && book.pdfUrl) {
+        var docxUrl = book.pdfUrl.startsWith('http') ? book.pdfUrl : window.location.origin + '/' + book.pdfUrl;
+        var officeUrl = 'https://view.officeapps.live.com/op/embed.aspx?src=' + encodeURIComponent(docxUrl);
+        body.innerHTML = '<iframe src="' + officeUrl + '" title="' + title + '" style="width:100%;height:100%;border:none" allowfullscreen></iframe>';
     } else {
         body.innerHTML = `
             <div class="book-reader-text">

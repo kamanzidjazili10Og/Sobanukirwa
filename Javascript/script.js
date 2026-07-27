@@ -625,11 +625,13 @@ function openBook(bookId) {
     document.body.style.overflow = 'hidden';
 
     if (book.type === 'pdf' && book.pdfUrl) {
-        var gviewUrl = 'https://docs.google.com/gview?url=' + encodeURIComponent(book.pdfUrl) + '&embedded=true';
+        var fullUrl = book.pdfUrl.startsWith('http') ? book.pdfUrl : window.location.origin + '/' + book.pdfUrl;
+        var gviewUrl = 'https://docs.google.com/gview?url=' + encodeURIComponent(fullUrl) + '&embedded=true';
         body.innerHTML = '<iframe src="' + gviewUrl + '" title="' + title + '" style="width:100%;height:100%;border:none" allowfullscreen></iframe>';
     } else if (book.type === 'docx' && book.pdfUrl) {
-        var viewerUrl = 'https://view.officeapps.live.com/op/embed.aspx?src=' + encodeURIComponent(book.pdfUrl);
-        body.innerHTML = '<iframe src="' + viewerUrl + '" title="' + title + '" style="width:100%;height:100%;border:none" allowfullscreen></iframe>';
+        var docxUrl = book.pdfUrl.startsWith('http') ? book.pdfUrl : window.location.origin + '/' + book.pdfUrl;
+        var officeUrl = 'https://view.officeapps.live.com/op/embed.aspx?src=' + encodeURIComponent(docxUrl);
+        body.innerHTML = '<iframe src="' + officeUrl + '" title="' + title + '" style="width:100%;height:100%;border:none" allowfullscreen></iframe>';
     } else {
         var content = book.content || book.description || 'Iki gitabo kirimo ubumenyi bw\'Islam bufatika.';
         body.innerHTML = '<div class="book-reader-text">' +
