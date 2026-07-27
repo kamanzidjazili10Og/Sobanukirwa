@@ -57,6 +57,7 @@ router.post('/', async (req, res) => {
       [name, name_ar || null, name_en || null, finalSlug, description || null, icon || null, sort_order || 0]
     );
     res.status(201).json({ id: result.insertId, message: 'Category created' });
+    req.app.get('bumpVersion')();
   } catch (err) {
     if (err.code === 'ER_DUP_ENTRY') {
       return res.status(400).json({ message: 'A category with this slug already exists' });
@@ -76,6 +77,7 @@ router.put('/:id', async (req, res) => {
 
     await pool.query(sql, params);
     res.json({ message: 'Category updated' });
+    req.app.get('bumpVersion')();
   } catch (err) {
     if (err.code === 'ER_DUP_ENTRY') {
       return res.status(400).json({ message: 'A category with this slug already exists' });
@@ -89,6 +91,7 @@ router.delete('/:id', async (req, res) => {
     await pool.query('UPDATE categories SET is_active = 0 WHERE id = ?', [req.params.id]);
     await pool.query('UPDATE tracks SET category_id = NULL WHERE category_id = ?', [req.params.id]);
     res.json({ message: 'Category deleted' });
+    req.app.get('bumpVersion')();
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }

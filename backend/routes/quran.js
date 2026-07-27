@@ -30,6 +30,7 @@ router.put('/surahs/:number', async (req, res) => {
       [name, name_arabic, ayahs_count, revelation_type, req.params.number]
     );
     res.json({ message: 'Surah updated' });
+    req.app.get('bumpVersion')();
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
@@ -41,6 +42,7 @@ router.put('/surahs/:number/audio', upload.single('audio'), async (req, res) => 
     const audioUrl = `/uploads/audio/${req.file.filename}`;
     await pool.query('UPDATE quran_surahs SET audio_url = ? WHERE surah_number = ?', [audioUrl, req.params.number]);
     res.json({ message: 'Audio uploaded', audio_url: audioUrl });
+    req.app.get('bumpVersion')();
   } catch (err) {
     res.status(500).json({ message: 'Upload failed', error: err.message });
   }

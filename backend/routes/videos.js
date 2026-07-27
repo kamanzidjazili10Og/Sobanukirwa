@@ -63,6 +63,7 @@ router.post('/', upload.fields([{ name: 'video', maxCount: 1 }, { name: 'thumbna
       [title, title_ar || null, title_en || null, author || null, author_ar || null, author_en || null, description || null, videoUrl, thumbnailUrl || null]
     );
     res.status(201).json({ id: result.insertId, message: 'Video created' });
+    req.app.get('bumpVersion')();
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
@@ -82,6 +83,7 @@ router.put('/:id', upload.fields([{ name: 'video', maxCount: 1 }, { name: 'thumb
 
     await pool.query(sql, params);
     res.json({ message: 'Video updated' });
+    req.app.get('bumpVersion')();
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
@@ -91,6 +93,7 @@ router.delete('/:id', async (req, res) => {
   try {
     await pool.query('UPDATE videos SET is_active = 0 WHERE id = ?', [req.params.id]);
     res.json({ message: 'Video deactivated' });
+    req.app.get('bumpVersion')();
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }

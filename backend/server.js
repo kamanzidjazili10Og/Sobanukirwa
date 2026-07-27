@@ -66,9 +66,19 @@ app.use('/api/stats', require('./routes/stats'));
 app.use('/api/adhkar', require('./routes/adhkar'));
 app.use('/api/settings', require('./routes/settings'));
 
+let contentVersion = Date.now();
+
+function bumpContentVersion() { contentVersion = Date.now(); }
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+app.get('/api/version', (req, res) => {
+  res.json({ version: contentVersion, timestamp: new Date(contentVersion).toISOString() });
+});
+
+app.set('bumpVersion', bumpContentVersion);
 
 app.use('/admin', express.static(path.join(ROOT_DIR, 'admin')));
 app.use('/', express.static(ROOT_DIR));

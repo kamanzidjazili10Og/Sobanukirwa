@@ -1,15 +1,15 @@
-const CACHE_NAME = 'sobanukirwa-v7';
-const API_CACHE = 'sobanukirwa-api-v1';
-const MEDIA_CACHE = 'sobanukirwa-media-v1';
+const CACHE_NAME = 'sobanukirwa-v8';
+const API_CACHE = 'sobanukirwa-api-v2';
+const MEDIA_CACHE = 'sobanukirwa-media-v2';
 
 const STATIC_ASSETS = [
   './',
   './index.html',
   './manifest.json',
-  './Css/style.css?v=7',
-  './Javascript/data.js?v=7',
-  './Javascript/api.js?v=7',
-  './Javascript/script.js?v=7',
+  './Css/style.css?v=8',
+  './Javascript/data.js?v=8',
+  './Javascript/api.js?v=8',
+  './Javascript/script.js?v=8',
   './Sounds/Adhan1.mpeg',
   './Sounds/Adhan2.mpeg',
   './Sounds/Mansour_Adhan.mpeg',
@@ -36,6 +36,11 @@ self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
   if (event.request.method !== 'GET') return;
+
+  if (url.pathname === '/api/version') {
+    event.respondWith(fetch(event.request).catch(() => new Response(JSON.stringify({ version: 0 }), { headers: { 'Content-Type': 'application/json' } })));
+    return;
+  }
 
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
@@ -106,5 +111,10 @@ self.addEventListener('activate', event => {
 self.addEventListener('message', event => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  }
+  if (event.data && event.data.type === 'CONTENT_UPDATED') {
+    self.clients.matchAll().then(clients => {
+      clients.forEach(client => client.postMessage({ type: 'REFRESH_DATA' }));
+    });
   }
 });

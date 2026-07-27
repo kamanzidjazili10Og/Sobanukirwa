@@ -56,6 +56,7 @@ router.post('/', upload.fields([{ name: 'file', maxCount: 1 }, { name: 'image', 
       [title, title_ar || null, title_en || null, author || null, author_ar || null, author_en || null, description || null, fileUrl, imageUrl, category || null, file_type || 'pdf']
     );
     res.status(201).json({ id: result.insertId, message: 'Book created' });
+    req.app.get('bumpVersion')();
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
@@ -76,6 +77,7 @@ router.put('/:id', upload.fields([{ name: 'file', maxCount: 1 }, { name: 'image'
 
     await pool.query(sql, params);
     res.json({ message: 'Book updated' });
+    req.app.get('bumpVersion')();
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
@@ -85,6 +87,7 @@ router.delete('/:id', async (req, res) => {
   try {
     await pool.query('UPDATE books SET is_active = 0 WHERE id = ?', [req.params.id]);
     res.json({ message: 'Book deactivated' });
+    req.app.get('bumpVersion')();
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }

@@ -31,7 +31,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
     
     <!-- Main CSS -->
-    <link rel="stylesheet" href="Css/style.css?v=7">
+    <link rel="stylesheet" href="Css/style.css?v=8">
 
     <!-- Custom Styles for Panels -->
     <style>
@@ -926,15 +926,15 @@
     <audio id="reminderAudio" preload="auto"></audio>
 
     <!-- Scripts -->
-    <script src="Javascript/data.js?v=7"></script>
-    <script src="Javascript/api.js?v=7"></script>
-    <script src="Javascript/script.js?v=7"></script>
+    <script src="Javascript/data.js?v=8"></script>
+    <script src="Javascript/api.js?v=8"></script>
+    <script src="Javascript/script.js?v=8"></script>
 
     <!-- Service Worker Registration -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js?v=7')
+                navigator.serviceWorker.register('sw.js?v=8')
                     .then(registration => {
                         console.log('ServiceWorker registered: ', registration);
                         registration.addEventListener('updatefound', () => {
@@ -953,6 +953,14 @@
                     });
                 navigator.serviceWorker.addEventListener('controllerchange', () => {
                     window.location.reload();
+                });
+                navigator.serviceWorker.addEventListener('message', (event) => {
+                    if (event.data && event.data.type === 'REFRESH_DATA') {
+                        console.log('Content updated by admin, refreshing...');
+                        if (typeof loadDataFromAPI === 'function') {
+                            loadDataFromAPI();
+                        }
+                    }
                 });
             });
         }

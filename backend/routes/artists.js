@@ -52,6 +52,7 @@ router.post('/', upload.single('image'), async (req, res) => {
       [name, name_ar, name_en, bio, imageUrl]
     );
     res.status(201).json({ id: result.insertId, message: 'Artist created' });
+    req.app.get('bumpVersion')();
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
@@ -73,6 +74,7 @@ router.put('/:id', upload.single('image'), async (req, res) => {
 
     await pool.query(query, params);
     res.json({ message: 'Artist updated' });
+    req.app.get('bumpVersion')();
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
@@ -82,6 +84,7 @@ router.delete('/:id', async (req, res) => {
   try {
     await pool.query('UPDATE artists SET is_active = 0 WHERE id = ?', [req.params.id]);
     res.json({ message: 'Artist deactivated' });
+    req.app.get('bumpVersion')();
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }

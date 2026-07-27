@@ -326,6 +326,28 @@ export function AppProvider({ children }) {
     initAudioCache().catch(() => {});
     initBookCache().catch(() => {});
 
+    let lastServerVersion = null;
+
+    async function checkServerVersion() {
+      try {
+        const res = await fetch('https://sobanukirwa-production.up.railway.app/api/version', {
+          headers: { Accept: 'application/json' },
+          signal: AbortSignal.timeout(10000),
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const v = String(data.version);
+        if (lastServerVersion && lastServerVersion !== v) {
+          console.log('Server content updated, refreshing...');
+          refreshData();
+        }
+        lastServerVersion = v;
+      } catch {}
+    }
+
+    checkServerVersion();
+    const versionInterval = setInterval(checkServerVersion, 60000);
+
     const unsub = NetInfo.addEventListener(state => {
       const offline = !state.isConnected || !state.isInternetReachable;
       setIsOffline(offline);
@@ -333,6 +355,7 @@ export function AppProvider({ children }) {
         setTimeout(() => {
           syncLocalChangesToServer('https://sobanukirwa-production.up.railway.app/api').catch(() => {});
           refreshSyncStatus();
+          checkServerVersion();
         }, 2000);
       }
     });
@@ -358,6 +381,7 @@ export function AppProvider({ children }) {
       stopBidirectional();
       unsubSync();
       unsubSyncEvent();
+      clearInterval(versionInterval);
     };
   }, []);
 

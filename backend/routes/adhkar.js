@@ -62,6 +62,7 @@ router.post('/', (req, res, next) => {
       [arabic_text, transliteration, translation_rw, translation_en, translation_ar, count_target || 33, category || 'general', audioPath, reference]
     );
     res.status(201).json({ id: result.insertId, message: 'Adhkar created' });
+    req.app.get('bumpVersion')();
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
@@ -86,6 +87,7 @@ router.put('/:id', (req, res, next) => {
       [arabic_text, transliteration, translation_rw, translation_en, translation_ar, count_target, category, audioPath, reference, req.params.id]
     );
     res.json({ message: 'Adhkar updated' });
+    req.app.get('bumpVersion')();
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
@@ -95,6 +97,7 @@ router.delete('/:id', async (req, res) => {
   try {
     await pool.query('UPDATE adhkar SET is_active = 0 WHERE id = ?', [req.params.id]);
     res.json({ message: 'Adhkar deactivated' });
+    req.app.get('bumpVersion')();
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }

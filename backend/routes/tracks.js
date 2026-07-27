@@ -111,6 +111,7 @@ router.post('/', upload.single('audio'), async (req, res) => {
     }
 
     res.status(201).json({ id: result.insertId, message: 'Track created' });
+    req.app.get('bumpVersion')();
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
@@ -132,6 +133,7 @@ router.put('/:id', upload.single('audio'), async (req, res) => {
 
     await pool.query(sql, params);
     res.json({ message: 'Track updated' });
+    req.app.get('bumpVersion')();
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
@@ -145,6 +147,7 @@ router.delete('/:id', async (req, res) => {
       await pool.query('UPDATE artists SET total_lessons = total_lessons - 1 WHERE id = ?', [track[0].artist_id]);
     }
     res.json({ message: 'Track deactivated' });
+    req.app.get('bumpVersion')();
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
