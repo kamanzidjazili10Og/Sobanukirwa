@@ -22,7 +22,7 @@ const COLORS = {
 };
 
 export default function AudioScreen({ navigation }) {
-  const { tracks, categories, t, refreshing, refreshData, cachedAudios, cacheAudio, isOffline } = useApp();
+  const { tracks, categories, t, refreshing, refreshData, cachedAudios, cacheAudio, isOffline, COLORS } = useApp();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [search, setSearch] = useState('');
   const [downloadingAll, setDownloadingAll] = useState(false);
@@ -30,8 +30,8 @@ export default function AudioScreen({ navigation }) {
 
   useFocusEffect(
     useCallback(() => {
-      refreshData();
-    }, [])
+      if (!isOffline) refreshData();
+    }, [isOffline])
   );
 
   const allCategoriesList = ['all', ...categories.map(c => c.name || c)];

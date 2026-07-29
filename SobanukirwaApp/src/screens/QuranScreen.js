@@ -21,7 +21,7 @@ const COLORS = {
 const TABS = ['All', 'Meccan', 'Medinan'];
 
 export default function QuranScreen({ navigation }) {
-  const { surahs, t, refreshing, refreshData } = useApp();
+  const { surahs, t, refreshing, refreshData, isOffline } = useApp();
   const [search, setSearch] = useState('');
   const [playingSurah, setPlayingSurah] = useState(null);
   const [activeTab, setActiveTab] = useState('All');
@@ -29,8 +29,8 @@ export default function QuranScreen({ navigation }) {
 
   useFocusEffect(
     useCallback(() => {
-      refreshData();
-    }, [])
+      if (!isOffline) refreshData();
+    }, [isOffline])
   );
 
   React.useEffect(() => {

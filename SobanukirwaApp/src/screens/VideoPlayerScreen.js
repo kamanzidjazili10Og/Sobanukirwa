@@ -14,7 +14,7 @@ try {
 
 export default function VideoPlayerScreen({ route, navigation }) {
   const { video } = route.params;
-  const { t, stopAllMedia, getVideoLocalUri, isOffline, cachedVideos, checkVideoCache } = useApp();
+  const { t, stopAllMedia, getVideoLocalUri, isOffline, cachedVideos, checkVideoCache, cacheVideo, videoDownloads } = useApp();
   const videoRef = useRef(null);
   const [status, setStatus] = useState({});
   const [error, setError] = useState(false);
@@ -96,6 +96,7 @@ export default function VideoPlayerScreen({ route, navigation }) {
   const videoDescription = video?.description || '';
   const videoDuration = video?.durationStr || (video?.duration ? `${Math.floor(video.duration / 60)}:${String(video.duration % 60).padStart(2, '0')}` : '');
   const videoViews = video?.viewsCount || 0;
+  const videoDownloadInfo = videoDownloads[remoteUrl];
 
   const renderVideo = () => {
     if (Platform.OS === 'web') {
@@ -268,6 +269,24 @@ export default function VideoPlayerScreen({ route, navigation }) {
               <Text style={styles.descText}>{videoDescription}</Text>
             </View>
           ) : null}
+          {!isOffline && !isCached && remoteUrl && (
+            <TouchableOpacity
+              style={[styles.cacheBtn, videoDownloadInfo?.downloading && styles.cacheBtnDisabled]}
+              onPress={() => cacheVideo(remoteUrl)}
+              disabled={videoDownloadInfo?.downloading}
+            >
+              {videoDownloadInfo?.downloading ? (
+                <ActivityIndicator size="small" color="#F59E0B" />
+              ) : (
+                <Ionicons name="download-outline" size={18} color="#F59E0B" />
+              )}
+              <Text style={styles.cacheBtnText}>
+                {videoDownloadInfo?.downloading
+                  ? `${Math.round((videoDownloadInfo.progress || 0) * 100)}%`
+                  : t('Kurura video', 'Download for offline', 'تنزيل للاستخدام بدون إنترنت')}
+              </Text>
+            </TouchableOpacity>
+          )}
         </ScrollView>
       </View>
     </ImageBackground>
@@ -319,4 +338,11 @@ const styles = StyleSheet.create({
   retryText: { color: '#F59E0B', fontSize: 14, fontWeight: '600' },
   browserBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(52,152,219,0.2)', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(52,152,219,0.4)' },
   browserText: { color: '#3498db', fontSize: 14, fontWeight: '600' },
+  cacheBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    marginTop: 14, paddingVertical: 12, borderRadius: 12,
+    backgroundColor: 'rgba(245,158,11,0.15)', borderWidth: 1, borderColor: 'rgba(245,158,11,0.4)',
+  },
+  cacheBtnDisabled: { opacity: 0.6 },
+  cacheBtnText: { fontSize: 13, fontWeight: '700', color: '#F59E0B' },
 });

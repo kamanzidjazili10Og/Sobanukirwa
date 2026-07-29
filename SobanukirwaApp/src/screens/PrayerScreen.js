@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, Platform, ImageBackground } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
-import { MapPin, RefreshCw, Bell, Clock } from 'lucide-react-native';
+import { MapPin, RefreshCw, Bell, Clock, Wifi, WifiOff } from 'lucide-react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useApp } from '../context/AppContext';
 import { fetchPrayerTimes, fetchHijriDate } from '../services/api';
@@ -32,8 +33,12 @@ const THEME = {
   error: '#EF4444',
 };
 
+const PRAYER_CACHE_KEY = 'prayer_times_cache';
+const PRAYER_DATE_KEY = 'prayer_times_date';
+const HIJRI_CACHE_KEY = 'hijri_date_cache';
+
 export default function PrayerScreen() {
-  const { t, refreshing, refreshData } = useApp();
+  const { t, refreshing, refreshData, isOffline } = useApp();
   const [prayerTimes, setPrayerTimes] = useState({});
   const [nextPrayer, setNextPrayer] = useState('');
   const [nextPrayerTime, setNextPrayerTime] = useState('');
@@ -48,17 +53,62 @@ export default function PrayerScreen() {
   useFocusEffect(
     useCallback(() => {
       const now = new Date();
-      setCurrentDate(now.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
-      loadHijriDate();
+      const dateStr = now.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      setCurrentDate(dateStr);
+      loadCachedHijriDate();
+      loadCachedPrayerTimes();
       getUserLocation();
       const interval = setInterval(updateCountdown, 10000);
       return () => clearInterval(interval);
     }, [])
   );
 
+  async function cachePrayerTimes(times, lat, lng) {
+    try {
+      const today = new Date().toDateString();
+      await AsyncStorage.setItem(PRAYER_CACHE_KEY, JSON.stringify(times));
+      await AsyncStorage.setItem(PRAYER_DATE_KEY, JSON.stringify({ date: today, lat, lng }));
+    } catch (e) {}
+  }
+
+  async function loadCachedPrayerTimes() {
+    try {
+      const [cached, dateInfo] = await Promise.all([
+        AsyncStorage.getItem(PRAYER_CACHE_KEY),
+        AsyncStorage.getItem(PRAYER_DATE_KEY),
+      ]);
+      if (cached && dateInfo) {
+        const parsed = JSON.parse(cached);
+        if (Object.keys(parsed).length > 0) {
+          setPrayerTimes(parsed);
+          setSource('Cached');
+          calculateNextPrayer(parsed);
+          updateCountdownWithTimes(parsed);
+        }
+      }
+    } catch (e) {}
+  }
+
+  async function cacheHijriDate(h) {
+    try {
+      await AsyncStorage.setItem(HIJRI_CACHE_KEY, JSON.stringify({ date: h, stored: Date.now() }));
+    } catch (e) {}
+  }
+
+  async function loadCachedHijriDate() {
+    try {
+      const cached = await AsyncStorage.getItem(HIJRI_CACHE_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed.date) setHijriDate(parsed.date);
+      }
+    } catch (e) {}
+  }
+
   async function getUserLocation() {
     if (Platform.OS === 'web' || !Location) {
-      await loadPrayerTimes(DEFAULT_LAT, DEFAULT_LNG);
+      setLocationLoading(true);
+      await fetchAndCacheTimes(DEFAULT_LAT, DEFAULT_LNG);
       setLocationLoading(false);
       return;
     }
@@ -75,21 +125,16 @@ export default function PrayerScreen() {
           const place = rev[0];
           setLocation(`${place.city || place.subregion || ''}, ${place.country || ''}`.replace(/^,\s*/, ''));
         }
-        await loadPrayerTimes(lat, lng);
+        await fetchAndCacheTimes(lat, lng);
         setLocationLoading(false);
         return;
       }
     } catch (e) {}
-    await loadPrayerTimes(DEFAULT_LAT, DEFAULT_LNG);
     setLocationLoading(false);
+    await fetchAndCacheTimes(DEFAULT_LAT, DEFAULT_LNG);
   }
 
-  async function loadHijriDate() {
-    const h = await fetchHijriDate();
-    if (h) setHijriDate(h);
-  }
-
-  async function loadPrayerTimes(lat, lng) {
+  async function fetchAndCacheTimes(lat, lng) {
     try {
       const data = await fetchPrayerTimes(lat, lng);
       if (data && data.timings) {
@@ -99,17 +144,24 @@ export default function PrayerScreen() {
           setSource(data.source || 'Aladhan API');
           calculateNextPrayer(sanitized);
           updateCountdownWithTimes(sanitized);
+          await cachePrayerTimes(sanitized, lat, lng);
+          const h = await fetchHijriDate();
+          if (h) {
+            setHijriDate(h);
+            await cacheHijriDate(h);
+          }
           return;
         }
       }
     } catch (e) {}
-    fallbackOfflineCalc(lat, lng);
+    const hasCached = Object.keys(prayerTimes).length > 0;
+    if (!hasCached) fallbackOfflineCalc(lat, lng);
   }
 
   function fallbackOfflineCalc(lat, lng) {
     const d = new Date();
     const times = calculatePrayerTimes(lat, lng, d.getFullYear(), d.getMonth() + 1, d.getDate());
-    if (times) {
+    if (times && Object.keys(times).length > 0) {
       setPrayerTimes(times);
       setSource('Offline Calculation');
       calculateNextPrayer(times);
@@ -144,8 +196,10 @@ export default function PrayerScreen() {
         return;
       }
     }
-    setNextPrayer(PRAYER_NAMES[0]);
-    setNextPrayerTime(times[PRAYER_NAMES[0]] || '');
+    if (times[PRAYER_NAMES[0]]) {
+      setNextPrayer(PRAYER_NAMES[0]);
+      setNextPrayerTime(times[PRAYER_NAMES[0]]);
+    }
   }
 
   function updateCountdownWithTimes(times) {
@@ -164,7 +218,7 @@ export default function PrayerScreen() {
   }
 
   function updateCountdown() {
-    if (nextPrayerTime) updateCountdownWithTimes(prayerTimes);
+    if (nextPrayerTime && Object.keys(prayerTimes).length > 0) updateCountdownWithTimes(prayerTimes);
   }
 
   function isCurrentPrayer(name) {
@@ -225,11 +279,19 @@ export default function PrayerScreen() {
             ) : null}
           </View>
 
-          {source ? (
-            <Text style={styles.sourceText}>
-              {t('Izadatashe:', 'Source:', 'المصدر:')} {source}
-            </Text>
-          ) : null}
+          <View style={styles.sourceRow}>
+            {source ? (
+              <Text style={styles.sourceText}>
+                {t('Izadatashe:', 'Source:', 'المصدر:')} {source}
+              </Text>
+            ) : <View />}
+            <View style={[styles.connBadge, { backgroundColor: isOffline ? 'rgba(245,158,11,0.15)' : 'rgba(16,185,129,0.15)' }]}>
+              {isOffline ? <WifiOff size={11} color="#F59E0B" /> : <Wifi size={11} color="#10B981" />}
+              <Text style={[styles.connText, { color: isOffline ? '#F59E0B' : '#10B981' }]}>
+                {isOffline ? t('Offline', 'Offline', 'غير متصل') : t('Online', 'Online', 'متصل')}
+              </Text>
+            </View>
+          </View>
 
           <View style={styles.prayerGrid}>
             {PRAYER_NAMES.map((name, i) => {
@@ -314,7 +376,10 @@ const styles = StyleSheet.create({
   },
   dateText: { fontSize: 13, fontWeight: '500', color: '#FFFFFF' },
   hijriText: { fontSize: 13, fontWeight: '600', marginTop: 4, color: '#FFFFFF' },
-  sourceText: { fontSize: 11, textAlign: 'center', color: 'rgba(255,255,255,0.6)' },
+  sourceRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  sourceText: { fontSize: 11, color: 'rgba(255,255,255,0.6)' },
+  connBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 },
+  connText: { fontSize: 10, fontWeight: '600' },
   prayerGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'space-between' },
   prayerCard: {
     width: '31%', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)',

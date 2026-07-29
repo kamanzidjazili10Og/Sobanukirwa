@@ -35,7 +35,7 @@ if (fs.existsSync(SOUNDS_DIR)) {
   app.use('/Sounds', express.static(SOUNDS_DIR));
 }
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Kamanzi@123';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Sobanukirwa@123';
 
 app.post('/api/auth/login', (req, res) => {
   const { password } = req.body;

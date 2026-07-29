@@ -85,6 +85,8 @@ export function AppProvider({ children }) {
   const [bookDownloads, setBookDownloads] = useState({});
   const [syncStatus, setSyncStatus] = useState({ pendingChanges: 0, lastSyncTime: null });
   const [offlineReady, setOfflineReady] = useState(false);
+  const [autoDownloadProgress, setAutoDownloadProgress] = useState({ active: false, downloaded: 0, total: 0, phase: '' });
+  const lastAutoDownloadRef = useRef(false);
 
   const pauseAudioRef = useRef(null);
   const pauseVideoRef = useRef(null);
@@ -218,6 +220,66 @@ export function AppProvider({ children }) {
     }
     return downloaded;
   }, []);
+
+  // Auto-download all content for offline use
+  const autoDownloadAllContent = useCallback(async (trackList, bookList, videoList) => {
+    if (lastAutoDownloadRef.current) return;
+    lastAutoDownloadRef.current = true;
+    setAutoDownloadProgress({ active: true, downloaded: 0, total: 0, phase: 'starting' });
+
+    try {
+      let downloaded = 0;
+      const audioTracks = trackList.filter(t => t.audioUrl || t.audio_url);
+      const pdfBooks = bookList.filter(b => b.fileUrl);
+      const total = audioTracks.length + pdfBooks.length;
+
+      setAutoDownloadProgress({ active: true, downloaded: 0, total, phase: 'audio' });
+
+      await initAudioCache();
+      for (const t of audioTracks) {
+        const url = t.audioUrl || t.audio_url;
+        if (url && !(await isAudioCached(url))) {
+          try {
+            await downloadAudio(url, () => {});
+          } catch (e) {}
+        }
+        downloaded++;
+        setAutoDownloadProgress({ active: true, downloaded, total, phase: 'audio' });
+        if (url) setCachedAudios(prev => ({ ...prev, [url]: true }));
+      }
+
+      setAutoDownloadProgress({ active: true, downloaded, total, phase: 'books' });
+      await initBookCache();
+      for (const b of pdfBooks) {
+        const fullUrl = getMediaUrl(b.fileUrl);
+        if (fullUrl && !(await isBookCached(fullUrl))) {
+          try {
+            await downloadBook(fullUrl, () => {});
+          } catch (e) {}
+        }
+        downloaded++;
+        setAutoDownloadProgress({ active: true, downloaded, total, phase: 'books' });
+        if (fullUrl) setCachedBooks(prev => ({ ...prev, [fullUrl]: true }));
+      }
+
+      await AsyncStorage.setItem('auto_download_done', String(Date.now()));
+      setAutoDownloadProgress({ active: false, downloaded: total, total, phase: 'done' });
+    } catch (e) {
+      setAutoDownloadProgress({ active: false, downloaded: 0, total: 0, phase: 'error' });
+      lastAutoDownloadRef.current = false;
+    }
+  }, []);
+
+  const triggerAutoDownload = useCallback(async (trackList, bookList, videoList) => {
+    try {
+      const lastDone = await AsyncStorage.getItem('auto_download_done');
+      if (lastDone && (Date.now() - parseInt(lastDone)) < 24 * 60 * 60 * 1000) return;
+      const info = await NetInfo.fetch();
+      if (info.isConnected && info.isInternetReachable) {
+        autoDownloadAllContent(trackList, bookList, videoList);
+      }
+    } catch (e) {}
+  }, [autoDownloadAllContent]);
 
   // Book cache
   const checkBookCache = useCallback(async (bookUrl) => {
@@ -530,35 +592,38 @@ export function AppProvider({ children }) {
   const loadAllData = async () => {
     setLoading(true);
     setError(null);
+
+    const cached = await loadCacheData();
+    if (cached.surahs.length > 0 || cached.tracks.length > 0 || cached.books.length > 0) {
+      setTracks(cached.tracks);
+      setCategories(cached.categories);
+      setSurahs(cached.surahs);
+      setVideos(cached.videos);
+      setBooks(cached.books);
+      setAdhkar(cached.adhkar);
+      setOfflineReady(true);
+    }
+
     try {
       const [t, c, s, v, b, a] = await Promise.all([
         fetchTracks(), fetchCategories(), fetchSurahs(), fetchVideos(), fetchBooks(), fetchAdhkar()
       ]);
-      setTracks(t);
-      setCategories(c);
-      setSurahs(s);
-      setVideos(v);
-      setBooks(b);
-      setAdhkar(a);
-      await saveCacheData({ tracks: t, categories: c, surahs: s, videos: v, books: b, adhkar: a });
+      if (t.length > 0 || s.length > 0 || b.length > 0) {
+        setTracks(t);
+        setCategories(c);
+        setSurahs(s);
+        setVideos(v);
+        setBooks(b);
+        setAdhkar(a);
+        await saveCacheData({ tracks: t, categories: c, surahs: s, videos: v, books: b, adhkar: a });
+      }
       initAllVideoCaches(v).catch(() => {});
       initAllAudioCaches(t).catch(() => {});
       initAllBookCaches(b).catch(() => {});
       setOfflineReady(true);
+      triggerAutoDownload(t, b, v).catch(() => {});
     } catch (e) {
-      const cached = await loadCacheData();
-      if (cached.surahs.length > 0 || cached.tracks.length > 0 || cached.books.length > 0) {
-        setTracks(cached.tracks);
-        setCategories(cached.categories);
-        setSurahs(cached.surahs);
-        setVideos(cached.videos);
-        setBooks(cached.books);
-        setAdhkar(cached.adhkar);
-        initAllVideoCaches(cached.videos).catch(() => {});
-        initAllAudioCaches(cached.tracks).catch(() => {});
-        initAllBookCaches(cached.books).catch(() => {});
-        setOfflineReady(true);
-      } else {
+      if (!cached || (cached.surahs.length === 0 && cached.tracks.length === 0 && cached.books.length === 0)) {
         setError('network');
       }
     }
@@ -572,13 +637,15 @@ export function AppProvider({ children }) {
       const [t, c, s, v, b, a] = await Promise.all([
         fetchTracks(), fetchCategories(), fetchSurahs(), fetchVideos(), fetchBooks(), fetchAdhkar()
       ]);
-      setTracks(t);
-      setCategories(c);
-      setSurahs(s);
-      setVideos(v);
-      setBooks(b);
-      setAdhkar(a);
-      await saveCacheData({ tracks: t, categories: c, surahs: s, videos: v, books: b, adhkar: a });
+      if (t.length > 0 || s.length > 0 || b.length > 0) {
+        setTracks(t);
+        setCategories(c);
+        setSurahs(s);
+        setVideos(v);
+        setBooks(b);
+        setAdhkar(a);
+        await saveCacheData({ tracks: t, categories: c, surahs: s, videos: v, books: b, adhkar: a });
+      }
       initAllVideoCaches(v).catch(() => {});
       initAllAudioCaches(t).catch(() => {});
       initAllBookCaches(b).catch(() => {});
@@ -642,6 +709,7 @@ export function AppProvider({ children }) {
       pendingSyncCount, isSyncing, processPendingOps,
       syncStatus, recordLocalChange, refreshSyncStatus,
       formatFileSize,
+      autoDownloadProgress, triggerAutoDownload,
     }}>
       {children}
     </AppContext.Provider>

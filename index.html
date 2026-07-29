@@ -71,13 +71,25 @@
     <div class="install-prompt" id="installPrompt">
         <div class="install-content">
             <i class="fas fa-mosque install-icon"></i>
-            <h3>Install Sobanukirwa</h3>
-            <p>Install this app on your device for quick access and offline use</p>
+            <h3 data-i18n="installTitle">Shyiraho Sobanukirwa</h3>
+            <p data-i18n="installDesc">Shyiraho iyi porogaramu kuri phone yawe kugira ngo ushyireho vuba kandi ukore offline</p>
             <div class="install-buttons">
-                <button class="install-btn" id="installBtn">Install</button>
-                <button class="later-btn" id="laterBtn">Later</button>
+                <button class="install-btn" id="installBtn"><i class="fas fa-download"></i> <span data-i18n="install">Shyiraho</span></button>
+                <button class="later-btn" id="laterBtn"><span data-i18n="later">Nyuma</span></button>
             </div>
         </div>
+    </div>
+
+    <!-- Offline Banner -->
+    <div class="offline-banner" id="offlineBanner" style="display:none; position:fixed; top:0; left:0; right:0; z-index:9999; background:linear-gradient(135deg, #F59E0B, #D97706); color:#fff; text-align:center; padding:8px 16px; font-size:13px; font-weight:600; box-shadow:0 2px 8px rgba(0,0,0,0.3);">
+        <i class="fas fa-wifi-slash" style="margin-right:6px;"></i>
+        <span data-i18n="offlineMode">Uri ku bwamba - Ibyo watejwe biracyakorera</span>
+    </div>
+
+    <!-- Auto-Download Progress -->
+    <div class="auto-download-banner" id="autoDownloadBanner" style="display:none; position:fixed; bottom:80px; left:50%; transform:translateX(-50%); z-index:9998; background:rgba(15,118,110,0.95); color:#fff; text-align:center; padding:10px 20px; border-radius:12px; font-size:12px; font-weight:600; box-shadow:0 4px 16px rgba(0,0,0,0.3); backdrop-filter:blur(10px);">
+        <i class="fas fa-download" style="margin-right:6px; animation:pulse 1.5s infinite;"></i>
+        <span id="autoDownloadText">Kwiyizere content... 0/0</span>
     </div>
 
     <!-- Silent Mode Indicator -->
@@ -934,7 +946,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js?v=8')
+                navigator.serviceWorker.register('sw.js?v=9')
                     .then(registration => {
                         console.log('ServiceWorker registered: ', registration);
                         registration.addEventListener('updatefound', () => {
@@ -979,7 +991,7 @@
             if (!dismissed || (now - dismissedTime) > 7 * 24 * 60 * 60 * 1000) {
                 setTimeout(() => {
                     installPrompt.classList.add('show');
-                }, 2000);
+                }, 3000);
             }
         });
 
@@ -1001,7 +1013,18 @@
             document.body.classList.add('app-installed');
         }
 
-        // Online/offline handlers removed
+        // Offline/Online detection
+        const offlineBanner = document.getElementById('offlineBanner');
+        function updateOnlineStatus() {
+            if (navigator.onLine) {
+                offlineBanner.style.display = 'none';
+            } else {
+                offlineBanner.style.display = 'block';
+            }
+        }
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+        updateOnlineStatus();
 
         if ('Notification' in window) {
             Notification.requestPermission();

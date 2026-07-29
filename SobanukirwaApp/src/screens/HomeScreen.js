@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useApp } from '../context/AppContext';
 import { fetchPrayerTimes, fetchHijriDate, fetchAdhkar } from '../services/api';
+import { calculatePrayerTimes } from '../utils/prayerCalc';
 import SilentBanner from '../components/SilentBanner';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -135,17 +136,36 @@ export default function HomeScreen({ navigation }) {
     try {
       const data = await fetchPrayerTimes(-1.9403, 29.8739);
       if (data && data.timings) {
-        setPrayerTimes(data.timings);
-        calculateNextPrayer(data.timings);
-        AsyncStorage.setItem('cached_prayer_times', JSON.stringify({ timings: data.timings, date: new Date().toDateString() }));
+        const timings = {};
+        for (const name of ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha']) {
+          if (data.timings[name]) timings[name] = data.timings[name].replace(/ \(.*\)/, '');
+        }
+        if (Object.keys(timings).length >= 3) {
+          setPrayerTimes(timings);
+          calculateNextPrayer(timings);
+          await AsyncStorage.setItem('cached_prayer_times', JSON.stringify({ timings, date: new Date().toDateString() }));
+          return;
+        }
       }
-    } catch (e) {
-      const cached = await AsyncStorage.getItem('cached_prayer_times');
-      if (cached) {
-        const parsed = JSON.parse(cached);
+    } catch (e) {}
+    const cached = await AsyncStorage.getItem('cached_prayer_times');
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (parsed.date === new Date().toDateString() || Object.keys(parsed.timings || {}).length > 0) {
         setPrayerTimes(parsed.timings);
         calculateNextPrayer(parsed.timings);
+        return;
       }
+    }
+    const d = new Date();
+    const offline = calculatePrayerTimes(-1.9403, 29.8739, d.getFullYear(), d.getMonth() + 1, d.getDate());
+    if (offline && Object.keys(offline).length > 0) {
+      const filtered = {};
+      for (const name of ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha']) {
+        if (offline[name]) filtered[name] = offline[name];
+      }
+      setPrayerTimes(filtered);
+      calculateNextPrayer(filtered);
     }
   }
 
@@ -155,7 +175,7 @@ export default function HomeScreen({ navigation }) {
     for (const prayer of PRAYER_NAMES) {
       const timeStr = times[prayer];
       if (!timeStr) continue;
-      const [h, m] = timeStr.replace(/ \(.*\)/, '').split(':').map(Number);
+      const [h, m] = timeStr.split(':').map(Number);
       const prayerMinutes = h * 60 + m;
       if (prayerMinutes > currentMinutes) {
         setNextPrayer(prayer);
@@ -170,7 +190,7 @@ export default function HomeScreen({ navigation }) {
   function getNextPrayerCountdown() {
     if (!nextPrayerTime) return '';
     const now = new Date();
-    const [h, m] = nextPrayerTime.replace(/ \(.*\)/, '').split(':').map(Number);
+    const [h, m] = nextPrayerTime.split(':').map(Number);
     const target = new Date(now);
     target.setHours(h, m, 0, 0);
     if (target <= now) target.setDate(target.getDate() + 1);
@@ -196,12 +216,12 @@ export default function HomeScreen({ navigation }) {
     if (!prayerTimes[name]) return false;
     const now = new Date();
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    const [h, m] = prayerTimes[name].replace(/ \(.*\)/, '').split(':').map(Number);
+    const [h, m] = prayerTimes[name].split(':').map(Number);
     const start = h * 60 + m;
     const nextPrayerIndex = PRAYER_NAMES.indexOf(name) + 1;
     const nextPrayerName = PRAYER_NAMES[nextPrayerIndex % PRAYER_NAMES.length];
     if (!prayerTimes[nextPrayerName]) return false;
-    const [nh, nm] = prayerTimes[nextPrayerName].replace(/ \(.*\)/, '').split(':').map(Number);
+    const [nh, nm] = prayerTimes[nextPrayerName].split(':').map(Number);
     let end = nh * 60 + nm;
     if (end < start) end += 24 * 60;
     return currentMinutes >= start && currentMinutes < end;

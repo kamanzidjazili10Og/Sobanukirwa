@@ -1,16 +1,17 @@
 {
-  "name": "Sobanukirwa Islam Ukuri Kuyisobanutsirwa",
+  "name": "Sobanukirwa - Islamic Learning",
   "short_name": "Sobanukirwa",
-  "description": "Learn Islam in Kinyarwanda - Prayer times, Quran, Audio lessons, and Islamic knowledge",
-  "start_url": "index.html",
+  "description": "Learn Islam in Kinyarwanda - Prayer times, Quran, Audio lessons, and Islamic knowledge. Works offline!",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0a2f44",
   "theme_color": "#d4af37",
-  "orientation": "portrait",
+  "orientation": "portrait-primary",
   "scope": "./",
   "lang": "rw",
   "dir": "ltr",
   "categories": ["education", "religion", "islamic"],
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "Images/logo2.png",
@@ -23,28 +24,42 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "Images/logo2.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
     }
   ],
+  "screenshots": [],
   "shortcuts": [
     {
       "name": "Prayer Times",
       "short_name": "Prayer",
       "description": "View today's prayer times",
-      "url": "index.html#prayer",
+      "url": "./index.html?section=prayer",
       "icons": [{ "src": "Images/logo2.png", "sizes": "96x96", "type": "image/png" }]
     },
     {
       "name": "Quran",
       "short_name": "Quran",
       "description": "Read and listen to Quran",
-      "url": "index.html#quran",
+      "url": "./index.html?section=quran",
       "icons": [{ "src": "Images/logo2.png", "sizes": "96x96", "type": "image/png" }]
     },
     {
-      "name": "Qibla Direction",
-      "short_name": "Qibla",
-      "description": "Find Qibla direction",
-      "url": "index.html#qibla",
+      "name": "Audio Lessons",
+      "short_name": "Audio",
+      "description": "Listen to Islamic lessons",
+      "url": "./index.html?section=audio",
+      "icons": [{ "src": "Images/logo2.png", "sizes": "96x96", "type": "image/png" }]
+    },
+    {
+      "name": "Books",
+      "short_name": "Books",
+      "description": "Read Islamic books",
+      "url": "./index.html?section=books",
       "icons": [{ "src": "Images/logo2.png", "sizes": "96x96", "type": "image/png" }]
     }
   ]

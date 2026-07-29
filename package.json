@@ -1,9 +1,15 @@
 {
   "name": "sobanukirwa",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "Sobanukirwa Islamic Learning Platform",
   "scripts": {
-    "start": "cd backend && node server.js"
+    "start": "cd backend && node server.js",
+    "app:start": "cd SobanukirwaApp && npx expo start",
+    "app:android": "cd SobanukirwaApp && npx expo run:android",
+    "app:web": "cd SobanukirwaApp && npx expo start --web",
+    "app:build:preview": "cd SobanukirwaApp && eas build -p android --profile preview",
+    "app:build:production": "cd SobanukirwaApp && eas build -p android --profile production",
+    "app:install": "cd SobanukirwaApp && eas build -p android --profile preview --non-interactive"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

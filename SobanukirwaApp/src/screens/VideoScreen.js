@@ -115,20 +115,17 @@ export default function VideoScreen({ navigation }) {
 
   useFocusEffect(
     useCallback(() => {
-      refreshData();
-    }, [])
+      if (!isOffline) refreshData();
+    }, [isOffline])
   );
 
   const displayVideos = useMemo(() => {
-    if (isOffline) {
-      return videos.filter(v => cachedVideos[v.videoUrl]);
-    }
     return videos;
-  }, [videos, isOffline, cachedVideos]);
+  }, [videos]);
 
   const cachedCount = useMemo(() => {
-    return videos.filter(v => cachedVideos[v.videoUrl]).length;
-  }, [videos, cachedVideos]);
+    return Object.values(cachedVideos).filter(Boolean).length;
+  }, [cachedVideos]);
 
   const filtered = search
     ? displayVideos.filter(v =>
@@ -189,8 +186,7 @@ export default function VideoScreen({ navigation }) {
                   {t('Amashusho', 'Videos', 'الفيديو')}
                 </Text>
                 <Text style={styles.headerSub}>
-                  {filtered.length} {t('amashusho', 'videos', 'فيديو')}
-                  {isOffline ? ` (${cachedCount} ${t('cached', 'cached', 'محفوظ')})` : ''}
+                  {filtered.length} {t('amashusho', 'videos', 'فيديو')}{isOffline ? '' : ''}
                 </Text>
               </View>
             </View>
@@ -216,9 +212,9 @@ export default function VideoScreen({ navigation }) {
               <CloudOff size={14} color="#F59E0B" />
               <Text style={styles.offlineText}>
                 {t(
-                  `Amashusho ${cachedCount} yo mu bikoresho gusa`,
-                  `${cachedCount} cached videos available`,
-                  `${cachedCount} فيديو مخزن متاح`
+                  `Amashusho ${videos.length} ashyizwe ahagaragara, ${cachedCount} arabitswe`,
+                  `${videos.length} videos shown, ${cachedCount} cached for offline`,
+                  `عرض ${videos.length} فيديو، ${cachedCount} مخزنة`
                 )}
               </Text>
             </View>

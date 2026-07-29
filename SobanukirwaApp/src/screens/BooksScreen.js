@@ -1,12 +1,15 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, ImageBackground, TextInput, Modal, RefreshControl, Linking, Dimensions, ActivityIndicator } from 'react-native';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, ImageBackground, TextInput, Modal, RefreshControl, Dimensions, ActivityIndicator, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { BookOpen, Search, BookMarked, RotateCcw, ChevronLeft, Hand, Hash, Download, Check, Wifi, WifiOff, FileText, File, Filter } from 'lucide-react-native';
+import { BookOpen, Search, BookMarked, ChevronLeft, Download, Check, Wifi, WifiOff, FileText, File, Eye, X, Share2 } from 'lucide-react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useApp } from '../context/AppContext';
 import { getMediaUrl } from '../services/api';
 
-const { width } = Dimensions.get('window');
+let WebView = null;
+try { WebView = require('react-native-webview').default; } catch (e) {}
+
+const { width, height } = Dimensions.get('window');
 
 const COLORS = {
   primary: '#0F766E',
@@ -33,6 +36,78 @@ const CATEGORIES = [
   { key: 'other', labelRw: 'Ibindi', labelEn: 'Other', labelAr: 'أخرى' },
 ];
 
+function PdfInlineViewer({ url, onBack, title, isOffline }) {
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const webViewRef = useRef(null);
+
+  if (Platform.OS === 'web') {
+    return (
+      <View style={{ flex: 1 }}>
+        <iframe
+          src={url}
+          style={{ width: '100%', height: '100%', border: 'none' }}
+          title={title || 'PDF Viewer'}
+        />
+      </View>
+    );
+  }
+
+  if (!WebView) {
+    return (
+      <View style={styles.pdfFallback}>
+        <File size={48} color={COLORS.error} />
+        <Text style={styles.pdfFallbackTitle}>{title}</Text>
+        <Text style={styles.pdfFallbackText}>{isOffline ? 'Offline PDF viewer not available' : 'PDF viewer not available'}</Text>
+      </View>
+    );
+  }
+
+  const source = url.startsWith('file://') ? { uri: url } : { uri: url };
+
+  return (
+    <View style={{ flex: 1 }}>
+      {loading && (
+        <View style={styles.pdfLoadingOverlay}>
+          <ActivityIndicator size="large" color="#F59E0B" />
+          <Text style={styles.pdfLoadingText}>
+            {isOffline ? 'Loading cached document...' : 'Loading document...'}
+          </Text>
+        </View>
+      )}
+      <WebView
+        ref={webViewRef}
+        source={source}
+        style={{ flex: 1, backgroundColor: '#fff' }}
+        onLoadStart={() => setLoading(true)}
+        onLoadEnd={() => setLoading(false)}
+        onError={() => { setLoadError(true); setLoading(false); }}
+        originWhitelist={['*']}
+        allowsInlineMediaPlayback
+        mediaPlaybackRequiresUserAction={false}
+        cacheEnabled={true}
+        allowFileAccess={true}
+        allowFileAccessFromFileURLs={true}
+        allowUniversalAccessFromFileURLs={true}
+      />
+      {loadError && (
+        <View style={styles.pdfErrorOverlay}>
+          <File size={48} color={COLORS.error} />
+          <Text style={styles.pdfErrorText}>
+            {isOffline
+              ? 'Unable to load cached document. Please try downloading again when online.'
+              : 'Unable to load document'
+            }
+          </Text>
+          <TouchableOpacity style={styles.pdfRetryBtn} onPress={() => { setLoadError(false); setLoading(true); webViewRef.current?.reload(); }}>
+            <Text style={styles.pdfRetryText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </View>
+  );
+}
+
 export default function BooksScreen() {
   const { books, t, refreshing, refreshData, isOffline, cachedBooks, bookDownloads, cacheBook, uncacheBook, getBookLocalUri, checkBookCache } = useApp();
   const [search, setSearch] = useState('');
@@ -43,14 +118,14 @@ export default function BooksScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      refreshData();
+      if (!isOffline) refreshData();
       books.forEach(b => {
         if (b.fileUrl) {
           const fullUrl = getMediaUrl(b.fileUrl);
           checkBookCache(fullUrl);
         }
       });
-    }, [])
+    }, [isOffline])
   );
 
   const filtered = books.filter(b => {
@@ -63,10 +138,17 @@ export default function BooksScreen() {
     return matchesSearch && matchesCategory;
   });
 
-  function openBook(book) {
-    setSelectedBook(book);
+  const openBook = useCallback(async (book) => {
+    if (book.fileUrl) {
+      const fullUrl = getMediaUrl(book.fileUrl);
+      const localUri = await getBookLocalUri(fullUrl);
+      const cached = cachedBooks[fullUrl] || false;
+      setSelectedBook({ ...book, fileUrl: fullUrl, localUri, isCachedOffline: cached });
+    } else {
+      setSelectedBook(book);
+    }
     setReaderVisible(true);
-  }
+  }, [cachedBooks, getBookLocalUri]);
 
   function closeBookReader() {
     setReaderVisible(false);
@@ -87,18 +169,6 @@ export default function BooksScreen() {
     await uncacheBook(fullUrl);
   }
 
-  async function openCachedBook(book) {
-    if (!book.fileUrl) return;
-    const fullUrl = getMediaUrl(book.fileUrl);
-    const localUri = await getBookLocalUri(fullUrl);
-    if (localUri) {
-      setSelectedBook({ ...book, localUri });
-    } else {
-      setSelectedBook(book);
-    }
-    setReaderVisible(true);
-  }
-
   function getTypeIcon(fileType) {
     if (fileType === 'pdf') return File;
     if (fileType === 'docx') return FileText;
@@ -117,6 +187,12 @@ export default function BooksScreen() {
     categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
   });
   categoryCounts.all = books.length;
+
+  const selBook = selectedBook;
+  const selIcon = selBook ? getTypeIcon(selBook.fileType) : BookOpen;
+  const selColor = selBook ? getTypeColor(selBook.fileType) : COLORS.secondary;
+  const hasInlineFile = selBook && selBook.fileType !== 'text' && (selBook.localUri || (selBook.fileUrl && !isOffline));
+  const inlineUrl = selBook?.localUri || (selBook?.localUri ? `file://${selBook.localUri}` : '') || selBook?.fileUrl || '';
 
   return (
     <ImageBackground source={require('../../assets/ok5.jpeg')} style={styles.bgImage} resizeMode="cover">
@@ -232,15 +308,15 @@ export default function BooksScreen() {
             <TouchableOpacity
               key={item.id}
               style={styles.card}
-              onPress={() => openCachedBook(item)}
+              onPress={() => openBook(item)}
               activeOpacity={0.85}
             >
               <View style={styles.coverWrap}>
                 {imgUrl ? (
                   <Image source={{ uri: imgUrl }} style={styles.cover} resizeMode="cover" />
                 ) : (
-                  <View style={styles.coverPlaceholder}>
-                    <BookOpen size={36} color={COLORS.primary} />
+                  <View style={[styles.coverPlaceholder, { backgroundColor: typeColor + '15' }]}>
+                    <TypeIcon size={40} color={typeColor} />
                   </View>
                 )}
                 <View style={styles.coverOverlay} />
@@ -251,14 +327,13 @@ export default function BooksScreen() {
                 {isCached && (
                   <View style={styles.cachedBadge}>
                     <Check size={10} color="#FFFFFF" />
-                    <Text style={styles.cachedBadgeText}>{t('Off', 'Off', 'محفوظ')}</Text>
+                    <Text style={styles.cachedBadgeText}>{t('Birabitswe', 'Cached', 'محفوظ')}</Text>
                   </View>
                 )}
               </View>
               <View style={styles.info}>
                 <Text style={styles.title} numberOfLines={2}>{itemTitle}</Text>
                 <View style={styles.authorRow}>
-                  <Hash size={12} color={COLORS.secondary} />
                   <Text style={styles.author} numberOfLines={1}>{itemAuthor}</Text>
                 </View>
                 {item.category ? (
@@ -267,8 +342,8 @@ export default function BooksScreen() {
                   </View>
                 ) : null}
                 <View style={styles.actionRow}>
-                  <TouchableOpacity style={styles.readBtn} onPress={() => openCachedBook(item)}>
-                    <BookOpen size={14} color="#FFFFFF" />
+                  <TouchableOpacity style={styles.readBtn} onPress={() => openBook(item)}>
+                    <Eye size={14} color="#FFFFFF" />
                     <Text style={styles.readBtnText}>
                       {t('Soma', 'Read', 'اقرأ')}
                     </Text>
@@ -306,80 +381,62 @@ export default function BooksScreen() {
       </ScrollView>
 
       <Modal visible={readerVisible} animationType="slide" onRequestClose={closeBookReader}>
-        {(() => {
-          const selIcon = selectedBook ? getTypeIcon(selectedBook.fileType) : BookOpen;
-          const selColor = selectedBook ? getTypeColor(selectedBook.fileType) : COLORS.secondary;
-          return (
-            <SafeAreaView style={styles.readerContainer}>
-              <View style={styles.readerHeader}>
-                <View style={styles.readerHeaderLeft}>
-                  <selIcon size={18} color={selColor} />
-                  <Text style={styles.readerTitle} numberOfLines={1}>
-                    {selectedBook ? (selectedBook.titleEn || selectedBook.title || '') : ''}
-                  </Text>
-                  {selectedBook?.fileType && (
-                    <View style={[styles.readerTypeBadge, { backgroundColor: selColor + '30' }]}>
-                      <Text style={[styles.readerTypeText, { color: selColor }]}>
-                        {selectedBook.fileType.toUpperCase()}
-                      </Text>
+        <SafeAreaView style={styles.readerContainer}>
+          <View style={styles.readerHeader}>
+            <View style={styles.readerHeaderLeft}>
+              <TouchableOpacity onPress={closeBookReader} style={styles.readerBackBtn}>
+                <ChevronLeft size={22} color="#FFFFFF" />
+              </TouchableOpacity>
+              <View style={styles.readerHeaderInfo}>
+                <Text style={styles.readerTitle} numberOfLines={1}>
+                  {selBook ? (selBook.titleEn || selBook.title || '') : ''}
+                </Text>
+                {selBook?.fileType && (
+                  <View style={[styles.readerTypeBadge, { backgroundColor: selColor + '30' }]}>
+                    <Text style={[styles.readerTypeText, { color: selColor }]}>
+                      {selBook.fileType.toUpperCase()}
+                    </Text>
+                    {selBook?.localUri && (
+                      <Text style={styles.readerOfflineLabel}> | Offline</Text>
+                    )}
+                  </View>
+                )}
+              </View>
+            </View>
+            <TouchableOpacity onPress={closeBookReader} style={styles.readerCloseBtn}>
+              <X size={20} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.readerBody}>
+            {hasInlineFile ? (
+              <PdfInlineViewer url={inlineUrl} title={selBook.titleEn || selBook.title} isOffline={isOffline} />
+            ) : selBook ? (
+              <ScrollView contentContainerStyle={styles.textReaderContent}>
+                <View style={styles.textReaderCover}>
+                  {selBook.imageUrl ? (
+                    <Image source={{ uri: getMediaUrl(selBook.imageUrl) }} style={styles.textReaderCoverImg} resizeMode="cover" />
+                  ) : (
+                    <View style={[styles.textReaderCoverPlaceholder, { backgroundColor: selColor + '15' }]}>
+                      <BookMarked size={48} color={selColor} />
                     </View>
                   )}
                 </View>
-                <TouchableOpacity onPress={closeBookReader} style={styles.readerCloseBtn}>
-                  <Text style={styles.readerCloseBtnText}>×</Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.readerBody}>
-                {selectedBook && (selectedBook.fileType === 'pdf' || selectedBook.fileType === 'docx') && (selectedBook.localUri || selectedBook.fileUrl) ? (
-                  <View style={styles.pdfContainer}>
-                    <View style={styles.pdfIconWrap}>
-                      <BookMarked size={64} color={selColor} />
-                    </View>
-                    <Text style={styles.pdfTitle}>{selectedBook.titleEn || selectedBook.title}</Text>
-                    <Text style={styles.pdfAuthor}>{selectedBook.authorEn || selectedBook.author || ''}</Text>
-                    <Text style={styles.pdfType}>{selectedBook.fileType.toUpperCase()}</Text>
-                    {selectedBook.localUri ? (
-                      <View style={styles.offlineReadyBadge}>
-                        <Check size={16} color="#10B981" />
-                        <Text style={styles.offlineReadyText}>{t('Birabonetse offline', 'Available offline', 'متاح بدون إنترنت')}</Text>
-                      </View>
-                    ) : null}
-                    <TouchableOpacity
-                      style={[styles.pdfOpenBtn, { backgroundColor: selColor }]}
-                      onPress={() => {
-                        const url = selectedBook.localUri || getMediaUrl(selectedBook.fileUrl);
-                        Linking.openURL(url);
-                      }}
-                    >
-                      <BookOpen size={18} color="#FFFFFF" />
-                      <Text style={styles.pdfOpenBtnText}>
-                        {selectedBook.fileType === 'docx'
-                          ? t('Fungura DOCX', 'Open DOCX', 'فتح DOCX')
-                          : t('Fungura PDF', 'Open PDF', 'فتح PDF')}
-                      </Text>
-                    </TouchableOpacity>
+                <Text style={styles.textReaderTitle}>{selBook.titleEn || selBook.title || ''}</Text>
+                <Text style={styles.textReaderAuthor}>{selBook.authorEn || selBook.author || ''}</Text>
+                {selBook.category ? (
+                  <View style={styles.textReaderCategory}>
+                    <Text style={styles.textReaderCategoryText}>{selBook.category}</Text>
                   </View>
-                ) : selectedBook ? (
-                  <ScrollView contentContainerStyle={styles.textReaderContent}>
-                    <Text style={styles.textReaderTitle}>{selectedBook.titleEn || selectedBook.title || ''}</Text>
-                    <View style={styles.textReaderMeta}>
-                      <Hash size={14} color={COLORS.secondary} />
-                      <Text style={styles.textReaderAuthor}>{selectedBook.authorEn || selectedBook.author || ''}</Text>
-                    </View>
-                    {selectedBook.category ? (
-                      <View style={styles.textReaderCategory}>
-                        <Text style={styles.textReaderCategoryText}>{selectedBook.category}</Text>
-                      </View>
-                    ) : null}
-                    <Text style={styles.textReaderBody}>
-                      {selectedBook.description || 'This book contains beneficial Islamic knowledge.\n\nMay Allah increase us in knowledge and benefit us with what we learn.'}
-                    </Text>
-                  </ScrollView>
                 ) : null}
-              </View>
-            </SafeAreaView>
-          );
-        })()}
+                <View style={styles.textReaderDivider} />
+                <Text style={styles.textReaderBody}>
+                  {selBook.description || 'This book contains beneficial Islamic knowledge.\n\nMay Allah increase us in knowledge and benefit us with what we learn.'}
+                </Text>
+              </ScrollView>
+            ) : null}
+          </View>
+        </SafeAreaView>
       </Modal>
     </SafeAreaView>
     </ImageBackground>
@@ -450,7 +507,7 @@ const styles = StyleSheet.create({
   cover: { width: '100%', height: '100%' },
   coverPlaceholder: {
     width: '100%', height: '100%',
-    backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center',
+    alignItems: 'center', justifyContent: 'center',
   },
   coverOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.05)' },
   typeBadge: { position: 'absolute', top: 8, left: 8, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
@@ -465,16 +522,16 @@ const styles = StyleSheet.create({
   },
   cachedBadgeText: { color: '#fff', fontSize: 9, fontWeight: '700' },
 
-  info: { flex: 1, padding: 12, gap: 6 },
+  info: { flex: 1, padding: 12, gap: 4 },
   title: { fontSize: 14, fontWeight: '600', lineHeight: 19, color: '#FFFFFF' },
-  authorRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
+  authorRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
   author: { fontSize: 12, flex: 1, fontWeight: '500', color: 'rgba(255,255,255,0.7)' },
   categoryTag: {
     paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12,
     alignSelf: 'flex-start', marginTop: 4, backgroundColor: 'rgba(255,255,255,0.08)',
   },
   categoryTagText: { fontSize: 10, fontWeight: '600', color: '#5EEAD4' },
-  actionRow: { flexDirection: 'row', gap: 8, marginTop: 'auto', paddingTop: 4 },
+  actionRow: { flexDirection: 'row', gap: 8, marginTop: 6 },
   readBtn: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
     paddingVertical: 10, borderRadius: 12,
@@ -507,54 +564,56 @@ const styles = StyleSheet.create({
   },
   clearFilterText: { fontSize: 12, fontWeight: '600', color: '#5EEAD4' },
 
-  readerContainer: { flex: 1, backgroundColor: 'rgba(10,48,44,0.97)' },
+  readerContainer: { flex: 1, backgroundColor: '#0a1a2e' },
   readerHeader: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 12,
-    backgroundColor: 'rgba(0,0,0,0.3)', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)',
+    paddingHorizontal: 8, paddingVertical: 10,
+    backgroundColor: '#0d2137', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.08)',
   },
-  readerHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
-  readerTitle: { flex: 1, fontSize: 16, fontWeight: '600', color: '#FFFFFF' },
-  readerTypeBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
-  readerTypeText: { fontSize: 10, fontWeight: '700' },
+  readerHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 },
+  readerBackBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  readerHeaderInfo: { flex: 1 },
+  readerTitle: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
+  readerTypeBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4, marginTop: 2, alignSelf: 'flex-start' },
+  readerTypeText: { fontSize: 9, fontWeight: '700' },
+  readerOfflineLabel: { fontSize: 9, color: '#10B981', fontWeight: '600' },
   readerCloseBtn: {
     width: 36, height: 36, borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center', marginLeft: 10,
+    backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center',
   },
-  readerCloseBtnText: { fontSize: 20, color: 'rgba(255,255,255,0.7)', fontWeight: '500' },
 
   readerBody: { flex: 1 },
-  pdfContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24 },
-  pdfIconWrap: {
-    width: 120, height: 120, borderRadius: 60,
-    backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center',
-  },
-  pdfTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF', textAlign: 'center' },
-  pdfAuthor: { fontSize: 14, color: 'rgba(255,255,255,0.7)' },
-  pdfType: { fontSize: 12, fontWeight: '600', color: 'rgba(255,255,255,0.5)', letterSpacing: 1 },
-  offlineReadyBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12,
-    backgroundColor: 'rgba(16,185,129,0.15)', marginTop: 8,
-  },
-  offlineReadyText: { fontSize: 12, fontWeight: '600', color: '#10B981' },
-  pdfOpenBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    paddingHorizontal: 24, paddingVertical: 14, borderRadius: 12, marginTop: 16,
-  },
-  pdfOpenBtnText: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
 
-  textReaderContent: { padding: 24, paddingBottom: 60 },
-  textReaderTitle: { fontSize: 22, textAlign: 'center', marginBottom: 16, fontWeight: '700', color: '#5EEAD4' },
-  textReaderMeta: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
-    marginBottom: 12, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)',
+  pdfFallback: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24 },
+  pdfFallbackTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF', textAlign: 'center' },
+  pdfFallbackText: { fontSize: 14, color: 'rgba(255,255,255,0.6)' },
+
+  pdfLoadingOverlay: {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    alignItems: 'center', justifyContent: 'center', zIndex: 10,
+    backgroundColor: 'rgba(10,26,46,0.9)',
   },
-  textReaderAuthor: { fontSize: 13, fontWeight: '500', color: 'rgba(255,255,255,0.7)' },
+  pdfLoadingText: { color: '#F59E0B', fontSize: 13, marginTop: 10 },
+  pdfErrorOverlay: {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    alignItems: 'center', justifyContent: 'center', gap: 12,
+    backgroundColor: 'rgba(10,26,46,0.9)',
+  },
+  pdfErrorText: { color: '#ccc', fontSize: 14 },
+  pdfRetryBtn: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10, backgroundColor: 'rgba(245,158,11,0.2)', borderWidth: 1, borderColor: 'rgba(245,158,11,0.4)' },
+  pdfRetryText: { color: '#F59E0B', fontWeight: '600' },
+
+  textReaderContent: { padding: 24, paddingBottom: 60, alignItems: 'center' },
+  textReaderCover: { width: 160, height: 220, borderRadius: 12, overflow: 'hidden', marginBottom: 20, elevation: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
+  textReaderCoverImg: { width: '100%', height: '100%' },
+  textReaderCoverPlaceholder: { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' },
+  textReaderTitle: { fontSize: 20, textAlign: 'center', fontWeight: '700', color: '#5EEAD4', marginBottom: 8 },
+  textReaderAuthor: { fontSize: 14, color: 'rgba(255,255,255,0.7)', textAlign: 'center', marginBottom: 12 },
   textReaderCategory: {
-    alignSelf: 'center', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12,
-    backgroundColor: 'rgba(20,184,166,0.2)', marginBottom: 16,
+    paddingHorizontal: 14, paddingVertical: 5, borderRadius: 14,
+    backgroundColor: 'rgba(20,184,166,0.2)', marginBottom: 20,
   },
-  textReaderCategoryText: { fontSize: 11, fontWeight: '600', color: '#5EEAD4' },
-  textReaderBody: { fontSize: 16, lineHeight: 28, color: '#FFFFFF' },
+  textReaderCategoryText: { fontSize: 12, fontWeight: '600', color: '#5EEAD4' },
+  textReaderDivider: { width: 60, height: 2, backgroundColor: 'rgba(255,255,255,0.1)', marginBottom: 20 },
+  textReaderBody: { fontSize: 16, lineHeight: 28, color: 'rgba(255,255,255,0.85)', textAlign: 'center' },
 });
