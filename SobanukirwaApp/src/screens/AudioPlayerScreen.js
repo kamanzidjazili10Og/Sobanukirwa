@@ -24,13 +24,14 @@ const C = {
 };
 
 export default function AudioPlayerScreen({ route, navigation }) {
-  const { category, tracks: passedTracks, startIndex = 0 } = route.params;
+  const { category = '', tracks: passedTracks = [], startIndex = 0 } = route?.params || {};
   const { t, stopAllMedia, registerPauseAudio, cachedAudios, getAudioLocalUri, isOffline } = useApp();
   const soundRef = useRef(null);
   const [currentIndex, setCurrentIndex] = useState(startIndex);
   const [isPlaying, setIsPlaying] = useState(false);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [loadError, setLoadError] = useState('');
   const [shuffle, setShuffle] = useState(false);
   const [repeatMode, setRepeatMode] = useState(0);
   const [volume, setVolume] = useState(0.8);
@@ -87,8 +88,17 @@ export default function AudioPlayerScreen({ route, navigation }) {
       if (localUri) {
         finalUrl = localUri;
       } else if (isOffline) {
+        setLoadError(t(
+          'Iyi nyigisho ntabwo yatejwe mu bikoresho - kurura uyifashishe interineti',
+          'This lesson is not downloaded - download it when online to play offline',
+          'هذا الدرس غير محفوظ - حمّله عند الاتصال للتشغيل بدون إنترنت'
+        ));
+        setIsPlaying(false);
+        setPosition(0);
+        setDuration(0);
         return;
       }
+      setLoadError('');
       const { sound } = await Audio.Sound.createAsync(
         { uri: finalUrl },
         { shouldPlay: true, volume }
@@ -151,7 +161,7 @@ export default function AudioPlayerScreen({ route, navigation }) {
       <View style={styles.overlay} />
       <SafeAreaView style={styles.container}>
       <Animated.View style={[styles.topBar, { opacity: fadeAnim }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.topBtn}>
+        <TouchableOpacity style={styles.topBtn} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <View style={styles.topCenter}>
@@ -162,10 +172,15 @@ export default function AudioPlayerScreen({ route, navigation }) {
             {category || t('Inyigisho', 'Lessons', 'الدروس')}
           </Text>
         </View>
-        <TouchableOpacity style={styles.topBtn}>
-          <Ionicons name="ellipsis-horizontal" size={22} color="rgba(255,255,255,0.6)" />
-        </TouchableOpacity>
+        <View style={styles.topBtn} />
       </Animated.View>
+
+      {loadError ? (
+        <View style={styles.errorBanner}>
+          <Ionicons name="cloud-offline-outline" size={16} color="#FBBF24" />
+          <Text style={styles.errorBannerText}>{loadError}</Text>
+        </View>
+      ) : null}
 
       <Animated.View style={[styles.artSection, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
         <View style={styles.artGlow} />
@@ -279,7 +294,7 @@ export default function AudioPlayerScreen({ route, navigation }) {
                 )}
               </View>
               <View style={styles.plInfo}>
-                <Text style={[styles.plTitle, { color: index === currentIndex ? C.primary : C.text }]} numberOfLines={1}>
+                <Text style={[styles.plTitle, { color: index === currentIndex ? '#5EEAD4' : '#FFFFFF' }]} numberOfLines={1}>
                   {track.title}
                 </Text>
                 <Text style={styles.plArtist} numberOfLines={1}>
@@ -322,6 +337,13 @@ const styles = StyleSheet.create({
   },
   container: { flex: 1, backgroundColor: 'transparent' },
   topBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 4, backgroundColor: 'rgba(0,0,0,0.3)', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)' },
+  errorBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    marginHorizontal: 16, marginTop: 10, paddingHorizontal: 14, paddingVertical: 10,
+    borderRadius: 12, backgroundColor: 'rgba(245,158,11,0.12)',
+    borderWidth: 1, borderColor: 'rgba(245,158,11,0.3)',
+  },
+  errorBannerText: { flex: 1, fontSize: 12, fontWeight: '600', color: '#FBBF24', lineHeight: 18 },
   topBtn: { padding: 12 },
   topCenter: { flex: 1, alignItems: 'center' },
   topTitle: { fontSize: 13, fontWeight: '700', color: '#FFFFFF' },

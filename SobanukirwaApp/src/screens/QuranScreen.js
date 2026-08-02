@@ -1,10 +1,11 @@
-import React, { useState, useCallback, useRef, useMemo } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, TextInput, RefreshControl, Animated, ImageBackground, SectionList } from 'react-native';
+import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, TextInput, RefreshControl, Animated, ImageBackground } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { BookOpen, Search, X, Volume2, Pause, ChevronRight } from 'lucide-react-native';
+import { BookOpen, Search, X, Volume2, Download, Check, WifiOff } from 'lucide-react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useApp } from '../context/AppContext';
+import { getMediaUrl } from '../services/api';
 
 const COLORS = {
   primary: '#0F766E',
@@ -16,12 +17,14 @@ const COLORS = {
   textSecondary: '#6B7280',
   textTertiary: '#9CA3AF',
   border: '#E5E7EB',
+  success: '#10B981',
+  error: '#EF4444',
 };
 
 const TABS = ['All', 'Meccan', 'Medinan'];
 
 export default function QuranScreen({ navigation }) {
-  const { surahs, t, refreshing, refreshData, isOffline } = useApp();
+  const { surahs, t, refreshing, refreshData, isOffline, cachedAudios, cacheAudio, checkAudioCache } = useApp();
   const [search, setSearch] = useState('');
   const [playingSurah, setPlayingSurah] = useState(null);
   const [activeTab, setActiveTab] = useState('All');
@@ -30,10 +33,11 @@ export default function QuranScreen({ navigation }) {
   useFocusEffect(
     useCallback(() => {
       if (!isOffline) refreshData();
+      return () => setPlayingSurah(null);
     }, [isOffline])
   );
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (playingSurah) {
       Animated.loop(
         Animated.sequence([
@@ -45,7 +49,6 @@ export default function QuranScreen({ navigation }) {
       pulseAnim.setValue(1);
     }
   }, [playingSurah]);
-
   const filtered = useMemo(() => {
     return surahs.filter(s => {
       const q = search.toLowerCase();
@@ -70,10 +73,17 @@ export default function QuranScreen({ navigation }) {
     return { total: surahs.length, meccan, medinan };
   }, [surahs]);
 
-  function handleSurahPress(surah) {
+  function getSurahAudio(surah) {
     const num = surah.surah_number || surah.number;
     const padNum = String(num).padStart(3, '0');
-    const audioUrl = surah.audio_url || `https://server7.mp3quran.net/ahmed/${padNum}.mp3`;
+    return surah.audio_url || `https://server7.mp3quran.net/ahmed/${padNum}.mp3`;
+  }
+
+  function handleSurahPress(surah) {
+    const num = surah.surah_number || surah.number;
+    const audioUrl = getSurahAudio(surah);
+    const fullUrl = getMediaUrl(audioUrl);
+    if (isOffline && !(fullUrl && cachedAudios[fullUrl])) return;
     setPlayingSurah(num);
     navigation.navigate('AudioPlayer', {
       category: surah.name || `Surah ${num}`,
@@ -85,6 +95,15 @@ export default function QuranScreen({ navigation }) {
       }],
       startIndex: 0,
     });
+  }
+
+  async function handleCacheSurah(surah) {
+    if (isOffline) return;
+    const fullUrl = getMediaUrl(getSurahAudio(surah));
+    if (fullUrl && !cachedAudios[fullUrl]) {
+      await cacheAudio(fullUrl);
+      checkAudioCache(fullUrl);
+    }
   }
 
   return (
@@ -182,6 +201,9 @@ export default function QuranScreen({ navigation }) {
               const revType = surah.revelation_type || surah.revelationType || surah.type || '';
               const isMeccan = revType.toLowerCase() === 'makkah' || revType.toLowerCase() === 'meccan';
               const isPlaying = playingSurah === num;
+              const audioFullUrl = getMediaUrl(getSurahAudio(surah));
+              const isCached = !!(audioFullUrl && cachedAudios[audioFullUrl]);
+              const offlineLocked = isOffline && !isCached;
 
               return (
                 <TouchableOpacity
@@ -189,6 +211,7 @@ export default function QuranScreen({ navigation }) {
                   style={[
                     styles.card,
                     isPlaying && styles.cardPlaying,
+                    offlineLocked && styles.cardLocked,
                   ]}
                   onPress={() => handleSurahPress(surah)}
                   activeOpacity={0.7}
@@ -224,10 +247,18 @@ export default function QuranScreen({ navigation }) {
                   </View>
 
                   <View style={styles.cardRight}>
-                    {isPlaying ? (
-                      <Pause size={20} color={COLORS.secondary} />
+                    {isCached ? (
+                      <Check size={18} color="#10B981" />
+                    ) : isOffline ? (
+                      <WifiOff size={16} color={COLORS.textTertiary} />
                     ) : (
-                      <ChevronRight size={20} color={COLORS.textTertiary} />
+                      <TouchableOpacity
+                        style={styles.cacheBtn}
+                        onPress={() => handleCacheSurah(surah)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <Download size={16} color="#5EEAD4" />
+                      </TouchableOpacity>
                     )}
                   </View>
                 </TouchableOpacity>
@@ -243,7 +274,7 @@ export default function QuranScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   bgImage: { flex: 1 },
-  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(6, 48, 44, 0.35)' },
+  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(6, 48, 44, 0.6)' },
   container: { flex: 1, backgroundColor: 'transparent' },
 
   header: {
@@ -297,6 +328,7 @@ const styles = StyleSheet.create({
     padding: 12, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', gap: 12,
   },
   cardPlaying: { borderColor: COLORS.secondary, borderWidth: 2 },
+  cardLocked: { opacity: 0.55 },
 
   numberBadge: {
     width: 38, height: 38, borderRadius: 19, backgroundColor: COLORS.accent,
@@ -314,6 +346,11 @@ const styles = StyleSheet.create({
   typeText: { fontSize: 10, fontWeight: '600' },
 
   cardRight: { alignItems: 'center', paddingLeft: 8 },
+  cacheBtn: {
+    width: 30, height: 30, borderRadius: 15,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(20,184,166,0.15)', borderWidth: 1, borderColor: 'rgba(20,184,166,0.3)',
+  },
 
   emptyState: {
     alignItems: 'center', paddingVertical: 48, gap: 12, backgroundColor: 'rgba(0,0,0,0.2)',

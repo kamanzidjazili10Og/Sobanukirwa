@@ -50,7 +50,7 @@ const C = {
 };
 
 export default function HomeScreen({ navigation }) {
-  const { t, COLORS, refreshing, refreshData, isEffectivelySilent, language, setLanguage, saveSetting } = useApp();
+  const { t, COLORS, refreshing, refreshData, isEffectivelySilent, language, setLanguage, saveSetting, isOffline } = useApp();
   const [showLangDropdown, setShowLangDropdown] = useState(false);
   const [prayerTimes, setPrayerTimes] = useState({});
   const [nextPrayer, setNextPrayer] = useState('');
@@ -68,7 +68,16 @@ export default function HomeScreen({ navigation }) {
     const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 86400000);
     setVerseOfDay(QURAN_VERSES[dayOfYear % QURAN_VERSES.length]);
     setCurrentDate(today.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
-    fetchHijriDate().then(h => { if (h) setHijriDate(h); });
+    if (isOffline) {
+      AsyncStorage.getItem('cached_hijri_date').then(cached => { if (cached) setHijriDate(cached); });
+    } else {
+      fetchHijriDate().then(h => {
+        if (h) {
+          setHijriDate(h);
+          AsyncStorage.setItem('cached_hijri_date', h);
+        }
+      });
+    }
   }, []);
 
   useEffect(() => {
@@ -242,6 +251,29 @@ export default function HomeScreen({ navigation }) {
     return verseOfDay.translation;
   }
 
+  function getGreeting() {
+    const hour = new Date().getHours();
+    if (language === 'rw') {
+      if (hour < 12) return 'Mwaramutse';
+      if (hour < 17) return 'Mwasuye';
+      return 'Mwiriwe';
+    }
+    if (language === 'ar') {
+      if (hour < 12) return 'صباح الخير';
+      if (hour < 17) return 'مساء الخير';
+      return 'مساء الخير';
+    }
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  }
+
+  function getGreetingSub() {
+    if (language === 'rw') return 'Urumuri rw\'ubumenyi n\'amahoro ni byawe';
+    if (language === 'ar') return 'نور المعرفة والسلام لكم';
+    return 'Light of knowledge and peace be upon you';
+  }
+
   return (
     <ImageBackground source={require('../../assets/bg-about.jpg')} style={styles.bgImage} resizeMode="cover">
       <View style={styles.overlay} />
@@ -314,15 +346,39 @@ export default function HomeScreen({ navigation }) {
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* Hero Section */}
-        <View style={styles.heroCard}>
-          <View style={styles.heroStrip} />
-          <Text style={styles.heroTitle}>
+        {/* Welcome Section */}
+        <View style={styles.welcomeCard}>
+          <View style={styles.welcomeGlow} />
+          <View style={styles.welcomeBadge}>
+            <Text style={styles.welcomeBadgeText}>{t('Ikaze', 'Welcome', 'مرحباً')}</Text>
+          </View>
+          <Text style={styles.welcomeGreeting}>{getGreeting()}!</Text>
+          <Text style={styles.welcomeSubtitle}>{getGreetingSub()}</Text>
+          <View style={styles.welcomeDivider} />
+          <Text style={styles.welcomeTitle}>
             {t('Sobanukirwa Ubu Islam', 'Sobanukirwa Islamic', 'سوبانوكيروا الإسلامي')}
           </Text>
-          <Text style={styles.heroSubtitle}>
+          <Text style={styles.welcomeDesc}>
             {t('Menya ukuri, ubuhanga, n\'ubwiza bwa Islam', 'Learn the truth, knowledge, and beauty of Islam', 'اعرف الحقيقة والمعرفة وجمال الإسلام')}
           </Text>
+          <View style={styles.welcomeFeatures}>
+            <View style={styles.welcomeFeatureItem}>
+              <View style={styles.welcomeFeatureDot} />
+              <Text style={styles.welcomeFeatureText}>{t('Qor\'an', 'Quran', 'القرآن')}</Text>
+            </View>
+            <View style={styles.welcomeFeatureItem}>
+              <View style={styles.welcomeFeatureDot} />
+              <Text style={styles.welcomeFeatureText}>{t('Inyigisho', 'Audio', 'دروس')}</Text>
+            </View>
+            <View style={styles.welcomeFeatureItem}>
+              <View style={styles.welcomeFeatureDot} />
+              <Text style={styles.welcomeFeatureText}>{t('Ibitabo', 'Books', 'كتب')}</Text>
+            </View>
+            <View style={styles.welcomeFeatureItem}>
+              <View style={styles.welcomeFeatureDot} />
+              <Text style={styles.welcomeFeatureText}>{t('Isengesho', 'Prayer', 'صلاة')}</Text>
+            </View>
+          </View>
         </View>
 
         {/* Verse of the Day */}
@@ -517,11 +573,20 @@ const styles = StyleSheet.create({
   /* Scroll */
   scroll: { padding: 20, paddingBottom: 40, gap: 16 },
 
-  /* Hero */
-  heroCard: { backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: 16, padding: 20, alignItems: 'center', overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  heroStrip: { position: 'absolute', top: 0, left: 0, right: 0, height: 4, backgroundColor: '#14B8A6' },
-  heroTitle: { fontSize: 21, fontWeight: '700', color: '#FFFFFF', fontFamily: 'serif', textAlign: 'center', marginTop: 8 },
-  heroSubtitle: { fontSize: 13, color: 'rgba(255,255,255,0.7)', textAlign: 'center', lineHeight: 19, maxWidth: 300, marginTop: 8 },
+  /* Welcome */
+  welcomeCard: { backgroundColor: 'rgba(0,0,0,0.25)', borderRadius: 20, padding: 24, alignItems: 'center', overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(94,234,212,0.15)', position: 'relative' },
+  welcomeGlow: { position: 'absolute', top: -60, width: 200, height: 200, borderRadius: 100, backgroundColor: 'rgba(20,184,166,0.06)' },
+  welcomeBadge: { paddingHorizontal: 16, paddingVertical: 5, borderRadius: 20, backgroundColor: 'rgba(20,184,166,0.2)', borderWidth: 1, borderColor: 'rgba(94,234,212,0.2)', marginBottom: 12 },
+  welcomeBadgeText: { fontSize: 11, fontWeight: '700', color: '#5EEAD4', letterSpacing: 1, textTransform: 'uppercase' },
+  welcomeGreeting: { fontSize: 26, fontWeight: '800', color: '#FFFFFF', textAlign: 'center', lineHeight: 34 },
+  welcomeSubtitle: { fontSize: 13, color: 'rgba(255,255,255,0.65)', textAlign: 'center', marginTop: 4, lineHeight: 19 },
+  welcomeDivider: { width: 40, height: 3, borderRadius: 2, backgroundColor: '#14B8A6', marginVertical: 16 },
+  welcomeTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF', fontFamily: 'serif', textAlign: 'center' },
+  welcomeDesc: { fontSize: 12, color: 'rgba(255,255,255,0.6)', textAlign: 'center', lineHeight: 18, maxWidth: 280, marginTop: 8 },
+  welcomeFeatures: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12, marginTop: 16 },
+  welcomeFeatureItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  welcomeFeatureDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#14B8A6' },
+  welcomeFeatureText: { fontSize: 11, fontWeight: '600', color: 'rgba(255,255,255,0.7)' },
 
   /* Verse Card */
   verseCard: { flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: 16, padding: 16, alignItems: 'center', gap: 12, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },

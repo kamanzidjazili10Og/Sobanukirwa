@@ -1,68 +1,43 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
-import NetInfo from '@react-native-community/netinfo';
+import { WifiOff, Download, CheckCircle2, RefreshCw, UploadCloud } from 'lucide-react-native';
 import { useApp } from '../context/AppContext';
 
 export default function OfflineBanner() {
-  const [isOffline, setIsOffline] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
   const slideAnim = useState(new Animated.Value(-60))[0];
-  const { pendingSyncCount, isSyncing, syncStatus, autoDownloadProgress } = useApp();
+  const { isOffline, pendingSyncCount, isSyncing, autoDownloadProgress } = useApp();
 
   const isAutoDownloading = autoDownloadProgress?.active;
-
-  useEffect(() => {
-    const unsubscribe = NetInfo.addEventListener(state => {
-      const offline = !state.isConnected || !state.isInternetReachable;
-      setIsOffline(offline);
-      if (offline && !isAutoDownloading) {
-        setShowBanner(true);
-        Animated.spring(slideAnim, { toValue: 0, useNativeDriver: true }).start();
-      } else if (pendingSyncCount === 0 && !isAutoDownloading) {
-        Animated.timing(slideAnim, { toValue: -60, duration: 300, useNativeDriver: true }).start(() => {
-          setShowBanner(false);
-        });
-      }
-    });
-    return () => unsubscribe();
-  }, [pendingSyncCount, isAutoDownloading]);
 
   useEffect(() => {
     if (isAutoDownloading) {
       setShowBanner(true);
       Animated.spring(slideAnim, { toValue: 0, useNativeDriver: true }).start();
-    } else if (!isOffline && pendingSyncCount === 0) {
+    } else if (!isOffline && pendingSyncCount === 0 && !isSyncing) {
       Animated.timing(slideAnim, { toValue: -60, duration: 300, useNativeDriver: true }).start(() => {
         setShowBanner(false);
       });
-    }
-  }, [isAutoDownloading, pendingSyncCount, isOffline]);
-
-  useEffect(() => {
-    if (pendingSyncCount > 0 && !isOffline && !isAutoDownloading) {
+    } else if (isOffline || pendingSyncCount > 0 || isSyncing) {
       setShowBanner(true);
       Animated.spring(slideAnim, { toValue: 0, useNativeDriver: true }).start();
-    } else if (pendingSyncCount === 0 && !isOffline && !isAutoDownloading) {
-      Animated.timing(slideAnim, { toValue: -60, duration: 300, useNativeDriver: true }).start(() => {
-        setShowBanner(false);
-      });
     }
-  }, [pendingSyncCount, isOffline, isAutoDownloading]);
+  }, [isOffline, pendingSyncCount, isSyncing, isAutoDownloading]);
 
   if (!showBanner) return null;
 
   const getMessage = () => {
     if (isAutoDownloading) {
       const { downloaded, total, phase } = autoDownloadProgress;
-      if (phase === 'audio') return `📥 Downloading audio... ${downloaded}/${total}`;
-      if (phase === 'books') return `📥 Downloading books... ${downloaded}/${total}`;
-      if (phase === 'done') return '✅ All content saved for offline use!';
-      return '📥 Preparing offline content...';
+      if (phase === 'audio') return `Downloading audio... ${downloaded}/${total}`;
+      if (phase === 'books') return `Downloading books... ${downloaded}/${total}`;
+      if (phase === 'done') return 'All content saved for offline use!';
+      return 'Preparing offline content...';
     }
-    if (isOffline) return '📡 Offline — cached content available';
-    if (isSyncing) return `🔄 Syncing ${pendingSyncCount} pending changes...`;
-    if (pendingSyncCount > 0) return `📤 ${pendingSyncCount} changes pending sync`;
-    return '📡 Offline — cached content available';
+    if (isOffline) return 'Offline — cached content available';
+    if (isSyncing) return `Syncing ${pendingSyncCount} pending changes...`;
+    if (pendingSyncCount > 0) return `${pendingSyncCount} changes pending sync`;
+    return 'Offline — cached content available';
   };
 
   const getSubMessage = () => {
@@ -78,12 +53,21 @@ export default function OfflineBanner() {
     return '';
   };
 
+  const getIcon = () => {
+    if (isAutoDownloading) return autoDownloadProgress.phase === 'done' ? CheckCircle2 : Download;
+    if (isOffline) return WifiOff;
+    if (isSyncing || pendingSyncCount > 0) return RefreshCw;
+    return WifiOff;
+  };
+
   const bgColor = isAutoDownloading
     ? (autoDownloadProgress.phase === 'done' ? '#10B981' : '#0F766E')
     : (isOffline ? '#F59E0B' : '#10B981');
   const textColor = isAutoDownloading
     ? (autoDownloadProgress.phase === 'done' ? '#064E3B' : '#FFFFFF')
     : (isOffline ? '#78350F' : '#064E3B');
+
+  const Icon = getIcon();
 
   return (
     <Animated.View style={[styles.banner, {
@@ -92,7 +76,7 @@ export default function OfflineBanner() {
       borderBottomColor: bgColor === '#F59E0B' ? '#D97706' : (bgColor === '#10B981' ? '#059669' : '#0D5C56'),
     }]}>
       <View style={styles.content}>
-        <View style={[styles.dot, { backgroundColor: textColor }]} />
+        <Icon size={16} color={textColor} />
         <View style={styles.textWrap}>
           <Text style={[styles.text, { color: textColor }]}>{getMessage()}</Text>
           {getSubMessage() ? (
@@ -114,7 +98,6 @@ const styles = StyleSheet.create({
   content: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
   },
-  dot: { width: 8, height: 8, borderRadius: 4 },
   textWrap: { flex: 1 },
   text: { fontSize: 13, fontWeight: '600' },
   subText: { fontSize: 10, fontWeight: '500', marginTop: 1 },

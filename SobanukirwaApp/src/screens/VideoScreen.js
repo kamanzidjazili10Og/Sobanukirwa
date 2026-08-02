@@ -406,7 +406,7 @@ export default function VideoScreen({ navigation }) {
                 </Text>
                 {isOffline && (
                   <Text style={styles.emptySubText}>
-                    {t('Kurura amashusho ubwo uri在线', 'Download videos when online for offline use', 'قم بتنزيل الفيديوهات عند الاتصال للاستخدام بدون إنترنت')}
+                    {t('Kurura amashusho ubwo ufite interineti kugira ngo ubone kuyareba udafite interineti', 'Download videos when online for offline use', 'قم بتنزيل الفيديوهات عند الاتصال للاستخدام بدون إنترنت')}
                   </Text>
                 )}
               </View>

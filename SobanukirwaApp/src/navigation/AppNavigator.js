@@ -39,7 +39,6 @@ const TAB_ICONS = {
 };
 
 function HomeTabs() {
-  const { t } = useApp();
   const { width } = Dimensions.get('window');
   const isSmallScreen = width < 480;
 
@@ -47,37 +46,42 @@ function HomeTabs() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
+        tabBarShowLabel: false,
         tabBarActiveTintColor: '#5EEAD4',
-        tabBarInactiveTintColor: 'rgba(255,255,255,0.45)',
+        tabBarInactiveTintColor: 'rgba(255,255,255,0.4)',
         tabBarStyle: {
-          backgroundColor: 'rgba(6, 48, 44, 0.92)',
-          borderTopColor: 'rgba(255,255,255,0.1)',
+          backgroundColor: 'rgba(6, 48, 44, 0.95)',
+          borderTopColor: 'rgba(255,255,255,0.08)',
           borderTopWidth: 1,
-          height: isSmallScreen ? 52 : 65,
-          paddingBottom: isSmallScreen ? 4 : 8,
-          paddingTop: isSmallScreen ? 6 : 6,
-          elevation: 8,
+          height: isSmallScreen ? 60 : 70,
+          paddingBottom: isSmallScreen ? 8 : 12,
+          paddingTop: isSmallScreen ? 8 : 10,
+          elevation: 12,
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.3,
-          shadowRadius: 8,
-        },
-        tabBarLabelStyle: {
-          fontSize: 10,
-          fontWeight: '500',
-          marginTop: 2,
-          letterSpacing: 0.3,
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.35,
+          shadowRadius: 12,
+          justifyContent: 'center',
         },
         tabBarHideOnKeyboard: true,
         tabBarIcon: ({ color, size, focused }) => {
           const icons = TAB_ICONS[route.name] || { active: 'ellipse', inactive: 'ellipse-outline' };
-          return <Ionicons name={focused ? icons.active : icons.inactive} size={isSmallScreen ? 22 : size} color={color} />;
+          const iconSize = isSmallScreen ? 24 : 26;
+          return (
+            <View style={[
+              {
+                width: focused ? 44 : 36,
+                height: focused ? 44 : 36,
+                borderRadius: focused ? 22 : 18,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: focused ? 'rgba(94,234,212,0.12)' : 'transparent',
+              }
+            ]}>
+              <Ionicons name={focused ? icons.active : icons.inactive} size={focused ? iconSize + 2 : iconSize} color={color} />
+            </View>
+          );
         },
-        tabBarLabel: isSmallScreen ? undefined : t(
-          route.name === 'Home' ? 'Ahabanza' : route.name === 'Prayer' ? 'Isengesho' : route.name === 'Quran' ? 'Qor\'an' : route.name === 'Audio' ? 'Inyigisho' : route.name === 'Books' ? 'Ibitabo' : route.name === 'Videos' ? 'Amashusho' : 'Ibyerekeye',
-          route.name === 'Home' ? 'Home' : route.name === 'Prayer' ? 'Prayer' : route.name === 'Quran' ? 'Quran' : route.name === 'Audio' ? 'Audio' : route.name === 'Books' ? 'Books' : route.name === 'Videos' ? 'Videos' : 'About',
-          route.name === 'Home' ? 'الرئيسية' : route.name === 'Prayer' ? 'الصلاة' : route.name === 'Quran' ? 'القرآن' : route.name === 'Audio' ? 'الدروس' : route.name === 'Books' ? 'الكتب' : route.name === 'Videos' ? 'الفيديو' : 'حول'
-        ),
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />

@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useApp } from '../context/AppContext';
 import { getMediaUrl } from '../services/api';
-import { Headphones, Play, Search, Music, ChevronLeft, X, Download, Check } from 'lucide-react-native';
+import { Headphones, Play, Search, Music, X, Download, Check, WifiOff } from 'lucide-react-native';
 
 const COLORS = {
   primary: '#0F766E',
@@ -22,7 +22,7 @@ const COLORS = {
 };
 
 export default function AudioScreen({ navigation }) {
-  const { tracks, categories, t, refreshing, refreshData, cachedAudios, cacheAudio, isOffline, COLORS } = useApp();
+  const { tracks, categories, t, refreshing, refreshData, cachedAudios, cacheAudio, isOffline } = useApp();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [search, setSearch] = useState('');
   const [downloadingAll, setDownloadingAll] = useState(false);
@@ -46,6 +46,12 @@ export default function AudioScreen({ navigation }) {
         (tr.artist_name || tr.artist || '').toLowerCase().includes(search.toLowerCase())
       )
     : filteredTracks;
+
+  const cachedCount = searchedTracks.filter(tr => {
+    const url = tr.audio_url || tr.audioUrl;
+    const fullUrl = url ? getMediaUrl(url) : null;
+    return fullUrl && cachedAudios[fullUrl];
+  }).length;
 
   async function handleDownloadAll() {
     if (downloadingAll || isOffline) return;
@@ -90,8 +96,16 @@ export default function AudioScreen({ navigation }) {
                 {t('Inyigisho za Audio', 'Audio Lessons', 'الدروس الصوتية')}
               </Text>
               <Text style={styles.heroSub}>
-                {searchedTracks.length} {t('inyigisho', 'lessons', 'درس')} • {t('Izihe', 'Listen', 'استمع')}
+                {searchedTracks.length} {t('inyigisho', 'lessons', 'درس')} • {t('Umviriza', 'Listen', 'استمع')}
               </Text>
+              {isOffline && (
+                <View style={styles.offlineBar}>
+                  <WifiOff size={14} color="#F59E0B" />
+                  <Text style={styles.offlineBarText}>
+                    {t(`${cachedCount}/${searchedTracks.length} zatejwe - izindi shaka kurura ufite interineti`, `${cachedCount}/${searchedTracks.length} cached - download the rest when online`, `${cachedCount}/${searchedTracks.length} محفوظة - حمّل الباقي عند الاتصال`)}
+                  </Text>
+                </View>
+              )}
               {!isOffline && searchedTracks.some(tr => {
                 const url = tr.audio_url || tr.audioUrl;
                 const fullUrl = url ? getMediaUrl(url) : null;
@@ -171,11 +185,18 @@ export default function AudioScreen({ navigation }) {
               const catName = track.category_name || track.category || 'General';
               const artistName = track.artist_name || track.artist || '';
               const artistImage = track.artist_image || track.artistImage || '';
+              const tUrl = track.audio_url || track.audioUrl;
+              const fullUrl = tUrl ? getMediaUrl(tUrl) : null;
+              const isCached = !!(fullUrl && cachedAudios[fullUrl]);
+              const offlineLocked = isOffline && !isCached;
               return (
                 <TouchableOpacity
                   key={track.id || index}
-                  style={styles.trackCard}
-                  onPress={() => navigation.navigate('AudioPlayer', { category: catName, tracks: searchedTracks, startIndex: index })}
+                  style={[styles.trackCard, offlineLocked && styles.trackCardLocked]}
+                  onPress={() => {
+                    if (offlineLocked) return;
+                    navigation.navigate('AudioPlayer', { category: catName, tracks: searchedTracks, startIndex: index });
+                  }}
                   activeOpacity={0.7}
                 >
                   {/* Album Art Placeholder */}
@@ -191,7 +212,7 @@ export default function AudioScreen({ navigation }) {
 
                   {/* Track Info */}
                   <View style={styles.trackInfo}>
-                    <Text style={styles.trackTitle} numberOfLines={1}>
+                    <Text style={[styles.trackTitle, offlineLocked && styles.trackTextLocked]} numberOfLines={1}>
                       {t(track.title, track.title_en || track.title, track.title_ar || track.title)}
                     </Text>
                     {artistName ? (
@@ -212,17 +233,14 @@ export default function AudioScreen({ navigation }) {
                   </View>
 
                   {/* Play Button */}
-                  <View style={styles.trackPlayBtn}>
-                    {(() => {
-                      const tUrl = track.audio_url || track.audioUrl;
-                      const fullUrl = tUrl ? getMediaUrl(tUrl) : null;
-                      const isCached = fullUrl && cachedAudios[fullUrl];
-                      return isCached ? (
-                        <Check size={18} color="#10B981" />
-                      ) : (
-                        <Play size={18} color={COLORS.primary} fill={COLORS.primary} />
-                      );
-                    })()}
+                  <View style={[styles.trackPlayBtn, offlineLocked && styles.trackPlayBtnLocked]}>
+                    {isCached ? (
+                      <Check size={18} color="#10B981" />
+                    ) : offlineLocked ? (
+                      <WifiOff size={16} color="#9CA3AF" />
+                    ) : (
+                      <Play size={18} color={COLORS.primary} fill={COLORS.primary} />
+                    )}
                   </View>
                 </TouchableOpacity>
               );
@@ -257,6 +275,12 @@ const styles = StyleSheet.create({
   },
   heroTitle: { fontSize: 22, fontWeight: '800', letterSpacing: 0.5, color: '#FFFFFF' },
   heroSub: { fontSize: 12, marginTop: 4, fontWeight: '500', color: 'rgba(255,255,255,0.7)' },
+  offlineBar: {
+    flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10,
+    paddingHorizontal: 12, paddingVertical: 7, borderRadius: 10,
+    backgroundColor: 'rgba(245,158,11,0.12)', borderWidth: 1, borderColor: 'rgba(245,158,11,0.3)',
+  },
+  offlineBarText: { fontSize: 11, fontWeight: '600', color: '#FBBF24', flexShrink: 1 },
   downloadAllBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
     marginTop: 12, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12,
@@ -294,6 +318,8 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', gap: 12,
     backgroundColor: 'rgba(0,0,0,0.2)',
   },
+  trackCardLocked: { opacity: 0.55 },
+  trackTextLocked: { color: 'rgba(255,255,255,0.5)' },
   trackLeft: {},
   artistAvatar: { width: 52, height: 52, borderRadius: 26 },
   artistAvatarPlaceholder: {
@@ -319,6 +345,9 @@ const styles = StyleSheet.create({
     width: 42, height: 42, borderRadius: 21,
     alignItems: 'center', justifyContent: 'center',
     backgroundColor: 'rgba(15,118,110,0.2)', borderWidth: 1, borderColor: 'rgba(15,118,110,0.3)',
+  },
+  trackPlayBtnLocked: {
+    backgroundColor: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.1)',
   },
 
   /* Empty */

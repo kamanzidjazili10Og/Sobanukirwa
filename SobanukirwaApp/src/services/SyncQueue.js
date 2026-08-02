@@ -109,6 +109,7 @@ export async function processPendingOps() {
 
   const remaining = [];
   let synced = 0;
+  let dropped = 0;
 
   for (const op of ops) {
     try {
@@ -118,15 +119,20 @@ export async function processPendingOps() {
       op.retries = (op.retries || 0) + 1;
       if (op.retries < MAX_RETRIES) {
         remaining.push(op);
+      } else {
+        dropped++;
+        await AsyncStorage.setItem('sync_last_failed_op', JSON.stringify(op));
       }
     }
   }
 
   await savePendingOps(remaining);
   syncInProgress = false;
-  notifyListeners({ pending: remaining.length, syncing: false, synced });
-  return { synced, remaining: remaining.length };
+  notifyListeners({ pending: remaining.length, syncing: false, synced, dropped });
+  return { synced, dropped, remaining: remaining.length };
 }
+
+let netInfoUnsubscribe = null;
 
 export function startAutoSync(intervalMs = 60000) {
   const check = async () => {
@@ -140,12 +146,19 @@ export function startAutoSync(intervalMs = 60000) {
   };
 
   const interval = setInterval(check, intervalMs);
-  NetInfo.addEventListener(state => {
+  if (netInfoUnsubscribe) netInfoUnsubscribe();
+  netInfoUnsubscribe = NetInfo.addEventListener(state => {
     if (state.isConnected && state.isInternetReachable) {
       setTimeout(check, 2000);
     }
   });
-  return () => clearInterval(interval);
+  return () => {
+    clearInterval(interval);
+    if (netInfoUnsubscribe) {
+      netInfoUnsubscribe();
+      netInfoUnsubscribe = null;
+    }
+  };
 }
 
 export async function clearSyncQueue() {

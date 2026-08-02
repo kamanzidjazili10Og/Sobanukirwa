@@ -46,7 +46,7 @@ export default function App() {
 
   return (
     <View style={styles.container}>
-      <StatusBar style="dark" backgroundColor="#F8FAFC" />
+      <StatusBar style="light" backgroundColor="#0a2f44" />
       <ErrorBoundary>
         <AppProvider>
           <ToastProvider>

@@ -1,18 +1,20 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  TextInput, RefreshControl, Image, ActivityIndicator, FlatList,
+  TextInput, RefreshControl, Image, ActivityIndicator,
   Dimensions, ImageBackground,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { useApp } from '../context/AppContext';
 import { fetchArtists, fetchTracks, getMediaUrl } from '../services/api';
-import { Users, Play, Search, Music, ChevronLeft, Headphones, Plus } from 'lucide-react-native';
-import { playClickSound } from '../utils/sound';
+import { Users, Play, Search, Music, ChevronLeft, Headphones, WifiOff } from 'lucide-react-native';
+
+const ARTISTS_CACHE_KEY = 'cache_artists';
 
 export default function ArtistsScreen({ navigation }) {
-  const { t } = useApp();
+  const { t, tracks: contextTracks, isOffline } = useApp();
   const [artists, setArtists] = useState([]);
   const [tracks, setTracks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,21 +24,26 @@ export default function ArtistsScreen({ navigation }) {
   const [artistTracks, setArtistTracks] = useState([]);
 
   const loadData = useCallback(async () => {
+    if (contextTracks.length > 0) setTracks(contextTracks);
     try {
-      const [a, tr] = await Promise.all([
-        fetchArtists().catch(() => []),
-        fetchTracks().catch(() => []),
-      ]);
-      setArtists(Array.isArray(a) ? a : []);
-      setTracks(Array.isArray(tr) ? tr : []);
+      const a = await fetchArtists().catch(() => null);
+      if (Array.isArray(a) && a.length > 0) {
+        setArtists(a);
+        await AsyncStorage.setItem(ARTISTS_CACHE_KEY, JSON.stringify(a));
+      } else {
+        const cached = await AsyncStorage.getItem(ARTISTS_CACHE_KEY).catch(() => null);
+        if (cached) setArtists(JSON.parse(cached));
+      }
+      const tr = await fetchTracks().catch(() => null);
+      if (Array.isArray(tr) && tr.length > 0) setTracks(tr);
     } catch (e) {}
     setLoading(false);
-  }, []);
+  }, [contextTracks]);
 
   useFocusEffect(
     useCallback(() => {
       loadData();
-    }, [])
+    }, [loadData])
   );
 
   const onRefresh = async () => {
@@ -53,7 +60,6 @@ export default function ArtistsScreen({ navigation }) {
     : artists;
 
   const handleArtistPress = (artist) => {
-    playClickSound();
     if (selectedArtist?.id === artist.id) {
       setSelectedArtist(null);
       setArtistTracks([]);
@@ -65,7 +71,6 @@ export default function ArtistsScreen({ navigation }) {
   };
 
   const handleTrackPress = (track, index) => {
-    playClickSound();
     const trackList = artistTracks.length > 0 ? artistTracks : tracks;
     navigation.navigate('AudioPlayer', {
       category: selectedArtist?.name || 'Artists',
@@ -88,8 +93,23 @@ export default function ArtistsScreen({ navigation }) {
               {filteredArtists.length} {t('abahanzi', 'artists', 'فنان')}
             </Text>
           </View>
-          <View style={{ width: 36 }} />
+          {isOffline ? (
+            <View style={styles.offlineBadge}>
+              <WifiOff size={14} color="#F59E0B" />
+            </View>
+          ) : (
+            <View style={{ width: 36 }} />
+          )}
         </View>
+
+        {isOffline && (
+          <View style={styles.offlineNotice}>
+            <WifiOff size={14} color="#F59E0B" />
+            <Text style={styles.offlineNoticeText}>
+              {t('Uri ku bwamba - inyigisho zatejwe zirakora', 'Offline - cached lessons are available', 'غير متصل - الدروس المحفوظة متوفرة')}
+            </Text>
+          </View>
+        )}
 
         <View style={styles.searchWrap}>
           <View style={styles.searchBar}>
@@ -106,14 +126,14 @@ export default function ArtistsScreen({ navigation }) {
 
         {loading ? (
           <View style={styles.loadingWrap}>
-            <ActivityIndicator size="large" color="#D4AF37" />
+            <ActivityIndicator size="large" color="#F59E0B" />
             <Text style={styles.loadingText}>{t('Gutegura...', 'Loading...', 'جاري التحميل...')}</Text>
           </View>
         ) : (
           <ScrollView
             contentContainerStyle={styles.scrollContent}
             refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#D4AF37" colors={['#D4AF37']} />
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#F59E0B" colors={['#F59E0B']} />
             }
             showsVerticalScrollIndicator={false}
           >
@@ -123,6 +143,11 @@ export default function ArtistsScreen({ navigation }) {
                 <Text style={styles.emptyText}>
                   {t('Nta bahanzi babonetse', 'No artists found', 'لم يتم العثور على فنانين')}
                 </Text>
+                {isOffline && tracks.length === 0 && (
+                  <Text style={styles.emptySubText}>
+                    {t('Uri ku bwamba - ushyire interineti kugira ngo ubone ibintu bishya', 'You are offline - connect to load new content', 'أنت غير متصل - اتصل لتحميل محتوى جديد')}
+                  </Text>
+                )}
               </View>
             ) : (
               <View style={styles.artistGrid}>
@@ -143,7 +168,7 @@ export default function ArtistsScreen({ navigation }) {
                             <Image source={{ uri: imageUrl }} style={styles.artistImage} />
                           ) : (
                             <View style={styles.artistImagePlaceholder}>
-                              <Users size={28} color="#D4AF37" />
+                              <Users size={28} color="#F59E0B" />
                             </View>
                           )}
                           <View style={styles.artistPlayBadge}>
@@ -186,7 +211,7 @@ export default function ArtistsScreen({ navigation }) {
                                 ) : null}
                               </View>
                               <View style={styles.trackPlayBtn}>
-                                <Play size={14} color="#D4AF37" fill="#D4AF37" />
+                                <Play size={14} color="#F59E0B" fill="#F59E0B" />
                               </View>
                             </TouchableOpacity>
                           ))}
@@ -210,7 +235,7 @@ export default function ArtistsScreen({ navigation }) {
             {!selectedArtist && tracks.length > 0 && (
               <View style={styles.allTracksSection}>
                 <View style={styles.sectionHeader}>
-                  <Headphones size={18} color="#D4AF37" />
+                  <Headphones size={18} color="#F59E0B" />
                   <Text style={styles.sectionTitle}>
                     {t('Ibinyigisho byose', 'All Tracks', 'جميع المقاطع')}
                   </Text>
@@ -220,7 +245,6 @@ export default function ArtistsScreen({ navigation }) {
                     key={track.id || index}
                     style={styles.trackCard}
                     onPress={() => {
-                      playClickSound();
                       navigation.navigate('AudioPlayer', {
                         category: track.category_name || 'Audio',
                         tracks: tracks,
@@ -237,7 +261,7 @@ export default function ArtistsScreen({ navigation }) {
                         />
                       ) : (
                         <View style={styles.trackThumbPlaceholder}>
-                          <Music size={16} color="#D4AF37" />
+                          <Music size={16} color="#F59E0B" />
                         </View>
                       )}
                     </View>
@@ -253,7 +277,7 @@ export default function ArtistsScreen({ navigation }) {
                       <Text style={styles.trackDuration}>{track.duration_str}</Text>
                     ) : null}
                     <View style={styles.trackPlayBtn}>
-                      <Play size={14} color="#D4AF37" fill="#D4AF37" />
+                      <Play size={14} color="#F59E0B" fill="#F59E0B" />
                     </View>
                   </TouchableOpacity>
                 ))}
@@ -285,6 +309,19 @@ const styles = StyleSheet.create({
   headerCenter: { flex: 1, alignItems: 'center' },
   headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF', fontFamily: 'serif' },
   headerSub: { fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 2 },
+  offlineBadge: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: 'rgba(245,158,11,0.15)',
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: 'rgba(245,158,11,0.3)',
+  },
+  offlineNotice: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    marginHorizontal: 16, marginBottom: 8, paddingHorizontal: 12, paddingVertical: 8,
+    borderRadius: 10, backgroundColor: 'rgba(245,158,11,0.12)',
+    borderWidth: 1, borderColor: 'rgba(245,158,11,0.3)',
+  },
+  offlineNoticeText: { fontSize: 11, fontWeight: '600', color: '#FBBF24', flexShrink: 1 },
 
   searchWrap: { paddingHorizontal: 16, marginBottom: 8 },
   searchBar: {
@@ -306,6 +343,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.2)',
   },
   emptyText: { fontSize: 14, color: 'rgba(255,255,255,0.5)' },
+  emptySubText: { fontSize: 12, color: 'rgba(255,255,255,0.35)', paddingHorizontal: 24, textAlign: 'center' },
 
   artistGrid: { paddingHorizontal: 16, gap: 12 },
 
@@ -329,7 +367,7 @@ const styles = StyleSheet.create({
   artistPlayBadge: {
     position: 'absolute', bottom: -2, right: -2,
     width: 24, height: 24, borderRadius: 12,
-    backgroundColor: '#D4AF37', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#F59E0B', alignItems: 'center', justifyContent: 'center',
     borderWidth: 2, borderColor: 'rgba(6,48,44,0.8)',
   },
   artistInfo: { flex: 1 },
@@ -355,7 +393,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     backgroundColor: 'rgba(212,175,55,0.1)',
   },
-  trackNum: { fontSize: 12, fontWeight: '700', color: '#D4AF37' },
+  trackNum: { fontSize: 12, fontWeight: '700', color: '#F59E0B' },
   trackInfo: { flex: 1 },
   trackTitle: { fontSize: 13, fontWeight: '600', color: '#FFFFFF' },
   trackArtist: { fontSize: 11, color: '#5EEAD4', marginTop: 2 },

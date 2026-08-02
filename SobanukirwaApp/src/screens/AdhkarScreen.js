@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator, Animated, Vibration } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator, Animated, Vibration, ImageBackground } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BookOpen, Search, BookMarked, RotateCcw, ChevronLeft, Hand, Hash, Copy, Share2 } from 'lucide-react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -219,6 +219,8 @@ export default function AdhkarScreen({ navigation }) {
   }
 
   return (
+    <ImageBackground source={require('../../assets/bg-loading.jpg')} style={styles.bgImage} resizeMode="cover">
+    <View style={styles.overlay} />
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
@@ -382,43 +384,46 @@ export default function AdhkarScreen({ navigation }) {
         )}
       </ScrollView>
     </SafeAreaView>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+  bgImage: { flex: 1 },
+  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(6, 48, 44, 0.6)' },
+  container: { flex: 1, backgroundColor: 'transparent' },
 
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingVertical: 12,
-    backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.border,
+    backgroundColor: 'rgba(0,0,0,0.25)', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)',
   },
   backBtn: {
     width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#CCFBF1',
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
   headerCenter: { flex: 1, alignItems: 'center' },
-  headerTitle: { fontSize: 20, fontWeight: '700', color: COLORS.text },
+  headerTitle: { fontSize: 20, fontWeight: '700', color: '#FFFFFF' },
   resetBtn: {
     width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#FEE2E2',
+    backgroundColor: 'rgba(239,68,68,0.15)',
   },
 
   clockSection: {
     margin: 16, marginBottom: 8, borderRadius: 16,
-    backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: 'rgba(0,0,0,0.2)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)',
     padding: 16, alignItems: 'center', position: 'relative', overflow: 'hidden',
   },
   clockGlow: {
     position: 'absolute', top: -30, left: -30, right: -30, bottom: -30,
-    borderRadius: 60, backgroundColor: '#CCFBF1',
+    borderRadius: 60, backgroundColor: 'rgba(20,184,166,0.06)',
   },
   clockTime: {
     fontSize: 28, fontWeight: '700', fontVariant: ['tabular-nums'], letterSpacing: 3,
-    color: COLORS.primary, position: 'relative',
+    color: '#5EEAD4', position: 'relative',
   },
   clockStats: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6, position: 'relative' },
-  clockStatsText: { fontSize: 12, fontWeight: '500', color: COLORS.textSecondary },
+  clockStatsText: { fontSize: 12, fontWeight: '500', color: 'rgba(255,255,255,0.6)' },
 
   categoryWrap: {
     flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center',
@@ -427,40 +432,38 @@ const styles = StyleSheet.create({
   categoryTab: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
     paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
-    borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surface,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', backgroundColor: 'rgba(255,255,255,0.08)',
   },
   categoryTabActive: {
-    backgroundColor: COLORS.primary, borderColor: COLORS.primary,
+    backgroundColor: '#0F766E', borderColor: '#0F766E',
   },
-  categoryLabel: { fontSize: 12, fontWeight: '600', color: COLORS.text },
+  categoryLabel: { fontSize: 12, fontWeight: '600', color: 'rgba(255,255,255,0.7)' },
   categoryLabelActive: { color: '#FFFFFF' },
 
   list: { padding: 16, paddingBottom: 40, gap: 12 },
 
   card: {
-    borderRadius: 16, borderWidth: 1, borderColor: COLORS.border,
-    backgroundColor: COLORS.card, overflow: 'hidden', flexDirection: 'row',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05, shadowRadius: 3, elevation: 2,
+    borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: 'rgba(0,0,0,0.2)', overflow: 'hidden', flexDirection: 'row',
   },
-  cardComplete: { borderColor: COLORS.success },
+  cardComplete: { borderColor: '#10B981' },
   accentBar: { width: 4, opacity: 0.8 },
-  accentBarDefault: { backgroundColor: COLORS.secondary },
-  accentBarComplete: { backgroundColor: COLORS.success },
-  progressTrack: { position: 'absolute', bottom: 0, left: 4, right: 0, height: 3, backgroundColor: '#F3F4F6' },
+  accentBarDefault: { backgroundColor: '#14B8A6' },
+  accentBarComplete: { backgroundColor: '#10B981' },
+  progressTrack: { position: 'absolute', bottom: 0, left: 4, right: 0, height: 3, backgroundColor: 'rgba(255,255,255,0.08)' },
   progressFill: { height: '100%', borderRadius: 2 },
   cardContent: { flex: 1, padding: 16 },
 
   arabicText: {
     fontSize: 22, fontWeight: '700', textAlign: 'center', lineHeight: 36,
-    fontFamily: 'serif', marginTop: 4, color: COLORS.primary,
+    fontFamily: 'serif', marginTop: 4, color: '#5EEAD4',
   },
   translitText: {
-    fontSize: 14, fontWeight: '600', textAlign: 'center', marginTop: 8, color: COLORS.text,
+    fontSize: 14, fontWeight: '600', textAlign: 'center', marginTop: 8, color: '#FFFFFF',
   },
   translationText: {
     fontSize: 12, textAlign: 'center', marginTop: 4, fontStyle: 'italic',
-    lineHeight: 18, color: COLORS.textSecondary,
+    lineHeight: 18, color: 'rgba(255,255,255,0.7)',
   },
 
   counterRow: {
@@ -468,35 +471,35 @@ const styles = StyleSheet.create({
     gap: 12, marginTop: 14,
   },
   audioBtn: {
-    width: 38, height: 38, borderRadius: 19, borderWidth: 1, borderColor: COLORS.border,
-    alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.surface,
+    width: 38, height: 38, borderRadius: 19, borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.08)',
   },
-  audioBtnActive: { borderColor: COLORS.secondary },
+  audioBtnActive: { borderColor: '#14B8A6' },
   counterBtn: {
-    width: 42, height: 42, borderRadius: 21, borderWidth: 1, borderColor: COLORS.border,
-    alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.surface,
+    width: 42, height: 42, borderRadius: 21, borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.08)',
   },
-  counterBtnText: { fontSize: 20, fontWeight: '600', color: COLORS.text },
+  counterBtnText: { fontSize: 20, fontWeight: '600', color: '#FFFFFF' },
   countDisplay: {
     flexDirection: 'row', alignItems: 'baseline', gap: 2,
     paddingHorizontal: 16, paddingVertical: 8, borderRadius: 16,
-    backgroundColor: '#CCFBF1',
+    backgroundColor: 'rgba(15,118,110,0.2)',
   },
-  countDisplayComplete: { backgroundColor: '#D1FAE5' },
-  countText: { fontSize: 18, fontWeight: '700', fontVariant: ['tabular-nums'], color: COLORS.primary },
-  countTextComplete: { color: COLORS.success },
-  countTarget: { fontSize: 12, fontWeight: '500', color: COLORS.textTertiary },
+  countDisplayComplete: { backgroundColor: 'rgba(16,185,129,0.2)' },
+  countText: { fontSize: 18, fontWeight: '700', fontVariant: ['tabular-nums'], color: '#5EEAD4' },
+  countTextComplete: { color: '#10B981' },
+  countTarget: { fontSize: 12, fontWeight: '500', color: 'rgba(255,255,255,0.5)' },
 
   completeBadge: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: 6, marginTop: 10,
   },
-  completeText: { fontSize: 12, fontWeight: '600', color: COLORS.success },
+  completeText: { fontSize: 12, fontWeight: '600', color: '#10B981' },
 
   actionRow: { flexDirection: 'row', justifyContent: 'center', gap: 16, marginTop: 10 },
-  actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: '#F3F4F6' },
-  actionText: { fontSize: 11, fontWeight: '500', color: COLORS.textSecondary },
+  actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.08)' },
+  actionText: { fontSize: 11, fontWeight: '500', color: 'rgba(255,255,255,0.6)' },
 
   emptyState: { alignItems: 'center', paddingVertical: 48, gap: 12 },
-  emptyText: { fontSize: 14, fontWeight: '500', color: COLORS.textSecondary },
+  emptyText: { fontSize: 14, fontWeight: '500', color: 'rgba(255,255,255,0.6)' },
 });

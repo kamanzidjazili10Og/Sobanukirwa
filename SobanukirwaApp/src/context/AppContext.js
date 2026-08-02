@@ -231,7 +231,8 @@ export function AppProvider({ children }) {
       let downloaded = 0;
       const audioTracks = trackList.filter(t => t.audioUrl || t.audio_url);
       const pdfBooks = bookList.filter(b => b.fileUrl);
-      const total = audioTracks.length + pdfBooks.length;
+      const videoList2 = videoList.filter(v => v.videoUrl);
+      const total = audioTracks.length + pdfBooks.length + videoList2.length;
 
       setAutoDownloadProgress({ active: true, downloaded: 0, total, phase: 'audio' });
 
@@ -262,18 +263,30 @@ export function AppProvider({ children }) {
         if (fullUrl) setCachedBooks(prev => ({ ...prev, [fullUrl]: true }));
       }
 
+      setAutoDownloadProgress({ active: true, downloaded, total, phase: 'videos' });
+      await initVideoCache();
+      for (const v of videoList2) {
+        const url = v.videoUrl;
+        if (url && !(await isVideoCached(url))) {
+          try {
+            await downloadVideo(url, () => {});
+          } catch (e) {}
+        }
+        downloaded++;
+        setAutoDownloadProgress({ active: true, downloaded, total, phase: 'videos' });
+        if (url) setCachedVideos(prev => ({ ...prev, [url]: true }));
+      }
+
       await AsyncStorage.setItem('auto_download_done', String(Date.now()));
       setAutoDownloadProgress({ active: false, downloaded: total, total, phase: 'done' });
     } catch (e) {
       setAutoDownloadProgress({ active: false, downloaded: 0, total: 0, phase: 'error' });
-      lastAutoDownloadRef.current = false;
     }
+    lastAutoDownloadRef.current = false;
   }, []);
 
   const triggerAutoDownload = useCallback(async (trackList, bookList, videoList) => {
     try {
-      const lastDone = await AsyncStorage.getItem('auto_download_done');
-      if (lastDone && (Date.now() - parseInt(lastDone)) < 24 * 60 * 60 * 1000) return;
       const info = await NetInfo.fetch();
       if (info.isConnected && info.isInternetReachable) {
         autoDownloadAllContent(trackList, bookList, videoList);
@@ -649,6 +662,7 @@ export function AppProvider({ children }) {
       initAllVideoCaches(v).catch(() => {});
       initAllAudioCaches(t).catch(() => {});
       initAllBookCaches(b).catch(() => {});
+      triggerAutoDownload(t, b, v).catch(() => {});
     } catch (e) {
       const cached = await loadCacheData();
       if (cached.surahs.length > 0 || cached.tracks.length > 0 || cached.books.length > 0) {

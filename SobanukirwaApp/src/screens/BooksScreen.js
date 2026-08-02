@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, ImageBackground, TextInput, Modal, RefreshControl, Dimensions, ActivityIndicator, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { BookOpen, Search, BookMarked, ChevronLeft, Download, Check, Wifi, WifiOff, FileText, File, Eye, X, Share2 } from 'lucide-react-native';
+import { BookOpen, Search, BookMarked, ChevronLeft, Download, Check, Wifi, WifiOff, FileText, File, Eye, X } from 'lucide-react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useApp } from '../context/AppContext';
 import { getMediaUrl } from '../services/api';
@@ -125,7 +125,7 @@ export default function BooksScreen() {
           checkBookCache(fullUrl);
         }
       });
-    }, [isOffline])
+    }, [isOffline, books])
   );
 
   const filtered = books.filter(b => {
@@ -142,13 +142,12 @@ export default function BooksScreen() {
     if (book.fileUrl) {
       const fullUrl = getMediaUrl(book.fileUrl);
       const localUri = await getBookLocalUri(fullUrl);
-      const cached = cachedBooks[fullUrl] || false;
-      setSelectedBook({ ...book, fileUrl: fullUrl, localUri, isCachedOffline: cached });
+      setSelectedBook({ ...book, fileUrl: fullUrl, localUri });
     } else {
       setSelectedBook(book);
     }
     setReaderVisible(true);
-  }, [cachedBooks, getBookLocalUri]);
+  }, [getBookLocalUri]);
 
   function closeBookReader() {
     setReaderVisible(false);
@@ -192,7 +191,7 @@ export default function BooksScreen() {
   const selIcon = selBook ? getTypeIcon(selBook.fileType) : BookOpen;
   const selColor = selBook ? getTypeColor(selBook.fileType) : COLORS.secondary;
   const hasInlineFile = selBook && selBook.fileType !== 'text' && (selBook.localUri || (selBook.fileUrl && !isOffline));
-  const inlineUrl = selBook?.localUri || (selBook?.localUri ? `file://${selBook.localUri}` : '') || selBook?.fileUrl || '';
+  const inlineUrl = selBook?.localUri || selBook?.fileUrl || '';
 
   return (
     <ImageBackground source={require('../../assets/ok5.jpeg')} style={styles.bgImage} resizeMode="cover">
@@ -330,6 +329,12 @@ export default function BooksScreen() {
                     <Text style={styles.cachedBadgeText}>{t('Birabitswe', 'Cached', 'محفوظ')}</Text>
                   </View>
                 )}
+                {isOffline && !isCached && item.fileUrl && (
+                  <View style={styles.offlineCardBadge}>
+                    <WifiOff size={10} color="#FBBF24" />
+                    <Text style={styles.offlineCardBadgeText}>{t('Ntabyo kurura', 'Not cached', 'غير محفوظ')}</Text>
+                  </View>
+                )}
               </View>
               <View style={styles.info}>
                 <Text style={styles.title} numberOfLines={2}>{itemTitle}</Text>
@@ -412,6 +417,17 @@ export default function BooksScreen() {
             {hasInlineFile ? (
               <PdfInlineViewer url={inlineUrl} title={selBook.titleEn || selBook.title} isOffline={isOffline} />
             ) : selBook ? (
+              selBook.fileType !== 'text' && isOffline && !selBook.localUri ? (
+                <View style={styles.offlineNotCached}>
+                  <WifiOff size={48} color="#F59E0B" />
+                  <Text style={styles.offlineNotCachedTitle}>
+                    {t('Iki gitabo ntabwo cyatejwe', 'This book is not downloaded', 'هذا الكتاب غير محفوظ')}
+                  </Text>
+                  <Text style={styles.offlineNotCachedText}>
+                    {t('Kurura iki gitabo ufite interineti kugira ngo ubone ukisoma udafite interineti', 'Download this book when online so you can read it offline', 'حمّل هذا الكتاب عند الاتصال لتتمكن من قراءته بدون إنترنت')}
+                  </Text>
+                </View>
+              ) : (
               <ScrollView contentContainerStyle={styles.textReaderContent}>
                 <View style={styles.textReaderCover}>
                   {selBook.imageUrl ? (
@@ -434,6 +450,7 @@ export default function BooksScreen() {
                   {selBook.description || 'This book contains beneficial Islamic knowledge.\n\nMay Allah increase us in knowledge and benefit us with what we learn.'}
                 </Text>
               </ScrollView>
+              )
             ) : null}
           </View>
         </SafeAreaView>
@@ -521,6 +538,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(16,185,129,0.9)',
   },
   cachedBadgeText: { color: '#fff', fontSize: 9, fontWeight: '700' },
+  offlineCardBadge: {
+    position: 'absolute', top: 8, right: 8, flexDirection: 'row', alignItems: 'center', gap: 3,
+    paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8,
+    backgroundColor: 'rgba(245,158,11,0.9)',
+  },
+  offlineCardBadgeText: { color: '#fff', fontSize: 9, fontWeight: '700' },
 
   info: { flex: 1, padding: 12, gap: 4 },
   title: { fontSize: 14, fontWeight: '600', lineHeight: 19, color: '#FFFFFF' },
@@ -583,6 +606,12 @@ const styles = StyleSheet.create({
   },
 
   readerBody: { flex: 1 },
+
+  offlineNotCached: {
+    flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 32,
+  },
+  offlineNotCachedTitle: { fontSize: 17, fontWeight: '700', color: '#FFFFFF', textAlign: 'center' },
+  offlineNotCachedText: { fontSize: 13, color: 'rgba(255,255,255,0.6)', textAlign: 'center', lineHeight: 20 },
 
   pdfFallback: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24 },
   pdfFallbackTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF', textAlign: 'center' },

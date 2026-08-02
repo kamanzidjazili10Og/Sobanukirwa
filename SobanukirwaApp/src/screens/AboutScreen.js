@@ -174,7 +174,7 @@ export default function AboutScreen({ navigation }) {
           </View>
           <View style={styles.featuresGrid}>
             {FEATURES.map((feat, i) => (
-              <TouchableOpacity key={i} style={styles.featureItem} activeOpacity={0.7}>
+              <View key={i} style={styles.featureItem}>
                 <View style={styles.featureIconWrap}>
                   <Ionicons name={feat.icon} size={22} color={C.primary} />
                 </View>
@@ -182,7 +182,7 @@ export default function AboutScreen({ navigation }) {
                   {t(feat.labelRw, feat.label, feat.label)}
                 </Text>
                 <Text style={styles.featureSub}>{feat.sublabel}</Text>
-              </TouchableOpacity>
+              </View>
             ))}
           </View>
         </View>
@@ -198,13 +198,13 @@ export default function AboutScreen({ navigation }) {
                 {t('Porogaramu zacu', 'Our Apps', 'تطبيقاتنا')}
               </Text>
               <Text style={styles.cardSectionSub}>
-                {t('Ziyungurure kuri Play Store', 'Download on Play Store', 'حمّل من متجر بلاي')}
+                {t('Porogaramu zacu zindi', 'More from Sobanukirwa', 'تطبيقاتنا الأخرى')}
               </Text>
             </View>
           </View>
           <View style={styles.appsGrid}>
             {OTHER_APPS.map((app, i) => (
-              <TouchableOpacity key={i} style={styles.appCardOuter} onPress={() => app.url !== '#' && Linking.openURL(app.url)} activeOpacity={0.7}>
+              <View key={i} style={styles.appCardOuter}>
                 <View style={styles.appCard}>
                   <View style={[styles.appIconBg, { backgroundColor: `${app.color}12` }]}>
                     <View style={[styles.appIconCircle, { borderColor: `${app.color}35` }]}>
@@ -214,13 +214,13 @@ export default function AboutScreen({ navigation }) {
                   <Text style={styles.appName} numberOfLines={1}>{app.name}</Text>
                   <Text style={styles.appNameEn} numberOfLines={1}>{app.nameEn}</Text>
                   <View style={styles.playBtn}>
-                    <Ionicons name="logo-google-playstore" size={12} color={C.surface} />
+                    <Ionicons name="time" size={12} color={C.surface} />
                     <Text style={styles.playBtnText}>
-                      {t('Shyira ku Play Store', 'Play Store', 'متجر بلاي')}
+                      {t('Bigiye kuza', 'Coming Soon', 'قريبًا')}
                     </Text>
                   </View>
                 </View>
-              </TouchableOpacity>
+              </View>
             ))}
           </View>
         </View>
@@ -280,7 +280,7 @@ export default function AboutScreen({ navigation }) {
               'كل المحتوى من القرآن والسنة النبوية.'
             )}
           </Text>
-          <Text style={styles.footerVersion}>Sobanukirwa v1.0.0</Text>
+          <Text style={styles.footerVersion}>Sobanukirwa v1.2.0</Text>
         </View>
 
         {/* === SETTINGS BUTTON === */}

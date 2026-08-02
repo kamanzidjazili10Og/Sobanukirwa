@@ -723,7 +723,7 @@ export default function SettingsScreen({ navigation }) {
                 <View style={styles.footerLine} />
               </View>
               <Text style={styles.footerText}>
-                {t('Sobanukirwa v2.0.0', 'Sobanukirwa v2.0.0', 'Sobanukirwa v2.0.0')}
+                {t('Sobanukirwa v1.2.0', 'Sobanukirwa v1.2.0', 'Sobanukirwa v1.2.0')}
               </Text>
               <Text style={styles.footerSubText}>
                 {t('Urumuri rw\'abemeramana', 'Light of Faith', 'نور الإيمان')}

@@ -97,7 +97,7 @@ export default function AdminSettingsScreen({ navigation }) {
           </View>
           <View style={styles.row}>
             <Ionicons name="information-circle" size={18} color="#14B8A6" />
-            <Text style={styles.rowLabel}>App Version: 1.0.0</Text>
+            <Text style={styles.rowLabel}>App Version: 1.2.0</Text>
           </View>
           <View style={styles.row}>
             <Ionicons name="code-working" size={18} color="#14B8A6" />

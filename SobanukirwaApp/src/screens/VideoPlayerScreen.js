@@ -176,7 +176,7 @@ export default function VideoPlayerScreen({ route, navigation }) {
                   </Text>
                   <Text style={[styles.errorUrl, { color: 'rgba(255,255,255,0.5)' }]}>
                     {t(
-                      'Kurura video ubwo uri在线, kugira ngo urashe kukurikira offline',
+                      'Kurura iyi video ubwo ufite interineti kugira ngo uyirebe udafite interineti',
                       'Download this video when online to watch offline',
                       'قم بتنزيل هذا الفيديو عند الاتصال لمشاهدته بدون إنترنت'
                     )}
