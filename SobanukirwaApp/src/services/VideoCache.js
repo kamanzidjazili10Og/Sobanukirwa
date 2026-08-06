@@ -1,10 +1,17 @@
 import * as FileSystem from 'expo-file-system';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getMediaUrl } from './api';
 
 const VIDEO_CACHE_DIR = `${FileSystem.cacheDirectory}videos/`;
 const CACHE_INDEX_KEY = 'video_cache_index';
 
 let cacheIndex = {};
+
+function resolveUrl(url) {
+  if (!url) return url;
+  if (/^https?:\/\//i.test(url)) return url;
+  return getMediaUrl(url);
+}
 
 async function ensureDir() {
   const dirInfo = await FileSystem.getInfoAsync(VIDEO_CACHE_DIR);
@@ -14,7 +21,7 @@ async function ensureDir() {
 }
 
 function getFileName(url) {
-  const clean = url.split('?')[0];
+  const clean = resolveUrl(url).split('?')[0];
   const parts = clean.split('/');
   return parts[parts.length - 1] || 'video.mp4';
 }
@@ -45,11 +52,8 @@ export async function initVideoCache() {
 export async function isVideoCached(url) {
   if (!url) return false;
   try {
-    if (cacheIndex[url]) {
-      const info = await FileSystem.getInfoAsync(getCachePath(url));
-      return info.exists;
-    }
-    return false;
+    const info = await FileSystem.getInfoAsync(getCachePath(url));
+    return info.exists;
   } catch {
     return false;
   }
@@ -58,11 +62,9 @@ export async function isVideoCached(url) {
 export async function getCachedVideoPath(url) {
   if (!url) return null;
   try {
-    if (cacheIndex[url]) {
-      const path = getCachePath(url);
-      const info = await FileSystem.getInfoAsync(path);
-      if (info.exists) return path;
-    }
+    const path = getCachePath(url);
+    const info = await FileSystem.getInfoAsync(path);
+    if (info.exists) return path;
     return null;
   } catch {
     return null;
@@ -71,11 +73,12 @@ export async function getCachedVideoPath(url) {
 
 export async function downloadVideo(url, onProgress) {
   if (!url) return null;
+  const fullUrl = resolveUrl(url);
   try {
     await ensureDir();
-    const path = getCachePath(url);
+    const path = getCachePath(fullUrl);
     const downloadResult = await FileSystem.createDownloadResumable(
-      url,
+      fullUrl,
       path,
       {},
       (downloadProgress) => {
@@ -87,7 +90,7 @@ export async function downloadVideo(url, onProgress) {
     );
     const result = await downloadResult.downloadAsync();
     if (result && result.uri) {
-      cacheIndex[url] = { path: result.uri, cachedAt: Date.now() };
+      cacheIndex[fullUrl] = { path: result.uri, cachedAt: Date.now() };
       await AsyncStorage.setItem(CACHE_INDEX_KEY, JSON.stringify(cacheIndex));
       return result.uri;
     }
@@ -99,13 +102,14 @@ export async function downloadVideo(url, onProgress) {
 
 export async function removeCachedVideo(url) {
   if (!url) return;
+  const fullUrl = resolveUrl(url);
   try {
-    const path = getCachePath(url);
+    const path = getCachePath(fullUrl);
     const info = await FileSystem.getInfoAsync(path);
     if (info.exists) {
       await FileSystem.deleteAsync(path);
     }
-    delete cacheIndex[url];
+    delete cacheIndex[fullUrl];
     await AsyncStorage.setItem(CACHE_INDEX_KEY, JSON.stringify(cacheIndex));
   } catch (e) {}
 }

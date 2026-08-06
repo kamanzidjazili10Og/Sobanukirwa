@@ -63,7 +63,7 @@ function CacheButton({ videoUrl, cachedVideos, videoDownloads, cacheVideo, uncac
   );
 }
 
-function ThumbImage({ uri, title, style, isCached, isOffline }) {
+function ThumbImage({ uri, title, style, isCached, isOffline, t }) {
   const [failed, setFailed] = useState(false);
   if (failed || !uri) {
     return (
@@ -261,6 +261,7 @@ export default function VideoScreen({ navigation }) {
             style={styles.listThumb}
             isCached={isVideoCached}
             isOffline={isOffline}
+            t={t}
           />
           <View style={styles.listOverlay}>
             {!notAvailableOffline && (
@@ -322,6 +323,7 @@ export default function VideoScreen({ navigation }) {
             style={styles.thumbnail}
             isCached={isVideoCached}
             isOffline={isOffline}
+            t={t}
           />
           <View style={styles.overlay}>
             {!notAvailableOffline && (
@@ -444,7 +446,7 @@ export default function VideoScreen({ navigation }) {
               </Text>
               {isOffline && (
                 <Text style={styles.emptySubText}>
-                  {t('Kurura amashusho ubwo uri在线', 'Download videos when online for offline use', 'قم بتنزيل الفيديوهات عند الاتصال للاستخدام بدون إنترنت')}
+                  {t('Kurura amashusho ubwo ufite interineti kugira ngo ubone kuyareba udafite interineti', 'Download videos when online for offline use', 'قم بتنزيل الفيديوهات عند الاتصال للاستخدام بدون إنترنت')}
                 </Text>
               )}
             </View>

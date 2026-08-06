@@ -621,20 +621,27 @@ export function AppProvider({ children }) {
       const [t, c, s, v, b, a] = await Promise.all([
         fetchTracks(), fetchCategories(), fetchSurahs(), fetchVideos(), fetchBooks(), fetchAdhkar()
       ]);
-      if (t.length > 0 || s.length > 0 || b.length > 0) {
-        setTracks(t);
-        setCategories(c);
-        setSurahs(s);
-        setVideos(v);
-        setBooks(b);
-        setAdhkar(a);
-        await saveCacheData({ tracks: t, categories: c, surahs: s, videos: v, books: b, adhkar: a });
-      }
-      initAllVideoCaches(v).catch(() => {});
-      initAllAudioCaches(t).catch(() => {});
-      initAllBookCaches(b).catch(() => {});
+      const combinedOk = t.length > 0 || s.length > 0 || b.length > 0;
+      const next = {
+        tracks: combinedOk ? t : cached.tracks,
+        categories: combinedOk ? c : cached.categories,
+        surahs: combinedOk ? s : cached.surahs,
+        videos: v != null ? v : cached.videos,
+        books: combinedOk ? b : cached.books,
+        adhkar: a && a.length > 0 ? a : cached.adhkar,
+      };
+      setTracks(next.tracks);
+      setCategories(next.categories);
+      setSurahs(next.surahs);
+      setVideos(next.videos);
+      setBooks(next.books);
+      setAdhkar(next.adhkar);
+      await saveCacheData(next);
+      initAllVideoCaches(next.videos).catch(() => {});
+      initAllAudioCaches(next.tracks).catch(() => {});
+      initAllBookCaches(next.books).catch(() => {});
       setOfflineReady(true);
-      triggerAutoDownload(t, b, v).catch(() => {});
+      triggerAutoDownload(next.tracks, next.books, next.videos).catch(() => {});
     } catch (e) {
       if (!cached || (cached.surahs.length === 0 && cached.tracks.length === 0 && cached.books.length === 0)) {
         setError('network');
@@ -650,19 +657,27 @@ export function AppProvider({ children }) {
       const [t, c, s, v, b, a] = await Promise.all([
         fetchTracks(), fetchCategories(), fetchSurahs(), fetchVideos(), fetchBooks(), fetchAdhkar()
       ]);
-      if (t.length > 0 || s.length > 0 || b.length > 0) {
-        setTracks(t);
-        setCategories(c);
-        setSurahs(s);
-        setVideos(v);
-        setBooks(b);
-        setAdhkar(a);
-        await saveCacheData({ tracks: t, categories: c, surahs: s, videos: v, books: b, adhkar: a });
-      }
-      initAllVideoCaches(v).catch(() => {});
-      initAllAudioCaches(t).catch(() => {});
-      initAllBookCaches(b).catch(() => {});
-      triggerAutoDownload(t, b, v).catch(() => {});
+      const cached = await loadCacheData();
+      const combinedOk = t.length > 0 || s.length > 0 || b.length > 0;
+      const next = {
+        tracks: combinedOk ? t : cached.tracks,
+        categories: combinedOk ? c : cached.categories,
+        surahs: combinedOk ? s : cached.surahs,
+        videos: v != null ? v : cached.videos,
+        books: combinedOk ? b : cached.books,
+        adhkar: a && a.length > 0 ? a : cached.adhkar,
+      };
+      setTracks(next.tracks);
+      setCategories(next.categories);
+      setSurahs(next.surahs);
+      setVideos(next.videos);
+      setBooks(next.books);
+      setAdhkar(next.adhkar);
+      await saveCacheData(next);
+      initAllVideoCaches(next.videos).catch(() => {});
+      initAllAudioCaches(next.tracks).catch(() => {});
+      initAllBookCaches(next.books).catch(() => {});
+      triggerAutoDownload(next.tracks, next.books, next.videos).catch(() => {});
     } catch (e) {
       const cached = await loadCacheData();
       if (cached.surahs.length > 0 || cached.tracks.length > 0 || cached.books.length > 0) {

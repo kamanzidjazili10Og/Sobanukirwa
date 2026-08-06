@@ -56,7 +56,7 @@ const COLORS = {
 };
 
 export default function AdhkarScreen({ navigation }) {
-  const { t, language, adhkar: cachedAdhkar } = useApp();
+  const { t, language, adhkar: cachedAdhkar, getAudioLocalUri, cacheAudio, isOffline } = useApp();
   const [counts, setCounts] = useState({});
   const [adhkarList, setAdhkarList] = useState(FALLBACK_ADHKAR);
   const [refreshing, setRefreshing] = useState(false);
@@ -188,8 +188,10 @@ export default function AdhkarScreen({ navigation }) {
     setAudioLoading(adhkar.id);
     try {
       const url = getMediaUrl(adhkar.audio_url);
+      const localUri = await getAudioLocalUri(url);
+      const playUri = localUri || url;
       const { sound } = await Audio.Sound.createAsync(
-        { uri: url },
+        { uri: playUri },
         { shouldPlay: true }
       );
       soundRef.current = sound;
@@ -201,6 +203,9 @@ export default function AdhkarScreen({ navigation }) {
           soundRef.current = null;
         }
       });
+      if (!localUri && !isOffline) {
+        cacheAudio(url).catch(() => {});
+      }
     } catch (e) {
       setAudioLoading(null);
       setPlayingId(null);
