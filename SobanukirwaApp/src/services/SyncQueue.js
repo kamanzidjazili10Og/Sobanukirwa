@@ -56,7 +56,7 @@ export async function removePendingOp(opId) {
 }
 
 async function executeOp(op) {
-  const BASE = 'https://sobanukirwa-production.up.railway.app/api';
+  const BASE = 'https://sobanukirwa.onrender.com/api';
   const { method, endpoint, body, isFormData } = op;
 
   const headers = { Accept: 'application/json' };

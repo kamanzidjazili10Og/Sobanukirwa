@@ -31,7 +31,7 @@ public class MainActivity extends Activity {
 
     private WebView webView;
     private ProgressBar progressBar;
-    private static final String BASE_URL = "https://sobanukirwa-production.up.railway.app";
+    private static final String BASE_URL = "https://sobanukirwa.onrender.com";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

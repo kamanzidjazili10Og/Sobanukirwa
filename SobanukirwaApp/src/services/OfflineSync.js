@@ -223,7 +223,7 @@ export async function clearSyncData() {
 }
 
 export function startBidirectionalSync(intervalMs = 120000) {
-  const baseUrl = 'https://sobanukirwa-production.up.railway.app/api';
+  const baseUrl = 'https://sobanukirwa.onrender.com/api';
   
   const cacheEndpoints = [
     { key: 'tracks', endpoint: '/tracks' },

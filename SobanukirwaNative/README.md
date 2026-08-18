@@ -3,9 +3,9 @@
 Native Android wrapper for the Sobanukirwa Islamic Learning Platform.
 
 ## How it works
-The APK is a lightweight WebView shell that loads the Railway-hosted web app at `https://sobanukirwa-production.up.railway.app`. 
+The APK is a lightweight WebView shell that loads the Render-hosted web app at `https://sobanukirwa.onrender.com`. 
 
-**Auto-updates:** Any changes deployed to Railway are instantly available in the app - no reinstallation needed!
+**Auto-updates:** Any changes deployed to Render are instantly available in the app - no reinstallation needed!
 
 ## Building locally
 1. Open the `android/` folder in Android Studio

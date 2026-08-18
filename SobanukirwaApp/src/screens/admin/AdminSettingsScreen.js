@@ -10,7 +10,7 @@ import { useToastContext } from '../../components/Toast';
 import { fetchHealth, fetchDashboard } from '../../services/api';
 import AdminLayout from '../../components/admin/AdminLayout';
 
-const API_BASE = 'https://sobanukirwa-production.up.railway.app/api';
+const API_BASE = 'https://sobanukirwa.onrender.com/api';
 
 export default function AdminSettingsScreen({ navigation }) {
   const { COLORS } = useApp();

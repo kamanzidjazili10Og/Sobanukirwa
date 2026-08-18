@@ -7,7 +7,7 @@ try { Audio = require('expo-av').Audio; } catch (e) {}
 
 const { width } = Dimensions.get('window');
 
-const ADHAN_BASE = 'https://sobanukirwa-production.up.railway.app';
+const ADHAN_BASE = 'https://sobanukirwa.onrender.com';
 const ADHAN_FILES = {
   Adhan1: `${ADHAN_BASE}/Sounds/Adhan1.mpeg`,
   Adhan2: `${ADHAN_BASE}/Sounds/Adhan2.mpeg`,

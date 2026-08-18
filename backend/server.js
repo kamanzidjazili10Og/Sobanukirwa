@@ -9,7 +9,7 @@ const initDb = require('./config/initDb');
 const app = express();
 const PORT = process.env.PORT || 5000;
 const ROOT_DIR = path.join(__dirname, '..');
-const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, 'uploads');
+const UPLOAD_DIR = path.join(__dirname, 'uploads');
 
 ['audio', 'videos', 'documents', 'images', 'other'].forEach(sub => {
   fs.mkdirSync(path.join(UPLOAD_DIR, sub), { recursive: true });
@@ -34,6 +34,14 @@ const SOUNDS_DIR = path.join(ROOT_DIR, 'Sounds');
 if (fs.existsSync(SOUNDS_DIR)) {
   app.use('/Sounds', express.static(SOUNDS_DIR));
 }
+const IMAGES_DIR = path.join(ROOT_DIR, 'Images');
+if (fs.existsSync(IMAGES_DIR)) {
+  app.use('/Images', express.static(IMAGES_DIR));
+}
+const DOCUMENT_DIR = path.join(ROOT_DIR, 'Document');
+if (fs.existsSync(DOCUMENT_DIR)) {
+  app.use('/Document', express.static(DOCUMENT_DIR));
+}
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Sobanukirwa@123';
 
@@ -46,15 +54,18 @@ app.post('/api/auth/login', (req, res) => {
   }
 });
 
+const adminPath = path.join(ROOT_DIR, 'admin');
+
 app.get('/admin', (req, res) => {
-  res.sendFile(path.join(ROOT_DIR, 'admin', 'index.html'));
+  res.sendFile(path.join(adminPath, 'index.html'));
 });
 app.get('/admin/', (req, res) => {
-  res.sendFile(path.join(ROOT_DIR, 'admin', 'index.html'));
+  res.sendFile(path.join(adminPath, 'index.html'));
 });
 app.get('/admin/index.html', (req, res) => {
-  res.sendFile(path.join(ROOT_DIR, 'admin', 'index.html'));
+  res.sendFile(path.join(adminPath, 'index.html'));
 });
+app.use('/admin', express.static(adminPath));
 
 app.use('/api/artists', require('./routes/artists'));
 app.use('/api/tracks', require('./routes/tracks'));
@@ -80,35 +91,21 @@ app.get('/api/version', (req, res) => {
 
 app.set('bumpVersion', bumpContentVersion);
 
-app.use('/admin', express.static(path.join(ROOT_DIR, 'admin')));
 app.use('/', express.static(ROOT_DIR));
 
-const server = app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Sobanukirwa API server running on port ${PORT}`);
   console.log(`Upload directory: ${UPLOAD_DIR}`);
+  console.log(`Root directory: ${ROOT_DIR}`);
+  console.log(`Admin path: ${adminPath}`);
+  console.log(`Uploads dir exists: ${fs.existsSync(UPLOAD_DIR)}`);
+  console.log(`Admin dir exists: ${fs.existsSync(adminPath)}`);
 });
-
-server.on('error', (err) => {
-  if (err.code === 'EADDRINUSE') {
-    console.error(`Port ${PORT} is already in use.`);
-    process.exit(1);
-  } else {
-    console.error('Server error:', err.message);
-    process.exit(1);
-  }
-});
-
-const DB_TIMEOUT = 15000;
-const dbTimeout = setTimeout(() => {
-  console.warn('Database initialization timed out after 15s, continuing without DB...');
-}, DB_TIMEOUT);
 
 initDb()
   .then(() => {
-    clearTimeout(dbTimeout);
     console.log('Database initialized successfully');
   })
   .catch((err) => {
-    clearTimeout(dbTimeout);
     console.error('Database init failed (server still running):', err.message);
   });

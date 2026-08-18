@@ -405,7 +405,7 @@ export function AppProvider({ children }) {
 
     async function checkServerVersion() {
       try {
-        const res = await fetch('https://sobanukirwa-production.up.railway.app/api/version', {
+        const res = await fetch('https://sobanukirwa.onrender.com/api/version', {
           headers: { Accept: 'application/json' },
           signal: AbortSignal.timeout(10000),
         });
@@ -428,7 +428,7 @@ export function AppProvider({ children }) {
       setIsOffline(offline);
       if (!offline) {
         setTimeout(() => {
-          syncLocalChangesToServer('https://sobanukirwa-production.up.railway.app/api').catch(() => {});
+          syncLocalChangesToServer('https://sobanukirwa.onrender.com/api').catch(() => {});
           refreshSyncStatus();
           checkServerVersion();
         }, 2000);
