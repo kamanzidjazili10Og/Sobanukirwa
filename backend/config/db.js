@@ -1,61 +1,67 @@
-const mysql = require('mysql2/promise');
+const { Pool } = require('pg');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
-const dbHost = process.env.DB_HOST || process.env.MYSQLHOST;
-const dbUser = process.env.DB_USER || process.env.MYSQLUSER || 'root';
-const dbPass = process.env.DB_PASSWORD || process.env.MYSQLPASSWORD || '';
-const dbName = process.env.DB_NAME || process.env.MYSQLDATABASE || 'sobanukirwa';
-const dbPort = process.env.DB_PORT || process.env.MYSQLPORT || 3306;
-const isConfigured = dbHost && dbHost.length > 0;
+const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL || null;
 
 let pool = null;
 
-if (isConfigured) {
-  const isCloud = dbHost !== 'localhost' && dbHost !== '127.0.0.1';
-  const config = {
-    host: dbHost,
-    port: parseInt(dbPort),
-    user: dbUser,
-    password: dbPass,
-    database: dbName,
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0,
-    charset: 'utf8mb4',
-    connectTimeout: 15000,
-  };
-  if (isCloud) {
-    config.ssl = { rejectUnauthorized: false };
-  }
-  pool = mysql.createPool(config);
-  console.log('MySQL pool created for ' + dbHost + ':' + dbPort + '/' + dbName);
+if (connectionString) {
+  pool = new Pool({
+    connectionString,
+    ssl: { rejectUnauthorized: false },
+    max: 10,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 15000,
+  });
+  console.log('PostgreSQL pool created');
 } else {
-  console.warn('DB_HOST/MYSQLHOST not configured. Running without database.');
+  const dbHost = process.env.DB_HOST;
+  const dbUser = process.env.DB_USER || 'postgres';
+  const dbPass = process.env.DB_PASSWORD || '';
+  const dbName = process.env.DB_NAME || 'sobanukirwa';
+  const dbPort = process.env.DB_PORT || 5432;
+
+  if (dbHost) {
+    pool = new Pool({
+      host: dbHost,
+      port: parseInt(dbPort),
+      user: dbUser,
+      password: dbPass,
+      database: dbName,
+      max: 10,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 15000,
+      ssl: dbHost !== 'localhost' && dbHost !== '127.0.0.1' ? { rejectUnauthorized: false } : false,
+    });
+    console.log('PostgreSQL pool created for ' + dbHost + ':' + dbPort + '/' + dbName);
+  } else {
+    console.warn('DATABASE_URL/DB_HOST not configured. Running without database.');
+  }
 }
 
 const safePool = {
   query: async (sql, params) => {
-    if (!pool) return [[]];
+    if (!pool) return { rows: [], rowCount: 0 };
     try {
       return await pool.query(sql, params);
     } catch (err) {
       console.error('DB query error:', err.message);
-      return [[]];
+      return { rows: [], rowCount: 0 };
     }
   },
   execute: async (sql, params) => {
-    if (!pool) return [[]];
+    if (!pool) return { rows: [], rowCount: 0 };
     try {
-      return await pool.execute(sql, params);
+      return await pool.query(sql, params);
     } catch (err) {
       console.error('DB execute error:', err.message);
-      return [[]];
+      return { rows: [], rowCount: 0 };
     }
   },
   getConnection: async () => {
     if (!pool) throw new Error('Database not configured');
-    return await pool.getConnection();
+    return await pool.connect();
   },
   end: async () => {
     if (pool) await pool.end();

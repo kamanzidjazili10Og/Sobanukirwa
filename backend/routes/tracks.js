@@ -3,20 +3,6 @@ const pool = require('../config/db');
 const upload = require('../middleware/upload');
 const router = express.Router();
 
-async function ensureColumns() {
-  try {
-    const [cols] = await pool.query("SHOW COLUMNS FROM tracks LIKE 'duration_str'");
-    if (cols.length === 0) {
-      await pool.query("ALTER TABLE tracks ADD COLUMN duration_str VARCHAR(10) DEFAULT '00:00'");
-    }
-    const [desc] = await pool.query("SHOW COLUMNS FROM tracks LIKE 'description'");
-    if (desc.length === 0) {
-      await pool.query("ALTER TABLE tracks ADD COLUMN description TEXT DEFAULT NULL");
-    }
-  } catch (e) { /* ignore */ }
-}
-ensureColumns();
-
 router.get('/', async (req, res) => {
   try {
     const { artist_id, category_id, search } = req.query;
@@ -25,16 +11,17 @@ router.get('/', async (req, res) => {
                FROM tracks t
                LEFT JOIN artists a ON t.artist_id = a.id
                LEFT JOIN categories c ON t.category_id = c.id
-               WHERE t.is_active = 1`;
+               WHERE t.is_active = TRUE`;
     const params = [];
+    let i = 1;
 
-    if (artist_id) { sql += ' AND t.artist_id = ?'; params.push(artist_id); }
-    if (category_id) { sql += ' AND t.category_id = ?'; params.push(category_id); }
-    if (search) { sql += ' AND (t.title LIKE ? OR t.title_ar LIKE ? OR t.title_en LIKE ?)'; params.push(`%${search}%`, `%${search}%`, `%${search}%`); }
+    if (artist_id) { sql += ` AND t.artist_id = $${i++}`; params.push(artist_id); }
+    if (category_id) { sql += ` AND t.category_id = $${i++}`; params.push(category_id); }
+    if (search) { sql += ` AND (t.title ILIKE $${i} OR t.title_ar ILIKE $${i} OR t.title_en ILIKE $${i})`; params.push(`%${search}%`); i++; }
 
     sql += ' ORDER BY t.sort_order ASC, t.created_at DESC';
 
-    const [rows] = await pool.query(sql, params);
+    const { rows } = await pool.query(sql, params);
 
     const seen = {};
     const deduped = [];
@@ -53,10 +40,10 @@ router.get('/', async (req, res) => {
 
 router.get('/featured', async (req, res) => {
   try {
-    const [rows] = await pool.query(
+    const { rows } = await pool.query(
       `SELECT t.*, a.name as artist_name FROM tracks t
        LEFT JOIN artists a ON t.artist_id = a.id
-       WHERE t.is_featured = 1 AND t.is_active = 1
+       WHERE t.is_featured = TRUE AND t.is_active = TRUE
        ORDER BY t.created_at DESC LIMIT 10`
     );
     res.json(rows);
@@ -67,12 +54,12 @@ router.get('/featured', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
-    const [rows] = await pool.query(
+    const { rows } = await pool.query(
       `SELECT t.*, a.name as artist_name, c.name as category_name
        FROM tracks t
        LEFT JOIN artists a ON t.artist_id = a.id
        LEFT JOIN categories c ON t.category_id = c.id
-       WHERE t.id = ?`,
+       WHERE t.id = $1`,
       [req.params.id]
     );
     if (rows.length === 0) return res.status(404).json({ message: 'Track not found' });
@@ -87,8 +74,8 @@ router.post('/', upload.single('audio'), async (req, res) => {
     const { artist_id, category_id, title, title_ar, title_en, description, duration_str } = req.body;
     const audioUrl = req.file ? `/uploads/audio/${req.file.filename}` : req.body.audio_url;
 
-    const [existing] = await pool.query(
-      'SELECT id FROM tracks WHERE title = ? AND is_active = 1 LIMIT 1',
+    const { rows: existing } = await pool.query(
+      'SELECT id FROM tracks WHERE title = $1 AND is_active = TRUE LIMIT 1',
       [title]
     );
     if (existing.length > 0) {
@@ -97,20 +84,20 @@ router.post('/', upload.single('audio'), async (req, res) => {
 
     let resolvedArtistId = artist_id || null;
     if (!resolvedArtistId) {
-      const [firstArtist] = await pool.query('SELECT id FROM artists ORDER BY id ASC LIMIT 1');
+      const { rows: firstArtist } = await pool.query('SELECT id FROM artists ORDER BY id ASC LIMIT 1');
       if (firstArtist.length > 0) resolvedArtistId = firstArtist[0].id;
     }
 
-    const [result] = await pool.query(
-      'INSERT INTO tracks (artist_id, category_id, title, title_ar, title_en, description, duration_str, audio_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    const { rows } = await pool.query(
+      'INSERT INTO tracks (artist_id, category_id, title, title_ar, title_en, description, duration_str, audio_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id',
       [resolvedArtistId, category_id || null, title, title_ar || null, title_en || null, description || null, duration_str || '00:00', audioUrl]
     );
 
     if (resolvedArtistId) {
-      await pool.query('UPDATE artists SET total_lessons = total_lessons + 1 WHERE id = ?', [resolvedArtistId]);
+      await pool.query('UPDATE artists SET total_lessons = total_lessons + 1 WHERE id = $1', [resolvedArtistId]);
     }
 
-    res.status(201).json({ id: result.insertId, message: 'Track created' });
+    res.status(201).json({ id: rows[0].id, message: 'Track created' });
     req.app.get('bumpVersion')();
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
@@ -120,15 +107,15 @@ router.post('/', upload.single('audio'), async (req, res) => {
 router.put('/:id', upload.single('audio'), async (req, res) => {
   try {
     const { artist_id, category_id, title, title_ar, title_en, description, duration_str } = req.body;
-    let sql = 'UPDATE tracks SET artist_id=?, category_id=?, title=?, title_ar=?, title_en=?, description=?, duration_str=?';
+    let sql = 'UPDATE tracks SET artist_id=$1, category_id=$2, title=$3, title_ar=$4, title_en=$5, description=$6, duration_str=$7';
     const params = [artist_id || null, category_id || null, title, title_ar || null, title_en || null, description || null, duration_str || '00:00'];
 
     if (req.file) {
-      sql += ', audio_url=?';
+      sql += `, audio_url=$${params.length + 1}`;
       params.push(`/uploads/audio/${req.file.filename}`);
     }
 
-    sql += ' WHERE id=?';
+    sql += ` WHERE id=$${params.length + 1}`;
     params.push(req.params.id);
 
     await pool.query(sql, params);
@@ -141,10 +128,10 @@ router.put('/:id', upload.single('audio'), async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const [track] = await pool.query('SELECT artist_id FROM tracks WHERE id = ?', [req.params.id]);
-    await pool.query('UPDATE tracks SET is_active = 0 WHERE id = ?', [req.params.id]);
+    const { rows: track } = await pool.query('SELECT artist_id FROM tracks WHERE id = $1', [req.params.id]);
+    await pool.query('UPDATE tracks SET is_active = FALSE WHERE id = $1', [req.params.id]);
     if (track.length > 0) {
-      await pool.query('UPDATE artists SET total_lessons = total_lessons - 1 WHERE id = ?', [track[0].artist_id]);
+      await pool.query('UPDATE artists SET total_lessons = total_lessons - 1 WHERE id = $1', [track[0].artist_id]);
     }
     res.json({ message: 'Track deactivated' });
     req.app.get('bumpVersion')();
@@ -155,7 +142,7 @@ router.delete('/:id', async (req, res) => {
 
 router.post('/:id/play', async (req, res) => {
   try {
-    await pool.query('UPDATE tracks SET plays_count = plays_count + 1 WHERE id = ?', [req.params.id]);
+    await pool.query('UPDATE tracks SET plays_count = plays_count + 1 WHERE id = $1', [req.params.id]);
     res.json({ message: 'Play counted' });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });

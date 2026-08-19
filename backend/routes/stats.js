@@ -4,12 +4,12 @@ const router = express.Router();
 
 router.get('/', async (req, res) => {
   try {
-    const [artistRows] = await pool.query('SELECT COUNT(*) as total FROM artists WHERE is_active = 1');
-    const [trackRows] = await pool.query('SELECT COUNT(*) as total FROM tracks WHERE is_active = 1');
-    const [videoRows] = await pool.query('SELECT COUNT(*) as total FROM videos WHERE is_active = 1');
-    const [bookRows] = await pool.query('SELECT COUNT(*) as total FROM books WHERE is_active = 1');
-    const [playRows] = await pool.query('SELECT COALESCE(SUM(plays_count), 0) as total FROM tracks');
-    const [catRows] = await pool.query('SELECT COUNT(*) as total FROM categories WHERE is_active = 1');
+    const { rows: artistRows } = await pool.query('SELECT COUNT(*) as total FROM artists WHERE is_active = TRUE');
+    const { rows: trackRows } = await pool.query('SELECT COUNT(*) as total FROM tracks WHERE is_active = TRUE');
+    const { rows: videoRows } = await pool.query('SELECT COUNT(*) as total FROM videos WHERE is_active = TRUE');
+    const { rows: bookRows } = await pool.query('SELECT COUNT(*) as total FROM books WHERE is_active = TRUE');
+    const { rows: playRows } = await pool.query('SELECT COALESCE(SUM(plays_count), 0) as total FROM tracks');
+    const { rows: catRows } = await pool.query('SELECT COUNT(*) as total FROM categories WHERE is_active = TRUE');
 
     res.json({
       total_artists: artistRows[0]?.total || 0,
@@ -26,23 +26,23 @@ router.get('/', async (req, res) => {
 
 router.get('/dashboard', async (req, res) => {
   try {
-    const [artistRows] = await pool.query('SELECT COUNT(*) as total FROM artists WHERE is_active = 1');
-    const [trackRows] = await pool.query('SELECT COUNT(*) as total FROM tracks WHERE is_active = 1');
-    const [videoRows] = await pool.query('SELECT COUNT(*) as total FROM videos WHERE is_active = 1');
-    const [bookRows] = await pool.query('SELECT COUNT(*) as total FROM books WHERE is_active = 1');
-    const [playRows] = await pool.query('SELECT COALESCE(SUM(plays_count), 0) as total FROM tracks');
-    const [catRows] = await pool.query('SELECT COUNT(*) as total FROM categories WHERE is_active = 1');
+    const { rows: artistRows } = await pool.query('SELECT COUNT(*) as total FROM artists WHERE is_active = TRUE');
+    const { rows: trackRows } = await pool.query('SELECT COUNT(*) as total FROM tracks WHERE is_active = TRUE');
+    const { rows: videoRows } = await pool.query('SELECT COUNT(*) as total FROM videos WHERE is_active = TRUE');
+    const { rows: bookRows } = await pool.query('SELECT COUNT(*) as total FROM books WHERE is_active = TRUE');
+    const { rows: playRows } = await pool.query('SELECT COALESCE(SUM(plays_count), 0) as total FROM tracks');
+    const { rows: catRows } = await pool.query('SELECT COUNT(*) as total FROM categories WHERE is_active = TRUE');
 
-    const [recentTracks] = await pool.query(
+    const { rows: recentTracks } = await pool.query(
       `SELECT t.title, t.plays_count, t.created_at, a.name as artist_name
        FROM tracks t LEFT JOIN artists a ON t.artist_id = a.id
-       WHERE t.is_active = 1 ORDER BY t.created_at DESC LIMIT 5`
+       WHERE t.is_active = TRUE ORDER BY t.created_at DESC LIMIT 5`
     );
 
-    const [topTracks] = await pool.query(
+    const { rows: topTracks } = await pool.query(
       `SELECT t.title, t.plays_count, a.name as artist_name
        FROM tracks t LEFT JOIN artists a ON t.artist_id = a.id
-       WHERE t.is_active = 1 ORDER BY t.plays_count DESC LIMIT 5`
+       WHERE t.is_active = TRUE ORDER BY t.plays_count DESC LIMIT 5`
     );
 
     res.json({

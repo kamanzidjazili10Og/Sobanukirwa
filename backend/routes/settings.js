@@ -4,7 +4,7 @@ const router = express.Router();
 
 router.get('/', async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT setting_key, setting_value FROM settings');
+    const { rows } = await pool.query('SELECT setting_key, setting_value FROM settings');
     const settings = {};
     rows.forEach(row => { settings[row.setting_key] = row.setting_value; });
     res.json(settings);
@@ -21,8 +21,9 @@ router.put('/:key', async (req, res) => {
       return res.status(400).json({ message: 'Value is required' });
     }
     await pool.query(
-      'INSERT INTO settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?',
-      [key, value, value]
+      `INSERT INTO settings (setting_key, setting_value) VALUES ($1, $2)
+       ON CONFLICT (setting_key) DO UPDATE SET setting_value = $2`,
+      [key, value]
     );
     res.json({ message: 'Setting updated', key, value });
   } catch (err) {
