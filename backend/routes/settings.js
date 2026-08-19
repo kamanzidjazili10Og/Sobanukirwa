@@ -31,4 +31,14 @@ router.put('/:key', async (req, res) => {
   }
 });
 
+router.delete('/:key', async (req, res) => {
+  try {
+    const { rows } = await pool.query('DELETE FROM settings WHERE setting_key = $1 RETURNING id', [req.params.key]);
+    if (rows.length === 0) return res.status(404).json({ message: 'Setting not found' });
+    res.json({ message: 'Setting deleted' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
 module.exports = router;

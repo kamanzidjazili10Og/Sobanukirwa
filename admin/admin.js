@@ -92,6 +92,7 @@ const LANG = {
         arabicText: 'Arabic Text', translation: 'Translation', reference: 'Reference',
         fileType: 'File Type', file: 'File', coverImage: 'Cover Image',
         icon: 'Icon', sortOrder: 'Sort Order', bio: 'Bio',
+        addSurah: 'Add Surah',
     },
     rw: {
         dashboard: 'Ikibaho', artists: 'Abahanzi', tracks: 'Inyigo', videos: 'Amashusho',
@@ -131,6 +132,7 @@ const LANG = {
         arabicText: 'Umwandiko w\'Icyarabu', translation: 'Ibisobanuro', reference: 'Inkomoko',
         fileType: 'Ubwoko bwa Dosiye', file: 'Dosiye', coverImage: 'Igifuniko',
         icon: 'Ikigaragamboneza', sortOrder: 'Itondekanya', bio: 'Ubuzima',
+        addSurah: 'Ongeraho Isura',
     },
     ar: {
         dashboard: 'لوحة التحكم', artists: 'الفنانون', tracks: 'المسارات الصوتية', videos: 'الفيديو',
@@ -170,6 +172,7 @@ const LANG = {
         arabicText: 'النص العربي', translation: 'الترجمة', reference: 'المرجع',
         fileType: 'نوع الملف', file: 'ملف', coverImage: 'صورة الغلاف',
         icon: 'أيقونة', sortOrder: 'الترتيب', bio: 'السيرة',
+        addSurah: 'إضافة سورة',
     }
 };
 
@@ -276,9 +279,13 @@ async function api(url, options) {
         options = options || {};
         var isFormData = options.body instanceof FormData;
         if (isFormData) {
-            delete options.headers;
+            if (options.headers) delete options.headers['Content-Type'];
         } else {
-            options.headers = { 'Accept': 'application/json', ...options.headers };
+            if (options.body && typeof options.body === 'string') {
+                options.headers = { 'Accept': 'application/json', 'Content-Type': 'application/json', ...options.headers };
+            } else {
+                options.headers = { 'Accept': 'application/json', ...options.headers };
+            }
         }
         if (adminToken) {
             options.headers = { ...options.headers, 'Authorization': 'Bearer ' + adminToken };
@@ -568,7 +575,9 @@ async function showVideoForm(id) {
         '<div class="form-group"><label><i class="fas fa-heading"></i> ' + t('title') + ' *</label><input type="text" id="vf_title" value="' + esc(video.title) + '" required placeholder="' + t('title') + '"></div>' +
         '<div class="form-group"><label><i class="fas fa-language"></i> ' + t('title') + ' (Ar)</label><input type="text" id="vf_title_ar" value="' + esc(video.title_ar || '') + '" placeholder="' + t('title') + ' (Ar)"></div>' +
         '<div class="form-group"><label><i class="fas fa-user"></i> ' + t('author') + '</label><input type="text" id="vf_author" value="' + esc(video.author || '') + '" placeholder="' + t('author') + '"></div>' +
+        '<div class="form-group"><label><i class="fas fa-user"></i> Author (Ar)</label><input type="text" id="vf_author_ar" value="' + esc(video.author_ar || '') + '" placeholder="Author Arabic"></div>' +
         '<div class="form-group"><label><i class="fas fa-globe"></i> ' + t('title') + ' (En)</label><input type="text" id="vf_title_en" value="' + esc(video.title_en || '') + '" placeholder="' + t('title') + ' (En)"></div>' +
+        '<div class="form-group"><label><i class="fas fa-globe"></i> Author (En)</label><input type="text" id="vf_author_en" value="' + esc(video.author_en || '') + '" placeholder="Author English"></div>' +
         '<div class="form-group full-width"><label><i class="fas fa-align-left"></i> ' + t('descriptionLabel') + '</label><textarea id="vf_description" placeholder="' + t('descriptionLabel') + '...">' + esc(video.description || '') + '</textarea></div>' +
         '<div class="form-group full-width"><label><i class="fas fa-video"></i> ' + t('videoFile') + '</label>' +
         '<div class="file-upload" onclick="document.getElementById(\'vf_video\').click()"><i class="fas fa-cloud-upload-alt"></i><p>' + t('uploadVideo') + '</p><div class="file-name" id="vf_video_name">' + videoLabel + '</div></div>' +
@@ -588,6 +597,8 @@ async function showVideoForm(id) {
         fd.append('title_ar', document.getElementById('vf_title_ar').value);
         fd.append('title_en', document.getElementById('vf_title_en').value);
         fd.append('author', document.getElementById('vf_author').value);
+        fd.append('author_ar', document.getElementById('vf_author_ar').value);
+        fd.append('author_en', document.getElementById('vf_author_en').value);
         fd.append('description', document.getElementById('vf_description').value);
         var vFile = document.getElementById('vf_video').files[0];
         if (vFile) fd.append('video', vFile);
@@ -656,6 +667,7 @@ async function showAdhkarForm(id) {
         '<div class="form-group full-width"><label><i class="fas fa-globe"></i> ' + t('name') + '</label><input type="text" id="af_trans" value="' + esc(adhkar.transliteration || '') + '" placeholder="Subhanallah"></div>' +
         '<div class="form-group"><label><i class="fas fa-globe"></i> ' + t('translation') + ' (RW)</label><textarea id="af_rw" placeholder="Translation in Kinyarwanda">' + esc(adhkar.translation_rw || '') + '</textarea></div>' +
         '<div class="form-group"><label><i class="fas fa-globe"></i> ' + t('translation') + ' (EN)</label><textarea id="af_en" placeholder="Translation in English">' + esc(adhkar.translation_en || '') + '</textarea></div>' +
+        '<div class="form-group"><label><i class="fas fa-globe"></i> ' + t('translation') + ' (AR)</label><textarea id="af_ar" placeholder="الترجمة بالعربية">' + esc(adhkar.translation_ar || '') + '</textarea></div>' +
         '<div class="form-group"><label><i class="fas fa-sort-numeric-up-alt"></i> ' + t('count') + '</label><input type="number" id="af_count" value="' + (adhkar.count_target || 33) + '" min="1"></div>' +
         '<div class="form-group"><label><i class="fas fa-tag"></i> ' + t('category') + '</label><select id="af_category">' +
         '<option value="general"' + (adhkar.category === 'general' ? ' selected' : '') + '>' + t('general') + '</option>' +
@@ -710,6 +722,7 @@ async function showAdhkarForm(id) {
                 fd.append('transliteration', transVal);
                 fd.append('translation_rw', document.getElementById('af_rw').value);
                 fd.append('translation_en', document.getElementById('af_en').value);
+                fd.append('translation_ar', document.getElementById('af_ar').value);
                 fd.append('count_target', parseInt(document.getElementById('af_count').value) || 33);
                 fd.append('category', document.getElementById('af_category').value);
                 fd.append('reference', document.getElementById('af_ref').value);
@@ -722,6 +735,7 @@ async function showAdhkarForm(id) {
                     transliteration: transVal,
                     translation_rw: document.getElementById('af_rw').value,
                     translation_en: document.getElementById('af_en').value,
+                    translation_ar: document.getElementById('af_ar').value,
                     count_target: parseInt(document.getElementById('af_count').value) || 33,
                     category: document.getElementById('af_category').value,
                     reference: document.getElementById('af_ref').value,
@@ -756,10 +770,10 @@ async function loadQuran() {
     try {
         var surahs = await api(API_BASE + '/quran/surahs');
         if (isStale(seq)) return;
-        var html = '<div class="toolbar"><div class="toolbar-left"><input type="text" class="search-input" id="surahSearch" placeholder="' + t('search') + '" onkeyup="filterSurahTable()"></div></div>';
-        html += '<div class="table-wrapper"><table class="data-table"><thead><tr><th>#</th><th>' + t('name') + '</th><th>' + t('arabic') + '</th><th>' + t('verses') + '</th><th>' + t('type') + '</th><th>' + t('audio') + '</th></tr></thead><tbody id="surahBody">';
+        var html = '<div class="toolbar"><div class="toolbar-left"><input type="text" class="search-input" id="surahSearch" placeholder="' + t('search') + '" onkeyup="filterSurahTable()"></div><div class="toolbar-right"><button class="btn-primary" onclick="showAddSurahForm()"><i class="fas fa-plus"></i> ' + t('addSurah') + '</button></div></div>';
+        html += '<div class="table-wrapper"><table class="data-table"><thead><tr><th>#</th><th>' + t('name') + '</th><th>' + t('arabic') + '</th><th>' + t('verses') + '</th><th>' + t('type') + '</th><th>' + t('audio') + '</th><th>' + t('actions') + '</th></tr></thead><tbody id="surahBody">';
         if (surahs.length === 0) {
-            html += '<tr><td colspan="6" class="td-muted" style="text-align:center">' + t('noSurahs') + '</td></tr>';
+            html += '<tr><td colspan="7" class="td-muted" style="text-align:center">' + t('noSurahs') + '</td></tr>';
         } else {
             for (var i = 0; i < surahs.length; i++) {
                 var s = surahs[i];
@@ -773,7 +787,10 @@ async function loadQuran() {
                     '<td><span class="badge">' + (s.revelation_type || '') + '</span></td>' +
                     '<td><div class="action-group" style="justify-content:center">' + hasAudio +
                     '<button class="action-btn upload-audio" onclick="uploadSurahAudio(' + s.surah_number + ')" title="' + t('uploadAudio') + '"><i class="fas fa-upload"></i></button>' +
-                    '<button class="action-btn edit" onclick="editSurah(' + s.surah_number + ')" title="' + t('edit') + '"><i class="fas fa-edit"></i></button></div></td></tr>';
+                    '</div></td>' +
+                    '<td><div class="action-group" style="justify-content:center">' +
+                    '<button class="action-btn edit" onclick="editSurah(' + s.surah_number + ')" title="' + t('edit') + '"><i class="fas fa-edit"></i></button>' +
+                    '<button class="action-btn delete" onclick="deleteSurah(' + s.surah_number + ', \'' + esc(s.name) + '\')" title="' + t('delete') + '"><i class="fas fa-trash"></i></button></div></td></tr>';
             }
         }
         html += '</tbody></table></div>';
@@ -846,6 +863,50 @@ async function editSurah(number) {
     });
 }
 
+function showAddSurahForm() {
+    showModal('' +
+        '<h3><i class="fas fa-plus"></i> ' + t('addSurah') + '</h3>' +
+        '<form id="addSurahForm"><div class="form-grid">' +
+        '<div class="form-group"><label><i class="fas fa-sort-numeric-up-alt"></i> Surah Number *</label><input type="number" id="asf_number" required min="1" max="114" placeholder="1"></div>' +
+        '<div class="form-group"><label><i class="fas fa-language"></i> Name *</label><input type="text" id="asf_name" required placeholder="Al-Fatiha"></div>' +
+        '<div class="form-group full-width"><label><i class="fas fa-language"></i> Arabic Name *</label><input type="text" id="asf_name_arabic" required placeholder="الفاتحة" style="font-family:Amiri,serif;font-size:1.2rem"></div>' +
+        '<div class="form-group"><label><i class="fas fa-sort-numeric-up-alt"></i> Ayahs Count</label><input type="number" id="asf_ayahs" value="0" min="0"></div>' +
+        '<div class="form-group"><label><i class="fas fa-tag"></i> Revelation Type</label><select id="asf_revelation"><option value="Makkah">Makkah</option><option value="Madani">Madani</option></select></div>' +
+        '</div>' +
+        '<div class="modal-actions"><button type="submit" class="btn-primary" id="saveNewSurahBtn"><i class="fas fa-save"></i> ' + t('save') + '</button><button type="button" class="btn-secondary" onclick="closeModal()">' + t('cancel') + '</button></div></form>');
+    document.getElementById('addSurahForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        var saveBtn = document.getElementById('saveNewSurahBtn');
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + t('saving');
+        try {
+            await api(API_BASE + '/quran/surahs', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    surah_number: parseInt(document.getElementById('asf_number').value),
+                    name: document.getElementById('asf_name').value,
+                    name_arabic: document.getElementById('asf_name_arabic').value,
+                    ayahs_count: parseInt(document.getElementById('asf_ayahs').value) || 0,
+                    revelation_type: document.getElementById('asf_revelation').value
+                })
+            });
+            closeModal(); loadQuran();
+            showToast(t('surah') + ' ' + t('saved'), 'success');
+        } catch (err) { showToast('Error: ' + err.message, 'error'); } finally {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fas fa-save"></i> ' + t('save');
+        }
+    });
+}
+
+function deleteSurah(number, name) {
+    if (!confirm('Delete Surah ' + number + ' (' + name + ')?')) return;
+    api(API_BASE + '/quran/surahs/' + number, { method: 'DELETE' })
+        .then(function() { loadQuran(); showToast(t('surah') + ' ' + t('deleted'), 'success'); })
+        .catch(function(err) { showToast('Error: ' + err.message, 'error'); });
+}
+
 // ===== BOOKS =====
 async function loadBooks() {
     showLoading(); var seq = _navSeq;
@@ -893,7 +954,9 @@ async function showBookForm(id) {
         '<div class="form-group"><label><i class="fas fa-heading"></i> ' + t('title') + ' *</label><input type="text" id="bf_title" value="' + esc(book.title) + '" required></div>' +
         '<div class="form-group"><label><i class="fas fa-language"></i> ' + t('title') + ' (Ar)</label><input type="text" id="bf_title_ar" value="' + esc(book.title_ar || '') + '"></div>' +
         '<div class="form-group"><label><i class="fas fa-user"></i> ' + t('author') + '</label><input type="text" id="bf_author" value="' + esc(book.author || '') + '"></div>' +
+        '<div class="form-group"><label><i class="fas fa-user"></i> Author (Ar)</label><input type="text" id="bf_author_ar" value="' + esc(book.author_ar || '') + '"></div>' +
         '<div class="form-group"><label><i class="fas fa-globe"></i> ' + t('title') + ' (En)</label><input type="text" id="bf_title_en" value="' + esc(book.title_en || '') + '"></div>' +
+        '<div class="form-group"><label><i class="fas fa-globe"></i> Author (En)</label><input type="text" id="bf_author_en" value="' + esc(book.author_en || '') + '"></div>' +
         '<div class="form-group"><label><i class="fas fa-tag"></i> ' + t('category') + '</label><input type="text" id="bf_category" value="' + esc(book.category || '') + '"></div>' +
         '<div class="form-group"><label><i class="fas fa-file"></i> ' + t('fileType') + '</label>' +
         '<select id="bf_file_type"><option value="pdf"' + (book.file_type === 'pdf' ? ' selected' : '') + '>PDF</option><option value="text"' + (book.file_type === 'text' ? ' selected' : '') + '>Text</option><option value="docx"' + (book.file_type === 'docx' ? ' selected' : '') + '>DOCX</option></select>' +
@@ -917,6 +980,8 @@ async function showBookForm(id) {
         fd.append('title_ar', document.getElementById('bf_title_ar').value);
         fd.append('title_en', document.getElementById('bf_title_en').value);
         fd.append('author', document.getElementById('bf_author').value);
+        fd.append('author_ar', document.getElementById('bf_author_ar').value);
+        fd.append('author_en', document.getElementById('bf_author_en').value);
         fd.append('description', document.getElementById('bf_description').value);
         fd.append('category', document.getElementById('bf_category').value);
         fd.append('file_type', document.getElementById('bf_file_type').value);
@@ -1060,25 +1125,72 @@ async function deleteCategory(id) {
 }
 
 // ===== SETTINGS =====
-function loadSettings() {
-    document.getElementById('contentBody').innerHTML = '' +
-        '<div class="settings-card">' +
-        '<h3><i class="fas fa-info-circle"></i> ' + t('apiConfig') + '</h3>' +
-        '<div class="form-group"><label>' + t('apiConfig') + '</label><input type="text" id="settingsApiUrl" value="' + API_BASE + '" class="form-input" readonly></div>' +
-        '<p class="td-muted">' + t('apiConfig') + ' — <code>admin/admin.js</code></p>' +
+async function loadSettings() {
+    document.getElementById('contentBody').innerHTML = '<div class="settings-card"><p><i class="fas fa-spinner fa-pulse"></i> Loading settings...</p></div>';
+    try {
+        var settings = await api(API_BASE + '/settings');
+        var keys = Object.keys(settings);
+        var html = '<div class="toolbar"><div class="toolbar-left"><h3 style="color:var(--accent);margin:0"><i class="fas fa-cog"></i> Settings</h3></div><div class="toolbar-right"><button class="btn-primary" onclick="showAddSettingForm()"><i class="fas fa-plus"></i> Add Setting</button></div></div>';
+        html += '<div class="table-wrapper"><table class="data-table"><thead><tr><th>Key</th><th>Value</th><th>' + t('actions') + '</th></tr></thead><tbody>';
+        if (keys.length === 0) {
+            html += '<tr><td colspan="3" class="td-muted" style="text-align:center">No settings found</td></tr>';
+        } else {
+            for (var i = 0; i < keys.length; i++) {
+                html += '<tr><td><code>' + esc(keys[i]) + '</code></td><td><input type="text" class="form-input" id="sv_' + esc(keys[i]) + '" value="' + esc(settings[keys[i]] || '') + '" style="background:transparent;border:1px solid var(--border);padding:6px 10px;border-radius:6px;width:100%"></td><td><div class="action-group"><button class="action-btn edit" onclick="saveSetting(\'' + esc(keys[i]) + '\')" title="Save"><i class="fas fa-save"></i></button><button class="action-btn delete" onclick="deleteSetting(\'' + esc(keys[i]) + '\')" title="Delete"><i class="fas fa-trash"></i></button></div></td></tr>';
+            }
+        }
+        html += '</tbody></table></div>';
+        html += '<div class="settings-card" style="margin-top:20px"><h3><i class="fas fa-server"></i> ' + t('serverStatus') + '</h3><div class="status-row"><span>Backend Server</span><span class="status-dot" id="serverStatus">' + t('checkConn') + '...</span></div><button class="btn-primary" onclick="checkServer()" style="margin-top:12px"><i class="fas fa-sync-alt"></i> ' + t('checkConn') + '</button><div id="serverResult" style="margin-top:10px"></div></div>';
+        html += '<div class="settings-card"><h3><i class="fas fa-database"></i> ' + t('systemInfo') + '</h3><div class="info-row"><span>' + t('appVersion') + '</span><span class="td-muted">1.0.0</span></div></div>';
+        document.getElementById('contentBody').innerHTML = html;
+        checkServer();
+    } catch (err) {
+        document.getElementById('contentBody').innerHTML = '<div class="settings-card"><p style="color:var(--error)">Error loading settings: ' + esc(err.message) + '</p><button class="btn-primary" onclick="loadSettings()">Retry</button></div>';
+    }
+}
+
+function showAddSettingForm() {
+    showModal('' +
+        '<h3><i class="fas fa-plus"></i> Add Setting</h3>' +
+        '<form id="addSettingForm"><div class="form-grid">' +
+        '<div class="form-group"><label><i class="fas fa-key"></i> Key *</label><input type="text" id="asf_key" required placeholder="setting_key"></div>' +
+        '<div class="form-group"><label><i class="fas fa-font"></i> Value *</label><input type="text" id="asf_value" required placeholder="setting_value"></div>' +
         '</div>' +
-        '<div class="settings-card">' +
-        '<h3><i class="fas fa-server"></i> ' + t('serverStatus') + '</h3>' +
-        '<div class="status-row"><span>Backend Server</span><span class="status-dot" id="serverStatus">' + t('checkConn') + '...</span></div>' +
-        '<button class="btn-primary" onclick="checkServer()" style="margin-top:12px"><i class="fas fa-sync-alt"></i> ' + t('checkConn') + '</button>' +
-        '<div id="serverResult" style="margin-top:10px"></div>' +
-        '</div>' +
-        '<div class="settings-card">' +
-        '<h3><i class="fas fa-database"></i> ' + t('systemInfo') + '</h3>' +
-        '<div class="info-row"><span>' + t('appVersion') + '</span><span class="td-muted">1.0.0</span></div>' +
-        '<div class="info-row"><span>' + t('adminPanel') + '</span><span class="td-muted">' + t('noLoginRequired') + '</span></div>' +
-        '</div>';
-    checkServer();
+        '<div class="modal-actions"><button type="submit" class="btn-primary"><i class="fas fa-save"></i> ' + t('save') + '</button><button type="button" class="btn-secondary" onclick="closeModal()">' + t('cancel') + '</button></div></form>');
+    document.getElementById('addSettingForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        var key = document.getElementById('asf_key').value.trim();
+        var value = document.getElementById('asf_value').value.trim();
+        try {
+            await api(API_BASE + '/settings/' + encodeURIComponent(key), {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ value: value })
+            });
+            closeModal(); loadSettings();
+            showToast('Setting saved', 'success');
+        } catch (err) { showToast('Error: ' + err.message, 'error'); }
+    });
+}
+
+async function saveSetting(key) {
+    var input = document.getElementById('sv_' + key);
+    if (!input) return;
+    try {
+        await api(API_BASE + '/settings/' + encodeURIComponent(key), {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ value: input.value })
+        });
+        showToast('Setting updated', 'success');
+    } catch (err) { showToast('Error: ' + err.message, 'error'); }
+}
+
+function deleteSetting(key) {
+    if (!confirm('Delete setting "' + key + '"?')) return;
+    api(API_BASE + '/settings/' + encodeURIComponent(key), { method: 'DELETE' })
+        .then(function() { loadSettings(); showToast('Setting deleted', 'success'); })
+        .catch(function(err) { showToast('Error: ' + err.message, 'error'); });
 }
 
 async function checkServer() {

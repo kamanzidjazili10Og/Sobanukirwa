@@ -10,6 +10,8 @@ router.get('/', async (req, res) => {
     const { rows: bookRows } = await pool.query('SELECT COUNT(*) as total FROM books WHERE is_active = TRUE');
     const { rows: playRows } = await pool.query('SELECT COALESCE(SUM(plays_count), 0) as total FROM tracks');
     const { rows: catRows } = await pool.query('SELECT COUNT(*) as total FROM categories WHERE is_active = TRUE');
+    const { rows: surahRows } = await pool.query('SELECT COUNT(*) as total FROM quran_surahs');
+    const { rows: adhkarRows } = await pool.query('SELECT COUNT(*) as total FROM adhkar WHERE is_active = TRUE');
 
     res.json({
       total_artists: artistRows[0]?.total || 0,
@@ -18,6 +20,8 @@ router.get('/', async (req, res) => {
       total_books: bookRows[0]?.total || 0,
       total_plays: playRows[0]?.total || 0,
       total_categories: catRows[0]?.total || 0,
+      total_surahs: surahRows[0]?.total || 0,
+      total_adhkar: adhkarRows[0]?.total || 0,
     });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
@@ -32,6 +36,8 @@ router.get('/dashboard', async (req, res) => {
     const { rows: bookRows } = await pool.query('SELECT COUNT(*) as total FROM books WHERE is_active = TRUE');
     const { rows: playRows } = await pool.query('SELECT COALESCE(SUM(plays_count), 0) as total FROM tracks');
     const { rows: catRows } = await pool.query('SELECT COUNT(*) as total FROM categories WHERE is_active = TRUE');
+    const { rows: surahRows } = await pool.query('SELECT COUNT(*) as total FROM quran_surahs');
+    const { rows: adhkarRows } = await pool.query('SELECT COUNT(*) as total FROM adhkar WHERE is_active = TRUE');
 
     const { rows: recentTracks } = await pool.query(
       `SELECT t.title, t.plays_count, t.created_at, a.name as artist_name
@@ -52,6 +58,8 @@ router.get('/dashboard', async (req, res) => {
       total_books: bookRows[0]?.total || 0,
       total_plays: playRows[0]?.total || 0,
       total_categories: catRows[0]?.total || 0,
+      total_surahs: surahRows[0]?.total || 0,
+      total_adhkar: adhkarRows[0]?.total || 0,
       recentTracks: recentTracks || [],
       topTracks: topTracks || [],
     });
