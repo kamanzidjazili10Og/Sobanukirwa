@@ -123,7 +123,7 @@ export default function AdminArtistsScreen({ navigation }) {
         <View style={styles.cardInfo}>
           <Text style={styles.cardTitle} numberOfLines={1}>{item.name}</Text>
           {item.name_en ? <Text style={styles.cardSub} numberOfLines={1}>{item.name_en}</Text> : null}
-          <Text style={styles.cardBadge}>{item.tracks_count ?? item.track_count ?? 0} tracks</Text>
+          <Text style={styles.cardBadge}>{item.total_tracks ?? item.tracks_count ?? item.track_count ?? 0} tracks</Text>
         </View>
         <TouchableOpacity onPress={() => handleDelete(item)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <Ionicons name="trash-outline" size={18} color="#EF4444" />

@@ -1,5 +1,6 @@
 const express = require('express');
 const pool = require('../config/db');
+const upload = require('../middleware/upload');
 const router = express.Router();
 
 router.get('/', async (req, res) => {
@@ -31,7 +32,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', upload.single('image'), async (req, res) => {
   try {
     const { name, name_ar, name_en, bio } = req.body;
     let imageUrl = null;
@@ -58,7 +59,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', upload.single('image'), async (req, res) => {
   try {
     const { name, name_ar, name_en, bio } = req.body;
     let query = 'UPDATE artists SET name=$1, name_ar=$2, name_en=$3, bio=$4';

@@ -3,6 +3,45 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
+function splitSql(sql) {
+  const statements = [];
+  let current = '';
+  let inSingle = false;
+  let inDouble = false;
+  let inDollar = false;
+
+  for (let i = 0; i < sql.length; i++) {
+    const ch = sql[i];
+    const next = sql[i + 1] || '';
+
+    if (!inSingle && !inDouble && !inDollar) {
+      if (ch === "'") { inSingle = true; current += ch; continue; }
+      if (ch === '"') { inDouble = true; current += ch; continue; }
+      if (ch === '$' && next === '$') { inDollar = true; current += ch + next; i++; continue; }
+      if (ch === ';') {
+        const trimmed = current.trim();
+        if (trimmed) statements.push(trimmed);
+        current = '';
+        continue;
+      }
+    } else if (inSingle) {
+      if (ch === "'" && next !== "'") { inSingle = false; current += ch; continue; }
+      if (ch === "'" && next === "'") { current += ch + next; i++; continue; }
+    } else if (inDouble) {
+      if (ch === '"' && next !== '"') { inDouble = false; current += ch; continue; }
+      if (ch === '"' && next === '"') { current += ch + next; i++; continue; }
+    } else if (inDollar) {
+      if (ch === '$' && next === '$') { inDollar = false; current += ch + next; i++; continue; }
+    }
+
+    current += ch;
+  }
+
+  const trimmed = current.trim();
+  if (trimmed) statements.push(trimmed);
+  return statements;
+}
+
 async function initDb() {
   const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL || null;
   const dbHost = process.env.DB_HOST;
@@ -30,161 +69,51 @@ async function initDb() {
     };
   }
 
-  const connection = new Pool(connectionConfig);
+  const pool = new Pool(connectionConfig);
 
   try {
-    const schemaPath = path.join(__dirname, '..', '..', 'database', 'sobanukirwa_schema.sql');
-    const fallbackPath = path.join(__dirname, '..', '..', 'database', 'sobanukirwa_pg.sql');
+    const schemaPath = path.join(__dirname, '..', '..', 'database', 'sobanukirwa_pg.sql');
+    const fallbackPath = path.join(__dirname, '..', '..', 'database', 'sobanukirwa_schema.sql');
 
     let schemaFile = schemaPath;
     if (!fs.existsSync(schemaPath) && fs.existsSync(fallbackPath)) {
       schemaFile = fallbackPath;
     }
 
-    try {
-      const schema = fs.readFileSync(schemaFile, 'utf8');
-      await connection.query(schema);
-      console.log('Database schema initialized successfully');
-    } catch (err) {
-      console.error('Schema file error:', err.message);
-      console.error('Falling back to manual table creation...');
-
-      const tables = [
-        `CREATE TABLE IF NOT EXISTS categories (
-          id SERIAL PRIMARY KEY,
-          name VARCHAR(100) NOT NULL,
-          name_ar VARCHAR(100) DEFAULT NULL,
-          name_en VARCHAR(100) DEFAULT NULL,
-          slug VARCHAR(100) NOT NULL UNIQUE,
-          description TEXT DEFAULT NULL,
-          icon VARCHAR(50) DEFAULT NULL,
-          sort_order INT DEFAULT 0,
-          is_active BOOLEAN DEFAULT TRUE,
-          created_at TIMESTAMP DEFAULT NOW(),
-          updated_at TIMESTAMP DEFAULT NOW()
-        )`,
-        `CREATE TABLE IF NOT EXISTS artists (
-          id SERIAL PRIMARY KEY,
-          name VARCHAR(200) NOT NULL,
-          name_ar VARCHAR(200) DEFAULT NULL,
-          name_en VARCHAR(200) DEFAULT NULL,
-          bio TEXT DEFAULT NULL,
-          image_url VARCHAR(500) DEFAULT NULL,
-          total_lessons INT DEFAULT 0,
-          is_active BOOLEAN DEFAULT TRUE,
-          created_at TIMESTAMP DEFAULT NOW(),
-          updated_at TIMESTAMP DEFAULT NOW()
-        )`,
-        `CREATE TABLE IF NOT EXISTS tracks (
-          id SERIAL PRIMARY KEY,
-          artist_id INT NOT NULL REFERENCES artists(id) ON DELETE CASCADE,
-          category_id INT DEFAULT NULL REFERENCES categories(id) ON DELETE SET NULL,
-          title VARCHAR(300) NOT NULL,
-          title_ar VARCHAR(300) DEFAULT NULL,
-          title_en VARCHAR(300) DEFAULT NULL,
-          audio_url VARCHAR(500) NOT NULL,
-          description TEXT DEFAULT NULL,
-          duration INT DEFAULT 0,
-          duration_str VARCHAR(10) DEFAULT '00:00',
-          file_size BIGINT DEFAULT 0,
-          plays_count INT DEFAULT 0,
-          downloads_count INT DEFAULT 0,
-          is_featured BOOLEAN DEFAULT FALSE,
-          sort_order INT DEFAULT 0,
-          is_active BOOLEAN DEFAULT TRUE,
-          created_at TIMESTAMP DEFAULT NOW(),
-          updated_at TIMESTAMP DEFAULT NOW()
-        )`,
-        `CREATE TABLE IF NOT EXISTS videos (
-          id SERIAL PRIMARY KEY,
-          title VARCHAR(300) NOT NULL,
-          title_ar VARCHAR(300) DEFAULT NULL,
-          title_en VARCHAR(300) DEFAULT NULL,
-          author VARCHAR(200) DEFAULT NULL,
-          author_ar VARCHAR(200) DEFAULT NULL,
-          author_en VARCHAR(200) DEFAULT NULL,
-          description TEXT DEFAULT NULL,
-          thumbnail_url VARCHAR(500) DEFAULT NULL,
-          video_url VARCHAR(500) NOT NULL,
-          duration INT DEFAULT 0,
-          duration_str VARCHAR(10) DEFAULT NULL,
-          file_size BIGINT DEFAULT 0,
-          views_count INT DEFAULT 0,
-          is_featured BOOLEAN DEFAULT FALSE,
-          is_active BOOLEAN DEFAULT TRUE,
-          created_at TIMESTAMP DEFAULT NOW(),
-          updated_at TIMESTAMP DEFAULT NOW()
-        )`,
-        `CREATE TABLE IF NOT EXISTS books (
-          id SERIAL PRIMARY KEY,
-          title VARCHAR(300) NOT NULL,
-          title_ar VARCHAR(300) DEFAULT NULL,
-          title_en VARCHAR(300) DEFAULT NULL,
-          author VARCHAR(200) DEFAULT NULL,
-          author_ar VARCHAR(200) DEFAULT NULL,
-          author_en VARCHAR(200) DEFAULT NULL,
-          description TEXT DEFAULT NULL,
-          image_url VARCHAR(500) DEFAULT NULL,
-          file_url VARCHAR(500) NOT NULL,
-          file_type VARCHAR(10) DEFAULT 'pdf',
-          category VARCHAR(100) DEFAULT NULL,
-          pages_count INT DEFAULT 0,
-          downloads_count INT DEFAULT 0,
-          is_featured BOOLEAN DEFAULT FALSE,
-          is_active BOOLEAN DEFAULT TRUE,
-          created_at TIMESTAMP DEFAULT NOW(),
-          updated_at TIMESTAMP DEFAULT NOW()
-        )`,
-        `CREATE TABLE IF NOT EXISTS quran_surahs (
-          id SERIAL PRIMARY KEY,
-          surah_number INT NOT NULL UNIQUE,
-          name VARCHAR(100) NOT NULL,
-          name_arabic VARCHAR(100) NOT NULL,
-          ayahs_count INT DEFAULT 0,
-          revelation_type VARCHAR(20) DEFAULT 'Makkah',
-          audio_url VARCHAR(500) DEFAULT NULL,
-          created_at TIMESTAMP DEFAULT NOW()
-        )`,
-        `CREATE TABLE IF NOT EXISTS play_history (
-          id SERIAL PRIMARY KEY,
-          user_id INT DEFAULT NULL,
-          track_id INT DEFAULT NULL REFERENCES tracks(id) ON DELETE SET NULL,
-          video_id INT DEFAULT NULL REFERENCES videos(id) ON DELETE SET NULL,
-          played_at TIMESTAMP DEFAULT NOW()
-        )`,
-        `CREATE TABLE IF NOT EXISTS settings (
-          id SERIAL PRIMARY KEY,
-          setting_key VARCHAR(100) NOT NULL UNIQUE,
-          setting_value TEXT DEFAULT NULL,
-          updated_at TIMESTAMP DEFAULT NOW()
-        )`,
-        `CREATE TABLE IF NOT EXISTS adhkar (
-          id SERIAL PRIMARY KEY,
-          arabic_text VARCHAR(500) NOT NULL,
-          transliteration VARCHAR(300) DEFAULT NULL,
-          translation_rw VARCHAR(500) DEFAULT NULL,
-          translation_en VARCHAR(500) DEFAULT NULL,
-          translation_ar VARCHAR(500) DEFAULT NULL,
-          count_target INT DEFAULT 33,
-          category VARCHAR(100) DEFAULT 'general',
-          audio_url VARCHAR(500) DEFAULT NULL,
-          reference VARCHAR(300) DEFAULT NULL,
-          sort_order INT DEFAULT 0,
-          is_active BOOLEAN DEFAULT TRUE,
-          created_at TIMESTAMP DEFAULT NOW()
-        )`
-      ];
-
-      for (const sql of tables) {
-        await connection.query(sql);
-      }
-      console.log('Manual table creation completed');
+    if (!fs.existsSync(schemaFile)) {
+      console.warn('Schema file not found:', schemaFile);
+      await pool.end();
+      return;
     }
 
-    await connection.end();
+    const schema = fs.readFileSync(schemaFile, 'utf8');
+    const statements = splitSql(schema);
+    console.log(`Running ${statements.length} SQL statements...`);
+
+    let succeeded = 0;
+    let failed = 0;
+
+    for (let i = 0; i < statements.length; i++) {
+      const stmt = statements[i];
+      try {
+        await pool.query(stmt);
+        succeeded++;
+      } catch (err) {
+        if (err.code === '42P07' || err.code === '42710' || err.code === '23505') {
+          failed++;
+        } else {
+          console.error(`SQL statement ${i + 1} failed:`, err.message.substring(0, 200));
+          console.error('Statement:', stmt.substring(0, 150));
+          failed++;
+        }
+      }
+    }
+
+    console.log(`Schema init complete: ${succeeded} succeeded, ${failed} skipped/failed`);
+    await pool.end();
   } catch (err) {
     console.error('Init error:', err.message);
-    await connection.end();
+    await pool.end();
   }
 }
 
