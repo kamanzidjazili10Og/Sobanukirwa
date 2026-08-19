@@ -93,19 +93,26 @@ app.set('bumpVersion', bumpContentVersion);
 
 app.use('/', express.static(ROOT_DIR));
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Sobanukirwa API server running on port ${PORT}`);
-  console.log(`Upload directory: ${UPLOAD_DIR}`);
-  console.log(`Root directory: ${ROOT_DIR}`);
-  console.log(`Admin path: ${adminPath}`);
-  console.log(`Uploads dir exists: ${fs.existsSync(UPLOAD_DIR)}`);
-  console.log(`Admin dir exists: ${fs.existsSync(adminPath)}`);
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err.message, err.stack);
+  if (res.headersSent) return next(err);
+  res.status(500).json({ message: 'Internal server error', error: err.message });
 });
 
-initDb()
-  .then(() => {
+(async () => {
+  try {
+    await initDb();
     console.log('Database initialized successfully');
-  })
-  .catch((err) => {
-    console.error('Database init failed (server still running):', err.message);
+  } catch (err) {
+    console.error('Database init failed:', err.message);
+  }
+
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Sobanukirwa API server running on port ${PORT}`);
+    console.log(`Upload directory: ${UPLOAD_DIR}`);
+    console.log(`Root directory: ${ROOT_DIR}`);
+    console.log(`Admin path: ${adminPath}`);
+    console.log(`Uploads dir exists: ${fs.existsSync(UPLOAD_DIR)}`);
+    console.log(`Admin dir exists: ${fs.existsSync(adminPath)}`);
   });
+})();

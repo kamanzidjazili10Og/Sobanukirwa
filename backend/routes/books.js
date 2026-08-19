@@ -30,7 +30,7 @@ router.get('/:id', async (req, res) => {
     if (rows.length === 0) return res.status(404).json({ message: 'Book not found' });
     res.json(rows[0]);
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
 
@@ -89,7 +89,7 @@ router.delete('/:id', async (req, res) => {
     res.json({ message: 'Book deactivated' });
     req.app.get('bumpVersion')();
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
 

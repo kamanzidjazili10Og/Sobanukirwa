@@ -18,7 +18,7 @@ router.get('/surahs/:number', async (req, res) => {
     if (rows.length === 0) return res.status(404).json({ message: 'Surah not found' });
     res.json(rows[0]);
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
 

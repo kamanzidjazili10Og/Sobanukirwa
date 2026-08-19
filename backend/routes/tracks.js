@@ -48,7 +48,7 @@ router.get('/featured', async (req, res) => {
     );
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
 
@@ -65,7 +65,7 @@ router.get('/:id', async (req, res) => {
     if (rows.length === 0) return res.status(404).json({ message: 'Track not found' });
     res.json(rows[0]);
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
 
@@ -136,7 +136,7 @@ router.delete('/:id', async (req, res) => {
     res.json({ message: 'Track deactivated' });
     req.app.get('bumpVersion')();
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
 
@@ -145,7 +145,7 @@ router.post('/:id/play', async (req, res) => {
     await pool.query('UPDATE tracks SET plays_count = plays_count + 1 WHERE id = $1', [req.params.id]);
     res.json({ message: 'Play counted' });
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
 

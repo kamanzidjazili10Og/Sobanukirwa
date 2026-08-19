@@ -9,12 +9,25 @@ function splitSql(sql) {
   let inSingle = false;
   let inDouble = false;
   let inDollar = false;
+  let inLineComment = false;
+  let inBlockComment = false;
 
   for (let i = 0; i < sql.length; i++) {
     const ch = sql[i];
     const next = sql[i + 1] || '';
 
+    if (inLineComment) {
+      if (ch === '\n') { inLineComment = false; current += ch; }
+      continue;
+    }
+    if (inBlockComment) {
+      if (ch === '*' && next === '/') { inBlockComment = false; current += ' */'; i++; }
+      continue;
+    }
+
     if (!inSingle && !inDouble && !inDollar) {
+      if (ch === '-' && next === '-') { inLineComment = true; continue; }
+      if (ch === '/' && next === '*') { inBlockComment = true; current += '/* '; i++; continue; }
       if (ch === "'") { inSingle = true; current += ch; continue; }
       if (ch === '"') { inDouble = true; current += ch; continue; }
       if (ch === '$' && next === '$') { inDollar = true; current += ch + next; i++; continue; }
@@ -113,7 +126,8 @@ async function initDb() {
     await pool.end();
   } catch (err) {
     console.error('Init error:', err.message);
-    await pool.end();
+    try { await pool.end(); } catch (e) {}
+    throw err;
   }
 }
 

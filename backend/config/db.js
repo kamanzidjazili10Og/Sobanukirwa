@@ -42,22 +42,12 @@ if (connectionString) {
 
 const safePool = {
   query: async (sql, params) => {
-    if (!pool) return { rows: [], rowCount: 0 };
-    try {
-      return await pool.query(sql, params);
-    } catch (err) {
-      console.error('DB query error:', err.message);
-      return { rows: [], rowCount: 0 };
-    }
+    if (!pool) throw new Error('Database not configured. Set DATABASE_URL environment variable.');
+    return await pool.query(sql, params);
   },
   execute: async (sql, params) => {
-    if (!pool) return { rows: [], rowCount: 0 };
-    try {
-      return await pool.query(sql, params);
-    } catch (err) {
-      console.error('DB execute error:', err.message);
-      return { rows: [], rowCount: 0 };
-    }
+    if (!pool) throw new Error('Database not configured. Set DATABASE_URL environment variable.');
+    return await pool.query(sql, params);
   },
   getConnection: async () => {
     if (!pool) throw new Error('Database not configured');
@@ -65,7 +55,8 @@ const safePool = {
   },
   end: async () => {
     if (pool) await pool.end();
-  }
+  },
+  isReady: () => pool !== null,
 };
 
 module.exports = safePool;
