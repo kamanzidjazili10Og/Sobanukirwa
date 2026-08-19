@@ -91,6 +91,10 @@ app.get('/api/version', (req, res) => {
 
 app.set('bumpVersion', bumpContentVersion);
 
+app.get('/', (req, res) => {
+  res.redirect('/admin');
+});
+
 app.use('/', express.static(ROOT_DIR));
 
 app.use((err, req, res, next) => {
