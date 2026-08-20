@@ -72,6 +72,15 @@ const safePool = {
   end: async () => {
     if (pool) await pool.end();
   },
+  ping: async () => {
+    if (!pool) return { connected: false, error: 'No pool configured' };
+    try {
+      const result = await pool.query('SELECT 1 as ok');
+      return { connected: true, rows: result.rows };
+    } catch (err) {
+      return { connected: false, error: err.message, code: err.code };
+    }
+  },
   isReady: () => pool !== null,
 };
 

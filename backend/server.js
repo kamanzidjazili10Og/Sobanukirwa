@@ -92,8 +92,10 @@ let contentVersion = Date.now();
 
 function bumpContentVersion() { contentVersion = Date.now(); }
 
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+app.get('/api/health', async (req, res) => {
+  const db = require('./config/db');
+  const dbStatus = await db.ping();
+  res.json({ status: 'ok', db: dbStatus, timestamp: new Date().toISOString() });
 });
 
 app.get('/api/version', (req, res) => {
