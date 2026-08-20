@@ -97,7 +97,7 @@ router.post('/', upload.single('audio'), async (req, res) => {
       await pool.query('UPDATE artists SET total_lessons = total_lessons + 1 WHERE id = $1', [resolvedArtistId]);
     }
 
-    res.status(201).json({ id: rows[0].id, message: 'Track created' });
+    res.status(201).json({ id: rows[0] ? rows[0].id : null, message: 'Track created' });
     req.app.get('bumpVersion')();
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });

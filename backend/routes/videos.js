@@ -52,7 +52,7 @@ router.post('/', upload.fields([{ name: 'video', maxCount: 1 }, { name: 'thumbna
       'INSERT INTO videos (title, title_ar, title_en, author, author_ar, author_en, description, video_url, thumbnail_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id',
       [title, title_ar || null, title_en || null, author || null, author_ar || null, author_en || null, description || null, videoUrl, thumbnailUrl || null]
     );
-    res.status(201).json({ id: rows[0].id, message: 'Video created' });
+    res.status(201).json({ id: rows[0] ? rows[0].id : null, message: 'Video created' });
     req.app.get('bumpVersion')();
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });

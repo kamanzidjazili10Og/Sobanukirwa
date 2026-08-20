@@ -54,6 +54,15 @@ app.post('/api/auth/login', (req, res) => {
   }
 });
 
+app.post('/api/admin/init-db', async (req, res) => {
+  try {
+    await initDb();
+    res.json({ message: 'Database initialized successfully' });
+  } catch (err) {
+    res.status(500).json({ message: 'Database init failed', error: err.message });
+  }
+});
+
 const adminPath = path.join(ROOT_DIR, 'admin');
 
 app.get('/admin', (req, res) => {

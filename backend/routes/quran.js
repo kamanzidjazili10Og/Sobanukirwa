@@ -38,7 +38,7 @@ router.post('/surahs', async (req, res) => {
       'INSERT INTO quran_surahs (surah_number, name, name_arabic, ayahs_count, revelation_type, audio_url) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
       [surah_number, name, name_arabic, ayahs_count || 0, revelation_type || 'Makkah', audio_url || null]
     );
-    res.status(201).json({ id: rows[0].id, message: 'Surah created' });
+    res.status(201).json({ id: rows[0] ? rows[0].id : null, message: 'Surah created' });
     req.app.get('bumpVersion')();
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });

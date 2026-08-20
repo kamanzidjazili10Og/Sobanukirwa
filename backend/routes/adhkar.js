@@ -62,7 +62,7 @@ router.post('/', (req, res, next) => {
       'INSERT INTO adhkar (arabic_text, transliteration, translation_rw, translation_en, translation_ar, count_target, category, audio_url, reference) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id',
       [arabic_text, transliteration, translation_rw, translation_en, translation_ar, count_target || 33, category || 'general', audioPath, reference]
     );
-    res.status(201).json({ id: rows[0].id, message: 'Adhkar created' });
+    res.status(201).json({ id: rows[0] ? rows[0].id : null, message: 'Adhkar created' });
     req.app.get('bumpVersion')();
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });

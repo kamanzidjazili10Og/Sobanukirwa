@@ -56,7 +56,7 @@ router.post('/', async (req, res) => {
       'INSERT INTO categories (name, name_ar, name_en, slug, description, icon, sort_order) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
       [name, name_ar || null, name_en || null, finalSlug, description || null, icon || null, sort_order || 0]
     );
-    res.status(201).json({ id: rows[0].id, message: 'Category created' });
+    res.status(201).json({ id: rows[0] ? rows[0].id : null, message: 'Category created' });
     req.app.get('bumpVersion')();
   } catch (err) {
     if (err.code === '23505') {

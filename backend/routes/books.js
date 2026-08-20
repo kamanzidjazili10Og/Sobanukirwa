@@ -55,7 +55,7 @@ router.post('/', upload.fields([{ name: 'file', maxCount: 1 }, { name: 'image', 
       'INSERT INTO books (title, title_ar, title_en, author, author_ar, author_en, description, file_url, image_url, category, file_type) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id',
       [title, title_ar || null, title_en || null, author || null, author_ar || null, author_en || null, description || null, fileUrl, imageUrl, category || null, file_type || 'pdf']
     );
-    res.status(201).json({ id: rows[0].id, message: 'Book created' });
+    res.status(201).json({ id: rows[0] ? rows[0].id : null, message: 'Book created' });
     req.app.get('bumpVersion')();
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
