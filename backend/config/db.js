@@ -7,14 +7,8 @@ const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL ||
 let pool = null;
 
 if (connectionString) {
-  let url = connectionString;
-  if (url.includes('?')) {
-    url += '&sslmode=require';
-  } else {
-    url += '?sslmode=require';
-  }
   pool = new Pool({
-    connectionString: url,
+    connectionString,
     ssl: { rejectUnauthorized: false },
     max: 10,
     idleTimeoutMillis: 30000,
