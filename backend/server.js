@@ -98,13 +98,6 @@ app.get('/api/health', async (req, res) => {
   res.json({ status: 'ok', db: dbStatus, timestamp: new Date().toISOString() });
 });
 
-app.get('/api/admin/debug-db', async (req, res) => {
-  const dbKeys = Object.keys(process.env).filter(k => k.toLowerCase().includes('database') || k.toLowerCase().includes('postgres'));
-  const safeEnv = {};
-  dbKeys.forEach(k => { safeEnv[k] = process.env[k] ? process.env[k].replace(/:[^@]+@/, ':***@').substring(0, 100) : ''; });
-  res.json({ envVars: safeEnv, count: dbKeys.length });
-});
-
 app.get('/api/version', (req, res) => {
   res.json({ version: contentVersion, timestamp: new Date(contentVersion).toISOString() });
 });
