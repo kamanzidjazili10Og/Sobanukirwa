@@ -95,7 +95,9 @@ function bumpContentVersion() { contentVersion = Date.now(); }
 app.get('/api/health', async (req, res) => {
   const db = require('./config/db');
   const dbStatus = await db.ping();
-  res.json({ status: 'ok', db: dbStatus, timestamp: new Date().toISOString() });
+  const rawUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL || null;
+  const safeUrl = rawUrl ? rawUrl.replace(/:[^@]+@/, ':***@') : 'not set';
+  res.json({ status: 'ok', db: dbStatus, dbUrl: safeUrl, timestamp: new Date().toISOString() });
 });
 
 app.get('/api/version', (req, res) => {
