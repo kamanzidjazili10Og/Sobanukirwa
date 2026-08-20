@@ -1,6 +1,7 @@
 const express = require('express');
 const pool = require('../config/db');
 const upload = require('../middleware/upload');
+const { requireAuth } = require('../middleware/auth');
 const router = express.Router();
 
 router.get('/', async (req, res) => {
@@ -34,7 +35,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.post('/', upload.fields([{ name: 'video', maxCount: 1 }, { name: 'thumbnail', maxCount: 1 }]), async (req, res) => {
+router.post('/', requireAuth, upload.fields([{ name: 'video', maxCount: 1 }, { name: 'thumbnail', maxCount: 1 }]), async (req, res) => {
   try {
     const { title, title_ar, title_en, author, author_ar, author_en, description } = req.body;
     const videoUrl = req.files.video ? `/uploads/videos/${req.files.video[0].filename}` : req.body.video_url;
@@ -59,7 +60,7 @@ router.post('/', upload.fields([{ name: 'video', maxCount: 1 }, { name: 'thumbna
   }
 });
 
-router.put('/:id', upload.fields([{ name: 'video', maxCount: 1 }, { name: 'thumbnail', maxCount: 1 }]), async (req, res) => {
+router.put('/:id', requireAuth, upload.fields([{ name: 'video', maxCount: 1 }, { name: 'thumbnail', maxCount: 1 }]), async (req, res) => {
   try {
     const { title, title_ar, title_en, author, author_ar, author_en, description } = req.body;
     let sql = 'UPDATE videos SET title=$1, title_ar=$2, title_en=$3, author=$4, author_ar=$5, author_en=$6, description=$7';
@@ -79,7 +80,7 @@ router.put('/:id', upload.fields([{ name: 'video', maxCount: 1 }, { name: 'thumb
   }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAuth, async (req, res) => {
   try {
     await pool.query('UPDATE videos SET is_active = FALSE WHERE id = $1', [req.params.id]);
     res.json({ message: 'Video deactivated' });

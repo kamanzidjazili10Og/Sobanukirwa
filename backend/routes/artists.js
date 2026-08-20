@@ -1,6 +1,7 @@
 const express = require('express');
 const pool = require('../config/db');
 const upload = require('../middleware/upload');
+const { requireAuth } = require('../middleware/auth');
 const router = express.Router();
 
 router.get('/', async (req, res) => {
@@ -32,7 +33,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.post('/', upload.single('image'), async (req, res) => {
+router.post('/', requireAuth, upload.single('image'), async (req, res) => {
   try {
     const { name, name_ar, name_en, bio } = req.body;
     let imageUrl = null;
@@ -62,7 +63,7 @@ router.post('/', upload.single('image'), async (req, res) => {
   }
 });
 
-router.put('/:id', upload.single('image'), async (req, res) => {
+router.put('/:id', requireAuth, upload.single('image'), async (req, res) => {
   try {
     const { name, name_ar, name_en, bio } = req.body;
     let query = 'UPDATE artists SET name=$1, name_ar=$2, name_en=$3, bio=$4';
@@ -84,7 +85,7 @@ router.put('/:id', upload.single('image'), async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAuth, async (req, res) => {
   try {
     await pool.query('UPDATE artists SET is_active = FALSE WHERE id = $1', [req.params.id]);
     res.json({ message: 'Artist deactivated' });

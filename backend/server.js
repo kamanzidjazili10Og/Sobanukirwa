@@ -54,17 +54,6 @@ app.post('/api/auth/login', (req, res) => {
   }
 });
 
-app.post('/api/admin/init-db', async (req, res) => {
-  try {
-    const result = await initDb();
-    const pool = require('./config/db');
-    const { rows: tables } = await pool.query("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'");
-    res.json({ message: 'Database initialized', ...result, tables: tables.map(t => t.table_name) });
-  } catch (err) {
-    res.status(500).json({ message: 'Database init failed', error: err.message });
-  }
-});
-
 const adminPath = path.join(ROOT_DIR, 'admin');
 
 app.get('/admin', (req, res) => {

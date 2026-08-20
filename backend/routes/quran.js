@@ -1,6 +1,7 @@
 const express = require('express');
 const pool = require('../config/db');
 const upload = require('../middleware/upload');
+const { requireAuth } = require('../middleware/auth');
 const router = express.Router();
 
 router.get('/surahs', async (req, res) => {
@@ -22,7 +23,7 @@ router.get('/surahs/:number', async (req, res) => {
   }
 });
 
-router.post('/surahs', async (req, res) => {
+router.post('/surahs', requireAuth, async (req, res) => {
   try {
     const { surah_number, name, name_arabic, ayahs_count, revelation_type, audio_url } = req.body;
     if (!surah_number || !name || !name_arabic) {
@@ -45,7 +46,7 @@ router.post('/surahs', async (req, res) => {
   }
 });
 
-router.put('/surahs/:number', async (req, res) => {
+router.put('/surahs/:number', requireAuth, async (req, res) => {
   try {
     const { name, name_arabic, ayahs_count, revelation_type } = req.body;
     await pool.query(
@@ -59,7 +60,7 @@ router.put('/surahs/:number', async (req, res) => {
   }
 });
 
-router.put('/surahs/:number/audio', upload.single('audio'), async (req, res) => {
+router.put('/surahs/:number/audio', requireAuth, upload.single('audio'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'No audio file uploaded' });
     const audioUrl = `/uploads/audio/${req.file.filename}`;
@@ -71,7 +72,7 @@ router.put('/surahs/:number/audio', upload.single('audio'), async (req, res) => 
   }
 });
 
-router.delete('/surahs/:number', async (req, res) => {
+router.delete('/surahs/:number', requireAuth, async (req, res) => {
   try {
     const { rows } = await pool.query('DELETE FROM quran_surahs WHERE surah_number = $1 RETURNING id', [req.params.number]);
     if (rows.length === 0) return res.status(404).json({ message: 'Surah not found' });

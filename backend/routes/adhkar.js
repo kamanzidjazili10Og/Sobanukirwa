@@ -1,6 +1,7 @@
 const express = require('express');
 const pool = require('../config/db');
 const upload = require('../middleware/upload');
+const { requireAuth } = require('../middleware/auth');
 const router = express.Router();
 
 router.get('/', async (req, res) => {
@@ -38,7 +39,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.post('/', (req, res, next) => {
+router.post('/', requireAuth, (req, res, next) => {
   upload.single('audio')(req, res, (err) => {
     if (err && err.code !== 'LIMIT_UNEXPECTED_FILE') {
       return res.status(400).json({ message: 'Upload error', error: err.message });
@@ -69,7 +70,7 @@ router.post('/', (req, res, next) => {
   }
 });
 
-router.put('/:id', (req, res, next) => {
+router.put('/:id', requireAuth, (req, res, next) => {
   upload.single('audio')(req, res, (err) => {
     if (err && err.code !== 'LIMIT_UNEXPECTED_FILE') {
       return res.status(400).json({ message: 'Upload error', error: err.message });
@@ -94,7 +95,7 @@ router.put('/:id', (req, res, next) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAuth, async (req, res) => {
   try {
     await pool.query('UPDATE adhkar SET is_active = FALSE WHERE id = $1', [req.params.id]);
     res.json({ message: 'Adhkar deactivated' });

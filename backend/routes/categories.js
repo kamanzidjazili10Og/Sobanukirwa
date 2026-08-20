@@ -1,5 +1,6 @@
 const express = require('express');
 const pool = require('../config/db');
+const { requireAuth } = require('../middleware/auth');
 const router = express.Router();
 
 router.get('/', async (req, res) => {
@@ -38,7 +39,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', requireAuth, async (req, res) => {
   try {
     const { name, name_ar, name_en, slug, description, icon, sort_order } = req.body;
     if (!name) return res.status(400).json({ message: 'Name is required' });
@@ -66,7 +67,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireAuth, async (req, res) => {
   try {
     const { name, name_ar, name_en, slug, description, icon, sort_order } = req.body;
     const sql = 'UPDATE categories SET name=$1, name_ar=$2, name_en=$3, slug=$4, description=$5, icon=$6, sort_order=$7 WHERE id=$8';
@@ -83,7 +84,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAuth, async (req, res) => {
   try {
     await pool.query('UPDATE categories SET is_active = FALSE WHERE id = $1', [req.params.id]);
     await pool.query('UPDATE tracks SET category_id = NULL WHERE category_id = $1', [req.params.id]);

@@ -1,5 +1,6 @@
 const express = require('express');
 const pool = require('../config/db');
+const { requireAuth } = require('../middleware/auth');
 const router = express.Router();
 
 router.get('/', async (req, res) => {
@@ -13,7 +14,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.put('/:key', async (req, res) => {
+router.put('/:key', requireAuth, async (req, res) => {
   try {
     const { key } = req.params;
     const { value } = req.body;
@@ -31,7 +32,7 @@ router.put('/:key', async (req, res) => {
   }
 });
 
-router.delete('/:key', async (req, res) => {
+router.delete('/:key', requireAuth, async (req, res) => {
   try {
     const { rows } = await pool.query('DELETE FROM settings WHERE setting_key = $1 RETURNING id', [req.params.key]);
     if (rows.length === 0) return res.status(404).json({ message: 'Setting not found' });

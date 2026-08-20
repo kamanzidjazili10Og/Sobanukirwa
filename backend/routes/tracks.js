@@ -1,6 +1,7 @@
 const express = require('express');
 const pool = require('../config/db');
 const upload = require('../middleware/upload');
+const { requireAuth } = require('../middleware/auth');
 const router = express.Router();
 
 router.get('/', async (req, res) => {
@@ -69,7 +70,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.post('/', upload.single('audio'), async (req, res) => {
+router.post('/', requireAuth, upload.single('audio'), async (req, res) => {
   try {
     const { artist_id, category_id, title, title_ar, title_en, description, duration_str } = req.body;
     const audioUrl = req.file ? `/uploads/audio/${req.file.filename}` : req.body.audio_url;
@@ -104,7 +105,7 @@ router.post('/', upload.single('audio'), async (req, res) => {
   }
 });
 
-router.put('/:id', upload.single('audio'), async (req, res) => {
+router.put('/:id', requireAuth, upload.single('audio'), async (req, res) => {
   try {
     const { artist_id, category_id, title, title_ar, title_en, description, duration_str } = req.body;
     let sql = 'UPDATE tracks SET artist_id=$1, category_id=$2, title=$3, title_ar=$4, title_en=$5, description=$6, duration_str=$7';
@@ -126,7 +127,7 @@ router.put('/:id', upload.single('audio'), async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAuth, async (req, res) => {
   try {
     const { rows: track } = await pool.query('SELECT artist_id FROM tracks WHERE id = $1', [req.params.id]);
     await pool.query('UPDATE tracks SET is_active = FALSE WHERE id = $1', [req.params.id]);
@@ -140,7 +141,7 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-router.post('/:id/play', async (req, res) => {
+router.post('/:id/play', requireAuth, async (req, res) => {
   try {
     await pool.query('UPDATE tracks SET plays_count = plays_count + 1 WHERE id = $1', [req.params.id]);
     res.json({ message: 'Play counted' });
