@@ -95,9 +95,14 @@ function bumpContentVersion() { contentVersion = Date.now(); }
 app.get('/api/health', async (req, res) => {
   const db = require('./config/db');
   const dbStatus = await db.ping();
-  const rawUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL || null;
-  const safeUrl = rawUrl ? rawUrl.replace(/:[^@]+@/, ':***@') : 'not set';
-  res.json({ status: 'ok', db: dbStatus, dbUrl: safeUrl, timestamp: new Date().toISOString() });
+  res.json({ status: 'ok', db: dbStatus, timestamp: new Date().toISOString() });
+});
+
+app.get('/api/admin/debug-db', async (req, res) => {
+  const dbKeys = Object.keys(process.env).filter(k => k.toLowerCase().includes('database') || k.toLowerCase().includes('postgres'));
+  const safeEnv = {};
+  dbKeys.forEach(k => { safeEnv[k] = process.env[k] ? process.env[k].replace(/:[^@]+@/, ':***@').substring(0, 100) : ''; });
+  res.json({ envVars: safeEnv, count: dbKeys.length });
 });
 
 app.get('/api/version', (req, res) => {
