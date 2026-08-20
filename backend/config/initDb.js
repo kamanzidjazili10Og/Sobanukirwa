@@ -113,13 +113,15 @@ async function initDb() {
         await pool.query(stmt);
         succeeded++;
       } catch (err) {
-        if (err.code === '42P07' || err.code === '42710' || err.code === '23505') {
+        const errCode = err.code || 'UNKNOWN';
+        const errMsg = String(err.message || err).substring(0, 300);
+        if (errCode === '42P07' || errCode === '42710' || errCode === '23505') {
           failed++;
         } else {
-          const errMsg = `SQL ${i + 1}: ${err.message.substring(0, 200)}`;
-          errors.push(errMsg);
-          console.error(errMsg);
-          console.error('Statement:', stmt.substring(0, 150));
+          const detail = `SQL ${i + 1} [${errCode}]: ${errMsg}`;
+          errors.push(detail);
+          console.error(detail);
+          console.error('Statement:', stmt.substring(0, 200));
           failed++;
         }
       }
