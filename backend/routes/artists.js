@@ -52,7 +52,10 @@ router.post('/', upload.single('image'), async (req, res) => {
       'INSERT INTO artists (name, name_ar, name_en, bio, image_url) VALUES ($1, $2, $3, $4, $5) RETURNING id',
       [name, name_ar || null, name_en || null, bio || null, imageUrl]
     );
-    res.status(201).json({ id: rows[0] ? rows[0].id : null, message: 'Artist created' });
+    if (!rows[0]) {
+      return res.status(500).json({ message: 'Failed to create artist' });
+    }
+    res.status(201).json({ id: rows[0].id, message: 'Artist created' });
     req.app.get('bumpVersion')();
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });

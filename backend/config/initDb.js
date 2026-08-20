@@ -105,6 +105,7 @@ async function initDb() {
 
     let succeeded = 0;
     let failed = 0;
+    const errors = [];
 
     for (let i = 0; i < statements.length; i++) {
       const stmt = statements[i];
@@ -115,7 +116,9 @@ async function initDb() {
         if (err.code === '42P07' || err.code === '42710' || err.code === '23505') {
           failed++;
         } else {
-          console.error(`SQL statement ${i + 1} failed:`, err.message.substring(0, 200));
+          const errMsg = `SQL ${i + 1}: ${err.message.substring(0, 200)}`;
+          errors.push(errMsg);
+          console.error(errMsg);
           console.error('Statement:', stmt.substring(0, 150));
           failed++;
         }
@@ -124,6 +127,7 @@ async function initDb() {
 
     console.log(`Schema init complete: ${succeeded} succeeded, ${failed} skipped/failed`);
     await pool.end();
+    return { succeeded, failed, errors };
   } catch (err) {
     console.error('Init error:', err.message);
     try { await pool.end(); } catch (e) {}
